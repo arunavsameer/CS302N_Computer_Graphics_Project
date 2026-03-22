@@ -1,0 +1,20 @@
+[
+{
+  "directory": "/storage/Graphics_Project/build",
+  "command": "/usr/bin/g++ -I/storage/Graphics_Project/include -g -std=gnu++17 -o CMakeFiles/OpenGLApp.dir/main.cpp.o -c /storage/Graphics_Project/main.cpp",
+  "file": "/storage/Graphics_Project/main.cpp",
+  "output": "/storage/Graphics_Project/build/CMakeFiles/OpenGLApp.dir/main.cpp.o"
+},
+{
+  "directory": "/storage/Graphics_Project/build",
+  "command": "/usr/bin/gcc -I/storage/Graphics_Project/include -g -o CMakeFiles/OpenGLApp.dir/src/glad.c.o -c /storage/Graphics_Project/src/glad.c",
+  "file": "/storage/Graphics_Project/src/glad.c",
+  "output": "/storage/Graphics_Project/build/CMakeFiles/OpenGLApp.dir/src/glad.c.o"
+},
+{
+  "directory": "/storage/Graphics_Project/build",
+  "command": "/usr/bin/g++ -I/storage/Graphics_Project/include -g -std=gnu++17 -o CMakeFiles/OpenGLApp.dir/src/shader.cpp.o -c /storage/Graphics_Project/src/shader.cpp",
+  "file": "/storage/Graphics_Project/src/shader.cpp",
+  "output": "/storage/Graphics_Project/build/CMakeFiles/OpenGLApp.dir/src/shader.cpp.o"
+}
+]

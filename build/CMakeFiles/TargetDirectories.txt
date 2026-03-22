@@ -1,0 +1,3 @@
+/storage/Graphics_Project/build/CMakeFiles/OpenGLApp.dir
+/storage/Graphics_Project/build/CMakeFiles/edit_cache.dir
+/storage/Graphics_Project/build/CMakeFiles/rebuild_cache.dir
