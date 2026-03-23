@@ -1,161 +1,175 @@
-#include <GL/glut.h>
-#include <math.h>
-#include <stdio.h>
+#include <GL/glew.h>
 
-float angleX = 20.0f, angleY = 30.0f;
+// Platform-specific GLUT headers
+#ifdef __APPLE__
+    #include <GLUT/glut.h>
+    #include <OpenGL/gl.h>
+#elif defined(_WIN32) || defined(_WIN64)
+    #include <GL/glut.h>
+#else
+    #include <GL/glut.h>
+#endif
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
+#include <cmath>
+#include <cstring>
 
-void drawCube(float sx, float sy, float sz) {
-    glPushMatrix();
-    glScalef(sx, sy, sz);
-    glutSolidCube(1.0f);
-    glPopMatrix();
-}
+// ============================================================
+// Global Variables (Required for GLUT)
+// ============================================================
 
-void drawCar() {
-    glColor3f(0.2f, 0.5f, 1.0f);
-    glPushMatrix();
-    glTranslatef(0, 1.0f, 0);
-    drawCube(2.5f, 0.85f, 1.5f);
-    glPopMatrix();
-    
-    glColor3f(0.95f, 0.95f, 1.0f);
-    glPushMatrix();
-    glTranslatef(-0.15f, 1.9f, 0);
-    drawCube(1.3f, 0.75f, 1.25f);
-    glPopMatrix();
-    
-    glColor3f(0.1f, 0.1f, 0.15f);
-    glPushMatrix();
-    glTranslatef(-0.5f, 1.85f, 0.6f);
-    drawCube(0.6f, 0.5f, 0.3f);
-    glPopMatrix();
-    
-    glPushMatrix();
-    glTranslatef(-0.5f, 1.85f, -0.6f);
-    drawCube(0.6f, 0.5f, 0.3f);
-    glPopMatrix();
-    
-    glColor3f(0.05f, 0.05f, 0.08f);
-    
-    float wheelX[] = {0.85f, 0.85f, -0.85f, -0.85f};
-    float wheelZ[] = {0.8f, -0.8f, 0.8f, -0.8f};
-    
-    for(int i = 0; i < 4; i++) {
-        glPushMatrix();
-        glTranslatef(wheelX[i], 0.35f, wheelZ[i]);
-        drawCube(0.65f, 0.65f, 0.5f);
-        glPopMatrix();
-    }
-    
-    glColor3f(0.1f, 0.3f, 0.6f);
-    
-    glPushMatrix();
-    glTranslatef(1.3f, 0.9f, 0);
-    drawCube(0.3f, 0.5f, 1.5f);
-    glPopMatrix();
-    
-    glPushMatrix();
-    glTranslatef(-1.3f, 0.9f, 0);
-    drawCube(0.3f, 0.5f, 1.5f);
-    glPopMatrix();
-}
+int g_windowWidth = 1280;
+int g_windowHeight = 720;
+bool g_keys[256];
+bool g_special_keys[256];
+float g_lastTime = 0.0f;
+float g_deltaTime = 0.0f;
 
-void drawEnvironment() {
-    glColor3f(0.58f, 0.88f, 0.35f);
-    glPushMatrix();
-    glScalef(20, 0.1f, 20);
-    glutSolidCube(1.0f);
-    glPopMatrix();
-}
+// ============================================================
+// GLUT Callbacks
+// ============================================================
 
-void display() {
+void displayCallback() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+    gluPerspective(45.0f, (float)g_windowWidth / (float)g_windowHeight, 0.1f, 100.0f);
     
-    gluLookAt(5, 4, 8,   
-              0, 1, 0,      
-              0, 1, 0);     
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glTranslatef(0.0f, 0.0f, -5.0f);
     
-    glRotatef(angleX, 1, 0, 0);
-    glRotatef(angleY, 0, 1, 0);
-    
-    drawEnvironment();
-    drawCar();
+    // TEST: Draw colorful triangle
+    glBegin(GL_TRIANGLES);
+    glColor3f(1.0f, 0.0f, 0.0f);  // Red
+    glVertex3f(0.0f, 0.5f, 0.0f);
+    glColor3f(0.0f, 1.0f, 0.0f);  // Green
+    glVertex3f(-0.5f, -0.5f, 0.0f);
+    glColor3f(0.0f, 0.0f, 1.0f);  // Blue
+    glVertex3f(0.5f, -0.5f, 0.0f);
+    glEnd();
     
     glutSwapBuffers();
 }
 
-void reshape(int w, int h) {
-    glViewport(0, 0, w, h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45.0, (float)w / h, 0.1, 100.0);
-    glMatrixMode(GL_MODELVIEW);
+void reshapeCallback(int width, int height) {
+    if (height == 0) height = 1;
+    g_windowWidth = width;
+    g_windowHeight = height;
+    glViewport(0, 0, width, height);
 }
 
-void keyboard(unsigned char key, int x, int y) {
-    switch(key) {
-        case 27: // ESC
-            exit(0);
-            break;
-        case 'w':
-        case 'W':
-            angleX = fminf(angleX + 3, 85);
-            break;
-        case 's':
-        case 'S':
-            angleX = fmaxf(angleX - 3, -85);
-            break;
-        case 'a':
-        case 'A':
-            angleY -= 3;
-            break;
-        case 'd':
-        case 'D':
-            angleY += 3;
-            break;
-        case 'r':
-        case 'R':
-            angleX = 20;
-            angleY = 30;
-            break;
+void keyboardCallback(unsigned char key, int x, int y) {
+    g_keys[key] = true;
+    if (key == 27) {  // ESC key
+        std::cout << "Exiting game..." << std::endl;
+        exit(0);
     }
-    glutPostRedisplay();
+    std::cout << "Keyboard: " << key << std::endl;
 }
 
-void init() {
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glEnable(GL_COLOR_MATERIAL);
-    
-    glEnable(GL_MULTISAMPLE); 
-    
-    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-    
-    glClearColor(0.52f, 0.8f, 1.0f, 1.0f);
-    GLfloat light_pos[] = {5, 5, 5, 0};
-    GLfloat light_color[] = {1, 1, 1, 1};
-    glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_color);
+void keyboardUpCallback(unsigned char key, int x, int y) {
+    g_keys[key] = false;
 }
+
+void specialKeyCallback(int key, int x, int y) {
+    g_special_keys[key] = true;
+    std::cout << "Special Key: " << key << std::endl;
+}
+
+void specialKeyUpCallback(int key, int x, int y) {
+    g_special_keys[key] = false;
+}
+
+void timerCallback(int value) {
+    glutPostRedisplay();
+    glutTimerFunc(16, timerCallback, 0);  // ~60 FPS
+}
+
+// ============================================================
+// Main Function
+// ============================================================
 
 int main(int argc, char** argv) {
+    std::cout << "================================================" << std::endl;
+    std::cout << "  CS302N - Crossy Road Game (Cross-Platform)" << std::endl;
+    std::cout << "================================================" << std::endl;
+    
+    // GLUT initialization
+    std::cout << "\n[*] Initializing GLUT..." << std::endl;
     glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(g_windowWidth, g_windowHeight);
+    glutInitWindowPosition(100, 100);
     
-    // Request a multisampled display mode
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GL_MULTISAMPLE); 
+    int window = glutCreateWindow("CS302N - Crossy Road Game");
     
-    glutInitWindowSize(800, 600);
-    glutCreateWindow("car");
+    if (window < 1) {
+        std::cerr << "[ERROR] Failed to create GLUT window!" << std::endl;
+        return -1;
+    }
     
-    init();
+    std::cout << "[OK] GLUT window created!" << std::endl;
     
-    glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
-    glutKeyboardFunc(keyboard);
+    // GLEW initialization
+    std::cout << "[*] Initializing GLEW..." << std::endl;
+    glewExperimental = GL_TRUE;
+    GLenum err = glewInit();
     
+    if (err != GLEW_OK) {
+        std::cerr << "[ERROR] GLEW failed: " << glewGetErrorString(err) << std::endl;
+        return -1;
+    }
+    
+    std::cout << "[OK] GLEW initialized!" << std::endl;
+    
+    // Print OpenGL info
+    std::cout << "\n[*] OpenGL Information:" << std::endl;
+    std::cout << "    Version: " << glGetString(GL_VERSION) << std::endl;
+    std::cout << "    GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    std::cout << "    Renderer: " << glGetString(GL_RENDERER) << std::endl;
+    
+    // Register callbacks
+    std::cout << "\n[*] Registering callbacks..." << std::endl;
+    glutDisplayFunc(displayCallback);
+    glutReshapeFunc(reshapeCallback);
+    glutKeyboardFunc(keyboardCallback);
+    glutKeyboardUpFunc(keyboardUpCallback);
+    glutSpecialFunc(specialKeyCallback);
+    glutSpecialUpFunc(specialKeyUpCallback);
+    glutTimerFunc(16, timerCallback, 0);
+    
+    // OpenGL settings
+    std::cout << "[*] Configuring OpenGL..." << std::endl;
+    glViewport(0, 0, g_windowWidth, g_windowHeight);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glClearColor(0.1f, 0.15f, 0.2f, 1.0f);
+    
+    std::memset(g_keys, false, sizeof(g_keys));
+    std::memset(g_special_keys, false, sizeof(g_special_keys));
+    
+    std::cout << "[OK] All systems ready!\n" << std::endl;
+    std::cout << "================================================" << std::endl;
+    std::cout << "Controls:" << std::endl;
+    std::cout << "  Arrow Keys / W/A/S/D - Movement" << std::endl;
+    std::cout << "  Space - Jump" << std::endl;
+    std::cout << "  C - Camera" << std::endl;
+    std::cout << "  M - Day/Night" << std::endl;
+    std::cout << "  ESC - Exit" << std::endl;
+    std::cout << "================================================" << std::endl;
+    std::cout << "You should see a colorful triangle in the center" << std::endl;
+    std::cout << "================================================\n" << std::endl;
+    
+    g_lastTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
     glutMainLoop();
+    
+    std::cout << "[*] Shutting down..." << std::endl;
+    std::cout << "[OK] Game closed successfully!" << std::endl;
+    
     return 0;
 }

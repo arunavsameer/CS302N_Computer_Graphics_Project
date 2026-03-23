@@ -1,34 +1,64 @@
 cmake_minimum_required(VERSION 3.10)
-project(ArchOpenGL VERSION 1.0)
+project(CS302N_Game)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+message(STATUS "Building CS302N Graphics Project")
+
+# Find OpenGL
+find_package(OpenGL REQUIRED)
+message(STATUS "OpenGL found: ${OPENGL_LIBRARIES}")
+
+# Find GLUT
 find_package(GLUT REQUIRED)
+message(STATUS "GLUT found: ${GLUT_LIBRARIES}")
+
+# Find GLEW
+find_package(GLEW REQUIRED)
+message(STATUS "GLEW found")
+
+# GLM is header-only
+if(EXISTS /opt/homebrew/include/glm)
+    set(GLM_INCLUDE_DIR /opt/homebrew/include)
+    message(STATUS "GLM found at /opt/homebrew/include")
+elseif(EXISTS /usr/local/include/glm)
+    set(GLM_INCLUDE_DIR /usr/local/include)
+    message(STATUS "GLM found at /usr/local/include")
+else()
+    message(FATAL_ERROR "GLM not found! Install with: brew install glm")
+endif()
+
+# Include directories
+include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLUT_INCLUDE_DIRS})
+include_directories(${GLEW_INCLUDE_DIRS})
+include_directories(${GLM_INCLUDE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
-find_package(OpenGL REQUIRED)
-find_package(glfw3 3.3 REQUIRED)
-# Note: We removed find_package(GLEW)
-
-# 1. Include the header files
-include_directories(include)
-
-# 2. Add executable
-add_executable(OpenGLApp main.cpp src/glad.c src/shader.cpp)
-
-set(OpenGL_GL_PREFERENCE GLVND)
-find_package(OpenGL REQUIRED)
-include_directories(${GLM_INCLUDE_DIRS})
-
-# 3. Link Libraries
-target_link_libraries(
-    OpenGLApp
-    PRIVATE
-    OpenGL::GL
-    OpenGL::GLU
-    ${GLUT_LIBRARIES}
-    glfw
-    dl
-    glm
+# Source files
+set(SOURCES
+    main.cpp
+    src/game.cpp
 )
+
+# Create executable
+add_executable(CS302N_Game ${SOURCES})
+
+# Link libraries
+target_link_libraries(CS302N_Game
+    ${OPENGL_LIBRARIES}
+    ${GLUT_LIBRARIES}
+    GLEW::GLEW
+)
+
+# macOS specific frameworks
+if(APPLE)
+    target_link_libraries(CS302N_Game "-framework Cocoa")
+    target_link_libraries(CS302N_Game "-framework OpenGL")
+    target_link_libraries(CS302N_Game "-framework IOKit")
+    message(STATUS "macOS frameworks linked")
+endif()
+
+message(STATUS "CS302N_Game build configured successfully!")
