@@ -26,8 +26,11 @@ if(EXISTS /opt/homebrew/include/glm)
 elseif(EXISTS /usr/local/include/glm)
     set(GLM_INCLUDE_DIR /usr/local/include)
     message(STATUS "GLM found at /usr/local/include")
+elseif(EXISTS /usr/include/glm)
+    set(GLM_INCLUDE_DIR /usr/include)
+    message(STATUS "GLM found at /usr/include")
 else()
-    message(FATAL_ERROR "GLM not found! Install with: brew install glm")
+    message(FATAL_ERROR "GLM not found!")
 endif()
 
 # Include directories
