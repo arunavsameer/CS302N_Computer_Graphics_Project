@@ -1,1 +1,0 @@
-# CS302N_Computer_Graphics_Project
