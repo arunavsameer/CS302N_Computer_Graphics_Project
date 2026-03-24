@@ -50,6 +50,8 @@ set(SOURCES
     src/collision.cpp
     src/renderer.cpp
     src/camera.cpp
+    src/shader.cpp
+    src/stb_implement.cpp
 )
 
 # Create executable
