@@ -3,7 +3,8 @@
 
 #include <glm/glm.hpp>
 
-// Game states
+constexpr float CELL_SIZE = 1.0f;
+
 enum GameState {
     GAME_STATE_MENU,
     GAME_STATE_PLAYING,
@@ -11,7 +12,6 @@ enum GameState {
     GAME_STATE_GAME_OVER
 };
 
-// Lane types
 enum LaneType {
     LANE_GRASS,
     LANE_ROAD,
@@ -19,7 +19,6 @@ enum LaneType {
     LANE_RAIL
 };
 
-// Obstacle types
 enum ObstacleType {
     OBSTACLE_CAR,
     OBSTACLE_TRUCK,
@@ -28,7 +27,6 @@ enum ObstacleType {
     OBSTACLE_LILYPAD
 };
 
-// Game data structure
 struct GameData {
     int score;
     int coins;

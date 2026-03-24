@@ -40,10 +40,16 @@ include_directories(${GLEW_INCLUDE_DIRS})
 include_directories(${GLM_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-# Source files
+# Source files (UPDATED to include the whole tree)
 set(SOURCES
     main.cpp
     src/game.cpp
+    src/chicken.cpp
+    src/lane.cpp
+    src/obstacle.cpp
+    src/collision.cpp
+    src/renderer.cpp
+    src/camera.cpp
 )
 
 # Create executable
