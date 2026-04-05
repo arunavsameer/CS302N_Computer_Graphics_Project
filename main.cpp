@@ -6,7 +6,6 @@
 #endif
 
 #include "game.h"
-
 Game* game = nullptr;
 
 void display() {
