@@ -1,0 +1,142 @@
+.
+├── assets
+│   ├── shaders
+│   │   ├── fragment.glsl
+│   │   └── vertex.glsl
+│   └── textures
+│       ├── car.png
+│       ├── chicken.png
+│       ├── grass.png
+│       └── road.png
+├── bin
+├── build
+│   ├── bin
+│   │   └── CS302N_Game
+│   ├── build.ninja
+│   ├── CMakeCache.txt
+│   ├── CMakeFiles
+│   │   ├── 4.3.0
+│   │   │   ├── CMakeCCompiler.cmake
+│   │   │   ├── CMakeCXXCompiler.cmake
+│   │   │   ├── CMakeDetermineCompilerABI_C.bin
+│   │   │   ├── CMakeDetermineCompilerABI_CXX.bin
+│   │   │   ├── CMakeSystem.cmake
+│   │   │   ├── CompilerIdC
+│   │   │   │   ├── a.out
+│   │   │   │   ├── CMakeCCompilerId.c
+│   │   │   │   └── tmp
+│   │   │   └── CompilerIdCXX
+│   │   │       ├── a.out
+│   │   │       ├── CMakeCXXCompilerId.cpp
+│   │   │       └── tmp
+│   │   ├── 4.3.1
+│   │   │   ├── CMakeCCompiler.cmake
+│   │   │   ├── CMakeCXXCompiler.cmake
+│   │   │   ├── CMakeDetermineCompilerABI_C.bin
+│   │   │   ├── CMakeDetermineCompilerABI_CXX.bin
+│   │   │   ├── CMakeSystem.cmake
+│   │   │   ├── CompilerIdC
+│   │   │   │   ├── a.out
+│   │   │   │   ├── CMakeCCompilerId.c
+│   │   │   │   └── tmp
+│   │   │   └── CompilerIdCXX
+│   │   │       ├── a.out
+│   │   │       ├── CMakeCXXCompilerId.cpp
+│   │   │       └── tmp
+│   │   ├── cmake.check_cache
+│   │   ├── CMakeConfigureLog.yaml
+│   │   ├── CS302N_Game.dir
+│   │   │   ├── build.make
+│   │   │   ├── cmake_clean.cmake
+│   │   │   ├── compiler_depend.make
+│   │   │   ├── compiler_depend.ts
+│   │   │   ├── DependInfo.cmake
+│   │   │   ├── depend.make
+│   │   │   ├── flags.make
+│   │   │   ├── link.txt
+│   │   │   ├── main.cpp.o
+│   │   │   ├── progress.make
+│   │   │   └── src
+│   │   │       ├── camera.cpp.o
+│   │   │       ├── chicken.cpp.o
+│   │   │       ├── collision.cpp.o
+│   │   │       ├── game.cpp.o
+│   │   │       ├── lane.cpp.o
+│   │   │       ├── obstacle.cpp.o
+│   │   │       ├── renderer.cpp.o
+│   │   │       ├── shader.cpp.o
+│   │   │       └── stb_implement.cpp.o
+│   │   ├── InstallScripts.json
+│   │   ├── Makefile2
+│   │   ├── pkgRedirects
+│   │   ├── progress.marks
+│   │   ├── rules.ninja
+│   │   └── TargetDirectories.txt
+│   ├── cmake_install.cmake
+│   ├── compile_commands.json
+│   └── Makefile
+├── CMakeCache.txt
+├── CMakeFiles
+│   ├── 4.3.1
+│   │   ├── CMakeCCompiler.cmake
+│   │   ├── CMakeCXXCompiler.cmake
+│   │   ├── CMakeDetermineCompilerABI_C.bin
+│   │   ├── CMakeDetermineCompilerABI_CXX.bin
+│   │   ├── CMakeSystem.cmake
+│   │   ├── CompilerIdC
+│   │   │   ├── a.out
+│   │   │   ├── CMakeCCompilerId.c
+│   │   │   └── tmp
+│   │   └── CompilerIdCXX
+│   │       ├── a.out
+│   │       ├── CMakeCXXCompilerId.cpp
+│   │       └── tmp
+│   ├── cmake.check_cache
+│   ├── CMakeConfigureLog.yaml
+│   ├── CMakeDirectoryInformation.cmake
+│   ├── CMakeScratch
+│   ├── CS302N_Game.dir
+│   │   ├── build.make
+│   │   ├── cmake_clean.cmake
+│   │   ├── compiler_depend.make
+│   │   ├── compiler_depend.ts
+│   │   ├── DependInfo.cmake
+│   │   ├── depend.make
+│   │   ├── flags.make
+│   │   ├── link.txt
+│   │   ├── progress.make
+│   │   └── src
+│   ├── InstallScripts.json
+│   ├── Makefile2
+│   ├── Makefile.cmake
+│   ├── pkgRedirects
+│   ├── progress.marks
+│   └── TargetDirectories.txt
+├── cmake_install.cmake
+├── CMakeLists.txt
+├── include
+│   ├── camera.h
+│   ├── chicken.h
+│   ├── collision.h
+│   ├── game.h
+│   ├── lane.h
+│   ├── obstacle.h
+│   ├── renderer.h
+│   ├── shader.h
+│   ├── stb_image.h
+│   └── types.h
+├── main.cpp
+├── Makefile
+├── src
+│   ├── camera.cpp
+│   ├── chicken.cpp
+│   ├── collision.cpp
+│   ├── game.cpp
+│   ├── lane.cpp
+│   ├── obstacle.cpp
+│   ├── renderer.cpp
+│   ├── shader.cpp
+│   └── stb_implement.cpp
+└── tree.txt
+
+33 directories, 107 files

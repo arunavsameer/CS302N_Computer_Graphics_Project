@@ -9,6 +9,11 @@
 
 Game* game = nullptr;
 
+// State variables for tracking the mouse drag
+bool isDragging = false;
+int lastMouseX = -1;
+int lastMouseY = -1;
+
 void display() {
     game->render();
     glutSwapBuffers();
@@ -27,6 +32,32 @@ void keyboard(unsigned char key, int x, int y) {
     game->onKeyPress(key);
 }
 
+// Handle initial mouse clicks
+void mouseButton(int button, int state, int x, int y) {
+    if (button == GLUT_LEFT_BUTTON) {
+        if (state == GLUT_DOWN) {
+            isDragging = true;
+            lastMouseX = x;
+            lastMouseY = y;
+        } else if (state == GLUT_UP) {
+            isDragging = false;
+        }
+    }
+}
+
+// Handle mouse movement while a button is pressed
+void mouseMotion(int x, int y) {
+    if (isDragging) {
+        float deltaX = (float)(x - lastMouseX);
+        float deltaY = (float)(y - lastMouseY);
+        
+        lastMouseX = x;
+        lastMouseY = y;
+        
+        game->onMouseDrag(deltaX, deltaY);
+    }
+}
+
 void reshape(int w, int h) {
     if (h == 0) h = 1;
     glViewport(0, 0, w, h);
@@ -35,7 +66,7 @@ void reshape(int w, int h) {
 
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
     glutInitWindowSize(800, 600);
     glutCreateWindow("CS302N_Game");
 
@@ -48,6 +79,10 @@ int main(int argc, char** argv) {
     glutIdleFunc(idle);
     glutKeyboardFunc(keyboard);
     glutReshapeFunc(reshape);
+    
+    // Register the new mouse callbacks
+    glutMouseFunc(mouseButton);
+    glutMotionFunc(mouseMotion);
 
     glutMainLoop();
     return 0;

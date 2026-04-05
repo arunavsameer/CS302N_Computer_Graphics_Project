@@ -24,6 +24,9 @@ public:
     void render();
     void onKeyPress(unsigned char key);
     void onResize(int w, int h);
+    
+    // New interaction functions
+    void onMouseDrag(float deltaX, float deltaY);
 };
 
 #endif
