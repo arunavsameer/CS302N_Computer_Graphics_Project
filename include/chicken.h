@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include "renderer.h"
+#include "types.h"
 
 class Chicken {
 private:
@@ -12,22 +13,23 @@ private:
     bool isJumping;
     glm::vec3 startPos;
     glm::vec3 targetPos;
-    float jumpProgress; // Normalized time from 0.0 to 1.0
-    float rotationY;    // Current facing angle in degrees
+    float jumpProgress; 
+    float rotationY;    
 
 public:
-    // --- Hyperparameters ---
-    static constexpr float JUMP_DURATION = 0.25f; // How long the jump takes (in seconds)
-    static constexpr float JUMP_HEIGHT   = 1.5f;  // Peak height of the jump
+    static constexpr float JUMP_DURATION = 0.25f; 
+    static constexpr float JUMP_HEIGHT   = 1.5f;  
 
     Chicken();
     
     void update(float deltaTime);
     void render(Renderer& renderer);
     void move(float gridX, float gridZ);
+    void applyLogVelocity(float velocityX, float deltaTime);
     
     glm::vec3 getPosition() const { return position; }
-    glm::vec3 getBasePosition() const; // NEW: Gets logical X/Z position, ignoring jump height
+    glm::vec3 getBasePosition() const; 
+    glm::vec3 getSize() const { return glm::vec3(Config::CELL_SIZE * 0.8f); }
     bool getIsJumping() const { return isJumping; }
 };
 

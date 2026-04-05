@@ -16,6 +16,10 @@ private:
     Camera camera;
     Chicken player;
     std::vector<Lane> lanes;
+    float currentGenerationZ; 
+
+    void generateLaneBlock();
+    void checkCollisions(float deltaTime);
 
 public:
     Game(int width, int height);
@@ -24,8 +28,6 @@ public:
     void render();
     void onKeyPress(unsigned char key);
     void onResize(int w, int h);
-    
-    // New interaction functions
     void onMouseDrag(float deltaX, float deltaY);
 };
 

@@ -26,12 +26,20 @@ void Renderer::initialize() {
     std::string roadTex = std::string(ASSET_DIR) + "textures/road.png";
     std::string chickenTex = std::string(ASSET_DIR) + "textures/chicken.png";
     std::string carTex = std::string(ASSET_DIR) + "textures/car.png";
+    std::string railTex = std::string(ASSET_DIR) + "textures/rail.png"; // Assumes you add rail.png later
+    std::string riverTex = std::string(ASSET_DIR) + "textures/river.png"; // Assumes you add river.png later
+    std::string trainTex = std::string(ASSET_DIR) + "textures/train.png"; // Assumes you add train.png later
+    std::string logTex = std::string(ASSET_DIR) + "textures/log.png";
 
     // Load Textures
     loadTexture(grassTex.c_str(), "grass");
     loadTexture(roadTex.c_str(), "road");
     loadTexture(chickenTex.c_str(), "chicken");
     loadTexture(carTex.c_str(), "car");
+    loadTexture(railTex.c_str(), "rail");
+    loadTexture(riverTex.c_str(), "river");
+    loadTexture(trainTex.c_str(), "train");
+    loadTexture(logTex.c_str(), "log");
 
     glClearColor(0.4f, 0.7f, 1.0f, 1.0f);
 }

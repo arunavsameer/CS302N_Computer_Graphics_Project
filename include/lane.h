@@ -16,6 +16,10 @@ public:
     Lane(float z, LaneType t);
     void update(float deltaTime);
     void render(Renderer& renderer);
+
+    const std::vector<Obstacle>& getObstacles() const { return obstacles; }
+    LaneType getType() const { return type; }
+    float getZPosition() const { return zPosition; }
 };
 
 #endif
