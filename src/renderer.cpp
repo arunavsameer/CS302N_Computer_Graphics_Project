@@ -8,18 +8,30 @@
 #endif
 #include <iostream>
 
+// Fallback macro just in case the CMake definition is missed
+#ifndef ASSET_DIR
+#define ASSET_DIR "../../assets/" 
+#endif
+
 void Renderer::initialize() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
 
-    // Initialize Shaders
-    mainShader = new Shader("../assets/shaders/vertex.glsl", "../assets/shaders/fragment.glsl");
+    // Build the full paths using the CMake macro
+    std::string vertShader = std::string(ASSET_DIR) + "shaders/vertex.glsl";
+    std::string fragShader = std::string(ASSET_DIR) + "shaders/fragment.glsl";
+    mainShader = new Shader(vertShader.c_str(), fragShader.c_str());
     
-    // Load Textures (Ensure these files exist in your assets folder!)
-    loadTexture("../../assets/textures/grass.png", "grass");
-    loadTexture("../../assets/textures/road.png", "road");
-    loadTexture("../../assets/textures/chicken.png", "chicken");
-    loadTexture("../../assets/textures/car.png", "car");
+    std::string grassTex = std::string(ASSET_DIR) + "textures/grass.png";
+    std::string roadTex = std::string(ASSET_DIR) + "textures/road.png";
+    std::string chickenTex = std::string(ASSET_DIR) + "textures/chicken.png";
+    std::string carTex = std::string(ASSET_DIR) + "textures/car.png";
+
+    // Load Textures
+    loadTexture(grassTex.c_str(), "grass");
+    loadTexture(roadTex.c_str(), "road");
+    loadTexture(chickenTex.c_str(), "chicken");
+    loadTexture(carTex.c_str(), "car");
 
     glClearColor(0.4f, 0.7f, 1.0f, 1.0f);
 }
@@ -37,14 +49,14 @@ void Renderer::loadTexture(const char* path, const std::string& name) {
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true);
     
-    // THE FIX: The '4' at the end forces STB to output RGBA (4 channels)
+    // The '4' at the end forces STB to output RGBA (4 channels)
     unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 4); 
     
     if (data) {
         // Fix byte alignment issues just to be safe
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         
-        // We now explicitly tell OpenGL the data is GL_RGBA
+        // Explicitly tell OpenGL the data is GL_RGBA
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         stbi_image_free(data);
         textures[name] = textureID;

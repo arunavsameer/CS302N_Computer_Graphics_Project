@@ -57,6 +57,12 @@ set(SOURCES
 # Create executable
 add_executable(CS302N_Game ${SOURCES})
 
+# --- NEW: Define the ASSET_DIR macro for absolute paths ---
+target_compile_definitions(CS302N_Game PRIVATE 
+    ASSET_DIR="${PROJECT_SOURCE_DIR}/assets/"
+)
+# ----------------------------------------------------------
+
 # Link libraries
 target_link_libraries(CS302N_Game
     ${OPENGL_LIBRARIES}
