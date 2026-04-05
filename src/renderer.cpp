@@ -78,9 +78,12 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 scale, glm::vec3 color) {
     glPopMatrix();
 }
 
-void Renderer::drawTexturedCube(glm::vec3 position, glm::vec3 scale, const std::string& textureName) {
+void Renderer::drawTexturedCube(glm::vec3 position, glm::vec3 scale, const std::string& textureName, float rotationY) {
     glPushMatrix();
     glTranslatef(position.x, position.y, position.z);
+    if (rotationY != 0.0f) {
+        glRotatef(rotationY, 0.0f, 1.0f, 0.0f);
+    }
     glScalef(scale.x, scale.y, scale.z);
     
     if (mainShader) {

@@ -26,6 +26,7 @@ class Camera {
 private:
     glm::vec3 position;
     glm::vec3 offset;
+    float followSpeed;
 
     float targetYaw, currentYaw;
     float targetPitch, currentPitch;

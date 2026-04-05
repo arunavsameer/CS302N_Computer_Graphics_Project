@@ -16,8 +16,8 @@ void Game::update(float deltaTime) {
 
     player.update(deltaTime);
     
-    // Pass deltaTime so the camera can smoothly lerp
-    camera.update(deltaTime, windowWidth, windowHeight, player.getPosition());
+    // CHANGED: Pass the base position so the camera doesn't wiggle on the Y-axis
+    camera.update(deltaTime, windowWidth, windowHeight, player.getBasePosition());
     
     for (auto& lane : lanes) {
         lane.update(deltaTime);

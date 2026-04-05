@@ -19,7 +19,9 @@ public:
     
     // Core drawing functions
     void drawCube(glm::vec3 position, glm::vec3 scale, glm::vec3 color);
-    void drawTexturedCube(glm::vec3 position, glm::vec3 scale, const std::string& textureName);
+    
+    // ADDED: rotationY with a default of 0.0f
+    void drawTexturedCube(glm::vec3 position, glm::vec3 scale, const std::string& textureName, float rotationY = 0.0f);
 };
 
 #endif
