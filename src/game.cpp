@@ -11,13 +11,12 @@ Game::Game(int width, int height) : windowWidth(width), windowHeight(height), st
 void Game::initialize() {
     renderer.initialize();
     
-    // Initial safe zone - Spawns a long runway of grass behind and ahead of the chicken
+    // Build the massive starting safe zone
     for (int i = 0; i < Config::INITIAL_SAFE_ZONE_LENGTH; i++) {
         lanes.push_back(Lane(currentGenerationZ, LANE_GRASS));
         currentGenerationZ -= Config::CELL_SIZE;
     }
 
-    // Begin generating hazard biomes
     for(int i = 0; i < 5; i++) {
         generateLaneBlock();
     }
@@ -61,7 +60,6 @@ void Game::update(float deltaTime) {
 
     camera.update(deltaTime, windowWidth, windowHeight, player.getBasePosition());
     
-    // Endless Generation
     if (player.getPosition().z - currentGenerationZ < 20.0f * Config::CELL_SIZE) {
         generateLaneBlock();
     }
@@ -69,7 +67,7 @@ void Game::update(float deltaTime) {
 
 void Game::checkCollisions(float deltaTime) {
     glm::vec3 playerPos = player.getPosition();
-    glm::vec3 playerSize = player.getSize(); // The exact AABB bounds of the chicken
+    glm::vec3 playerSize = player.getSize();
     
     bool onLog = false;
     Lane* currentLane = nullptr;
@@ -84,9 +82,8 @@ void Game::checkCollisions(float deltaTime) {
     if (!currentLane) return; 
 
     for (const auto& obs : currentLane->getObstacles()) {
-        if (!obs.getIsActive()) continue; // Ignore trains that have already passed
+        if (!obs.getIsActive()) continue; // Ignore trains that have already passed by
 
-        // Bounding Box check - now guaranteed to be cuboids matching the visuals
         if (Collision::checkAABB(playerPos, playerSize, obs.getPosition(), obs.getSize())) {
             
             if (obs.getType() == OBSTACLE_CAR || obs.getType() == OBSTACLE_TRAIN) {
@@ -100,7 +97,6 @@ void Game::checkCollisions(float deltaTime) {
         }
     }
 
-    // Water Logic check
     if (currentLane->getType() == LANE_RIVER && !player.getIsJumping() && !onLog) {
         state = GAME_STATE_GAME_OVER; 
     }

@@ -3,7 +3,6 @@
 Obstacle::Obstacle(glm::vec3 startPos, float spd, ObstacleType t) 
     : position(startPos), speed(spd), type(t), isActive(true) {
     
-    // Size perfectly controls BOTH the visual scale (glScalef) and the AABB Collision Box
     if (type == OBSTACLE_CAR) {
         size = glm::vec3(Config::CELL_SIZE * 1.5f, Config::CELL_SIZE * 0.8f, Config::CELL_SIZE * 0.8f);
     } else if (type == OBSTACLE_TRAIN) {
@@ -19,7 +18,7 @@ void Obstacle::update(float deltaTime) {
     position.x += speed * deltaTime;
     
     if (type == OBSTACLE_TRAIN) {
-        // Trains pass once. If they go far off-screen, disable them instead of wrapping.
+        // Trains pass once. If they go far off-screen, disable them entirely.
         if ((speed > 0 && position.x > 60.0f) || (speed < 0 && position.x < -60.0f)) {
             isActive = false; 
         }

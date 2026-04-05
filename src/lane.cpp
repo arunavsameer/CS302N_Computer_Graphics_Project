@@ -6,14 +6,12 @@ Lane::Lane(float z, LaneType t) : zPosition(z), type(t) {
 
     if (type == LANE_ROAD) {
         float speed = dir * (Config::CAR_SPEED_MIN + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX/(Config::CAR_SPEED_MAX - Config::CAR_SPEED_MIN))));
-        // Offset cars randomly so they don't look perfectly aligned
         float startX = dir * -(5.0f + static_cast<float>(rand() % 10));
         obstacles.push_back(Obstacle(glm::vec3(startX, Config::CELL_SIZE * 0.6f, zPosition), speed, OBSTACLE_CAR));
     } 
     else if (type == LANE_RAIL) {
         float speed = dir * Config::TRAIN_SPEED;
         // Start trains very far away randomly (30 to 80 units off-screen). 
-        // It acts as a delayed hazard that only sweeps across the map once.
         float startX = dir * -(30.0f + static_cast<float>(rand() % 50));
         obstacles.push_back(Obstacle(glm::vec3(startX, Config::CELL_SIZE * 0.6f, zPosition), speed, OBSTACLE_TRAIN));
     }
@@ -27,7 +25,6 @@ Lane::Lane(float z, LaneType t) : zPosition(z), type(t) {
 void Lane::update(float deltaTime) {
     for (auto& obs : obstacles) obs.update(deltaTime);
 }
-
 void Lane::render(Renderer& renderer) {
     std::string texName;
     if (type == LANE_GRASS) texName = "grass";

@@ -13,6 +13,8 @@ namespace Config {
     // --- Safe Zone ---
     constexpr int INITIAL_SAFE_ZONE_LENGTH = 15; // Chicken starts deep in safe grass
 
+    constexpr float HITBOX_PADDING = 0.8f;
+
     // --- Lane Generation Randomness ---
     constexpr int MIN_GRASS_WIDTH = 2;
     constexpr int MAX_GRASS_WIDTH = 4;

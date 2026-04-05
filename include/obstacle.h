@@ -11,7 +11,7 @@ private:
     glm::vec3 size;
     float speed;
     ObstacleType type;
-    bool isActive; // Tracks if the obstacle is still in play (used for trains)
+    bool isActive; // Tracks if the obstacle is still in play
 
 public:
     Obstacle(glm::vec3 startPos, float spd, ObstacleType t);
