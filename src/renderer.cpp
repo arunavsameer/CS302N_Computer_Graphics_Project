@@ -12,10 +12,10 @@ void Renderer::initialize() {
     mainShader = new Shader("../assets/shaders/vertex.glsl", "../assets/shaders/fragment.glsl");
     
     // Load Textures (Ensure these files exist in your assets folder!)
-    loadTexture("../assets/textures/grass.png", "grass");
-    loadTexture("../assets/textures/road.png", "road");
-    loadTexture("../assets/textures/chicken.png", "chicken");
-    loadTexture("../assets/textures/car.png", "car");
+    loadTexture("../../assets/textures/grass.png", "grass");
+    loadTexture("../../assets/textures/road.png", "road");
+    loadTexture("../../assets/textures/chicken.png", "chicken");
+    loadTexture("../../assets/textures/car.png", "car");
 
     glClearColor(0.4f, 0.7f, 1.0f, 1.0f);
 }
