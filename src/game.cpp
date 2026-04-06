@@ -3,23 +3,32 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
+#include <algorithm>
 
-Game::Game(int width, int height) : windowWidth(width), windowHeight(height), state(GAME_STATE_PLAYING), currentGenerationZ(5.0f * Config::CELL_SIZE) {
-    srand(static_cast<unsigned>(time(nullptr))); 
+Game::Game(int width, int height)
+    : windowWidth(width),
+      windowHeight(height),
+      state(GAME_STATE_PLAYING),
+      currentGenerationZ(5.0f * Config::CELL_SIZE),
+      cameraTrackZ(0.0f) {
+    srand(static_cast<unsigned>(time(nullptr)));
 }
 
 void Game::initialize() {
     renderer.initialize();
-    
+
     // Build the massive starting safe zone
     for (int i = 0; i < Config::INITIAL_SAFE_ZONE_LENGTH; i++) {
         lanes.push_back(Lane(currentGenerationZ, LANE_GRASS));
         currentGenerationZ -= Config::CELL_SIZE;
     }
 
-    for(int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
         generateLaneBlock();
     }
+
+    // Keep the camera anchor aligned with the start position
+    cameraTrackZ = player.getPosition().z;
 }
 
 void Game::generateLaneBlock() {
@@ -47,31 +56,69 @@ void Game::generateLaneBlock() {
     }
 }
 
+void Game::updateCameraAndFailState(float deltaTime) {
+    glm::vec3 playerBasePos = player.getBasePosition();
+
+    // Camera anchor always moves forward (negative Z is forward in this project).
+    // If the player goes further forward, the camera keeps up; if they stall, the camera eventually overtakes them.
+    if (playerBasePos.z < cameraTrackZ) {
+        cameraTrackZ = playerBasePos.z;
+    }
+    cameraTrackZ -= Config::CAMERA_AUTO_SCROLL_SPEED * deltaTime;
+
+    glm::vec3 cameraTarget = playerBasePos;
+    cameraTarget.z = cameraTrackZ;
+
+    camera.update(deltaTime, windowWidth, windowHeight, cameraTarget);
+
+    // If the chicken falls too far behind the moving camera target, the run is over.
+    if (player.getPosition().z > cameraTrackZ + Config::CAMERA_BACKWARD_DEATH_DISTANCE) {
+        state = GAME_STATE_GAME_OVER;
+    }
+}
+
+void Game::maintainInfiniteLanes() {
+    glm::vec3 playerPos = player.getPosition();
+    float forwardReferenceZ = std::min(playerPos.z, cameraTrackZ);
+
+    // Keep generating until there is enough world in front of the camera/player.
+    while (currentGenerationZ > forwardReferenceZ - Config::LANE_GENERATION_BUFFER_AHEAD) {
+        generateLaneBlock();
+    }
+
+    // Drop lanes that are well behind the player so memory stays bounded.
+    float pruneBehindZ = playerPos.z + Config::LANE_CLEANUP_BUFFER_BEHIND;
+    while (!lanes.empty() && lanes.front().getZPosition() > pruneBehindZ) {
+        lanes.erase(lanes.begin());
+    }
+}
+
 void Game::update(float deltaTime) {
     if (state != GAME_STATE_PLAYING) return;
 
     player.update(deltaTime);
-    
+
     for (auto& lane : lanes) {
         lane.update(deltaTime);
     }
 
     checkCollisions(deltaTime);
 
-    camera.update(deltaTime, windowWidth, windowHeight, player.getBasePosition());
-    
-    if (player.getPosition().z - currentGenerationZ < 20.0f * Config::CELL_SIZE) {
-        generateLaneBlock();
-    }
+    if (state != GAME_STATE_PLAYING) return;
+
+    updateCameraAndFailState(deltaTime);
+    if (state != GAME_STATE_PLAYING) return;
+
+    maintainInfiniteLanes();
 }
 
 void Game::checkCollisions(float deltaTime) {
     glm::vec3 playerPos = player.getPosition();
     glm::vec3 playerSize = player.getSize();
-    
+
     bool onLog = false;
     Lane* currentLane = nullptr;
-    
+
     for (auto& lane : lanes) {
         if (std::abs(lane.getZPosition() - playerPos.z) < Config::CELL_SIZE / 2.0f) {
             currentLane = &lane;
@@ -85,7 +132,7 @@ void Game::checkCollisions(float deltaTime) {
         if (!obs.getIsActive()) continue; // Ignore trains that have already passed by
 
         if (Collision::checkAABB(playerPos, playerSize, obs.getPosition(), obs.getSize())) {
-            
+
             if (obs.getType() == OBSTACLE_CAR || obs.getType() == OBSTACLE_TRAIN) {
                 state = GAME_STATE_GAME_OVER; 
                 return;
@@ -117,13 +164,13 @@ void Game::render() {
 void Game::onKeyPress(unsigned char key) {
     if (state != GAME_STATE_PLAYING) return;
 
-    if(key == 'w' || key == 'W') player.move(0.0f, -1.0f);
-    if(key == 's' || key == 'S') player.move(0.0f, 1.0f);
-    if(key == 'a' || key == 'A') player.move(-1.0f, 0.0f);
-    if(key == 'd' || key == 'D') player.move(1.0f, 0.0f);
-    
-    if(key == 'v' || key == 'V') camera.cyclePreset();
-    if(key == 'c' || key == 'C') camera.toggleLock();
+    if (key == 'w' || key == 'W') player.move(0.0f, -1.0f);
+    if (key == 's' || key == 'S') player.move(0.0f, 1.0f);
+    if (key == 'a' || key == 'A') player.move(-1.0f, 0.0f);
+    if (key == 'd' || key == 'D') player.move(1.0f, 0.0f);
+
+    if (key == 'v' || key == 'V') camera.cyclePreset();
+    if (key == 'c' || key == 'C') camera.toggleLock();
 }
 
 void Game::onMouseDrag(float deltaX, float deltaY) {

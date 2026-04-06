@@ -16,10 +16,13 @@ private:
     Camera camera;
     Chicken player;
     std::vector<Lane> lanes;
-    float currentGenerationZ; 
+    float currentGenerationZ;
+    float cameraTrackZ; // Moving world anchor for the camera and fail-behind check
 
     void generateLaneBlock();
     void checkCollisions(float deltaTime);
+    void updateCameraAndFailState(float deltaTime);
+    void maintainInfiniteLanes();
 
 public:
     Game(int width, int height);

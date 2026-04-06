@@ -9,7 +9,7 @@ enum ObstacleType { OBSTACLE_CAR, OBSTACLE_TRAIN, OBSTACLE_LOG };
 // --- Hyperparameters & Config ---
 namespace Config {
     constexpr float CELL_SIZE = 1.0f; 
-    
+
     // --- Safe Zone ---
     constexpr int INITIAL_SAFE_ZONE_LENGTH = 15; // Chicken starts deep in safe grass
 
@@ -25,13 +25,20 @@ namespace Config {
     constexpr int MIN_RIVER_WIDTH = 1;
     constexpr int MAX_RIVER_WIDTH = 3;
 
+    // --- Camera / Infinite World Tuning ---
+    // Camera target slowly advances forward even if the player stalls.
+    constexpr float CAMERA_AUTO_SCROLL_SPEED = 1.25f;          // world units per second
+    constexpr float CAMERA_BACKWARD_DEATH_DISTANCE = 5.0f;    // allowed gap behind camera target
+    constexpr float LANE_GENERATION_BUFFER_AHEAD = 25.0f;     // keep this much world ahead generated
+    constexpr float LANE_CLEANUP_BUFFER_BEHIND = 12.0f;       // remove lanes this far behind player
+
     // --- Obstacle Config ---
     constexpr float CAR_SPEED_MIN = 3.0f;
     constexpr float CAR_SPEED_MAX = 7.0f;
-    
+
     constexpr float TRAIN_SPEED = 25.0f; // Very fast
     constexpr float TRAIN_LENGTH = 15.0f; // Very long model/hitbox
-    
+
     constexpr float LOG_SPEED_MIN = 2.0f;
     constexpr float LOG_SPEED_MAX = 4.0f;
 }
