@@ -11,10 +11,11 @@ private:
     glm::vec3 size;
     float speed;
     ObstacleType type;
-    bool isActive; // Tracks if the obstacle is still in play
+    VehicleVariant vehicleVariant;
+    bool isActive;
 
 public:
-    Obstacle(glm::vec3 startPos, float spd, ObstacleType t);
+    Obstacle(glm::vec3 startPos, float spd, ObstacleType t, VehicleVariant variant = VEHICLE_SMALL_CAR);
     void update(float deltaTime);
     void render(Renderer& renderer);
     
