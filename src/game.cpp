@@ -1,5 +1,6 @@
 #include "../include/game.h"
 #include "../include/collision.h"
+#include "../include/types.h"
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
@@ -68,19 +69,29 @@ void Game::generateLaneBlock() {
 void Game::updateCameraAndFailState(float deltaTime) {
     glm::vec3 playerBasePos = player.getBasePosition();
 
-    // Camera anchor always moves forward (negative Z is forward in this project).
-    // If the player goes further forward, the camera keeps up; if they stall, the camera eventually overtakes them.
-    if (playerBasePos.z < cameraTrackZ) {
-        cameraTrackZ = playerBasePos.z;
+    // Auto-scroll the logical track forward
+    float idealCameraTrackZ = cameraTrackZ - Config::CAMERA_AUTO_SCROLL_SPEED * deltaTime;
+    
+    // If the player pushes further ahead, snap the logical track instantly
+    if (playerBasePos.z < idealCameraTrackZ) {
+        idealCameraTrackZ = playerBasePos.z;
     }
-    cameraTrackZ -= Config::CAMERA_AUTO_SCROLL_SPEED * deltaTime;
+    cameraTrackZ = idealCameraTrackZ;
+    
+    // Calculate framerate-independent lerp factors
+    float lerpFactorXY = 1.0f - std::exp(-Config::CAMERA_SMOOTH_SPEED_XY * deltaTime);
+    float lerpFactorZ  = 1.0f - std::exp(-Config::CAMERA_SMOOTH_SPEED_Z * deltaTime);
 
-    glm::vec3 cameraTarget = playerBasePos;
-    cameraTarget.z = cameraTrackZ;
+    // Smoothly interpolate X/Y to follow the player, and Z to follow the logical track
+    smoothedCameraTarget.x = glm::mix(smoothedCameraTarget.x, playerBasePos.x, lerpFactorXY);
+    smoothedCameraTarget.y = glm::mix(smoothedCameraTarget.y, playerBasePos.y, lerpFactorXY);
+    smoothedCameraTarget.z = glm::mix(smoothedCameraTarget.z, cameraTrackZ,  lerpFactorZ);
 
-    camera.update(deltaTime, windowWidth, windowHeight, cameraTarget);
+    // Pass the smoothed target to the actual camera matrix calculations
+    camera.update(deltaTime, windowWidth, windowHeight, smoothedCameraTarget);
 
-    // If the chicken falls too far behind the moving camera target, the run is over.
+    // Use the strict logical track (cameraTrackZ) for the death condition, 
+    // ensuring the game mechanics remain perfectly fair and responsive.
     if (player.getPosition().z > cameraTrackZ + Config::CAMERA_BACKWARD_DEATH_DISTANCE) {
         state = GAME_STATE_GAME_OVER;
     }
@@ -167,7 +178,7 @@ for (auto& coin : currentLane->coins) {
 
         coin.collected = true;
 
-        coinScore += 10;   // 🔥 ADD COIN SCORE
+        coinScore += 10;
     }
 }
 

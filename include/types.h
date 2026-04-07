@@ -27,10 +27,12 @@ namespace Config {
 
     // --- Camera / Infinite World Tuning ---
     // Camera target slowly advances forward even if the player stalls.
-    constexpr float CAMERA_AUTO_SCROLL_SPEED = 1.25f;          // world units per second
+    constexpr float CAMERA_AUTO_SCROLL_SPEED = 0.75f;          // world units per second
     constexpr float CAMERA_BACKWARD_DEATH_DISTANCE = 5.0f;    // allowed gap behind camera target
     constexpr float LANE_GENERATION_BUFFER_AHEAD = 25.0f;     // keep this much world ahead generated
     constexpr float LANE_CLEANUP_BUFFER_BEHIND = 12.0f;       // remove lanes this far behind player
+    constexpr float CAMERA_SMOOTH_SPEED_XY = 1.0f; // Higher = faster catch-up on X/Y axis
+    constexpr float CAMERA_SMOOTH_SPEED_Z  = 1.0f;  // Lower = softer catch-up on forward movement
 
     // --- Obstacle Config ---
     constexpr float CAR_SPEED_MIN = 3.0f;

@@ -25,6 +25,7 @@ private:
     void checkCollisions(float deltaTime);
     void updateCameraAndFailState(float deltaTime);
     void maintainInfiniteLanes();
+    glm::vec3 smoothedCameraTarget;
 
 public:
     Game(int width, int height);

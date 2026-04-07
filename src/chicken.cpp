@@ -39,7 +39,7 @@ void Chicken::render(Renderer& renderer) {
     glTranslatef(pos.x, pos.y, pos.z);
     glRotatef(rotationY, 0, 1, 0);
     glTranslatef(-pos.x, -pos.y, -pos.z);
-    glUseProgram(0);
+    // glUseProgram(0);
     glDisable(GL_TEXTURE_2D);
     glColor3f(1.0f, 1.0f, 1.0f);
 
