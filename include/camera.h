@@ -50,6 +50,11 @@ public:
     void processMouseDrag(float deltaX, float deltaY);
     void cyclePreset();
     void toggleLock();
+
+    void setTargetRadius(float radius);
+    void setLerpSpeed(float speed);
+    void resetToDefault();
+    float getTargetRadius() const { return targetRadius; }
 };
 
 #endif

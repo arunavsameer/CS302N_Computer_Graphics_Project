@@ -12,6 +12,7 @@ Chicken::Chicken() {
     isJumping = false;
     jumpProgress = 0.0f;
     rotationY = 180.0f; 
+    isDead = false;
 }
 
 void Chicken::update(float deltaTime) {
@@ -38,6 +39,13 @@ void Chicken::render(Renderer& renderer) {
     glPushMatrix();
     glTranslatef(pos.x, pos.y, pos.z);
     glRotatef(rotationY, 0, 1, 0);
+    
+    // Add squish effect if dead
+    if (isDead) {
+        glTranslatef(0.0f, -0.4f * s, 0.0f); // Sink into ground
+        glScalef(1.2f, 0.15f, 1.2f);         // Flatten severely
+    }
+    
     glTranslatef(-pos.x, -pos.y, -pos.z);
     // glUseProgram(0);
     glDisable(GL_TEXTURE_2D);
@@ -127,4 +135,13 @@ void Chicken::applyLogVelocity(float velocityX, float deltaTime) {
         startPos.x = position.x; 
         targetPos.x = position.x;
     }
+}
+
+
+void Chicken::reset() {
+    position = glm::vec3(0.0f, Config::CELL_SIZE * 0.6f, 0.0f);
+    isJumping = false;
+    isDead = false;
+    jumpProgress = 0.0f;
+    rotationY = 180.0f;
 }

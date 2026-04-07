@@ -26,6 +26,9 @@ private:
     void updateCameraAndFailState(float deltaTime);
     void maintainInfiniteLanes();
     glm::vec3 smoothedCameraTarget;
+    int eggClicks = 0;
+    void resetGame();
+    void renderUIOverlay();
 
 public:
     Game(int width, int height);
@@ -35,6 +38,7 @@ public:
     void onKeyPress(unsigned char key);
     void onResize(int w, int h);
     void onMouseDrag(float deltaX, float deltaY);
+    void onMouseClick(int button, int state, int x, int y);
 };
 
 #endif

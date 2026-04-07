@@ -34,6 +34,12 @@ void keyboard(unsigned char key, int x, int y) {
 
 // Handle initial mouse clicks
 void mouseButton(int button, int state, int x, int y) {
+    // 1. Pass the click to the game logic to handle the Egg and Replay buttons
+    if (game != nullptr) {
+        game->onMouseClick(button, state, x, y);
+    }
+
+    // 2. Existing drag logic for the camera
     if (button == GLUT_LEFT_BUTTON) {
         if (state == GLUT_DOWN) {
             isDragging = true;

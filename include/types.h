@@ -2,9 +2,15 @@
 #define TYPES_H
 
 // --- Game Enums ---
-enum GameState { GAME_STATE_PLAYING, GAME_STATE_GAME_OVER };
+enum GameState { GAME_STATE_START_SCREEN, GAME_STATE_PLAYING, GAME_STATE_GAME_OVER };
 enum LaneType { LANE_GRASS, LANE_ROAD, LANE_RAIL, LANE_RIVER };
 enum ObstacleType { OBSTACLE_CAR, OBSTACLE_TRAIN, OBSTACLE_LOG };
+
+struct UIConfig {
+    static constexpr int MAX_EGG_CLICKS = 3;
+    static constexpr float DEAD_ZOOM_RADIUS = 4.0f;
+    static constexpr float DEAD_ZOOM_SPEED = 3.0f; // Slower, dramatic zoom
+};
 
 // --- Hyperparameters & Config ---
 namespace Config {

@@ -129,3 +129,19 @@ void Camera::cyclePreset() {
 void Camera::toggleLock() {
     isLocked = !isLocked;
 }
+
+
+void Camera::setTargetRadius(float radius) {
+    targetRadius = std::max(params.minRadius, std::min(radius, params.maxRadius));
+}
+
+void Camera::setLerpSpeed(float speed) {
+    params.lerpSpeed = speed;
+}
+
+void Camera::resetToDefault() {
+    params.lerpSpeed = 7.0f; // Reset to your original hyperparameter
+    targetYaw = presets[currentPresetIndex].yaw;
+    targetPitch = presets[currentPresetIndex].pitch;
+    targetRadius = presets[currentPresetIndex].radius;
+}

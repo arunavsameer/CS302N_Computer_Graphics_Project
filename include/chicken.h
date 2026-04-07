@@ -15,6 +15,7 @@ private:
     glm::vec3 targetPos;
     float jumpProgress; 
     float rotationY;    
+    bool isDead;
 
 public:
     static constexpr float JUMP_DURATION = 0.25f; 
@@ -31,6 +32,9 @@ public:
     glm::vec3 getBasePosition() const; 
     glm::vec3 getSize() const { return glm::vec3(Config::CELL_SIZE * 0.8f); }
     bool getIsJumping() const { return isJumping; }
+    void setDead(bool dead) { isDead = dead; }
+    bool getIsDead() const { return isDead; }
+    void reset(); // Resets position and state
 };
 
 #endif

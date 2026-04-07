@@ -13,14 +13,34 @@
 #endif
 #include "../include/coin.h"
 Game::Game(int width, int height)
-    : windowWidth(width),
-      windowHeight(height),
-      state(GAME_STATE_PLAYING),
+    : windowWidth(width), windowHeight(height),
+      state(GAME_STATE_START_SCREEN), // START HERE INSTEAD OF PLAYING
       currentGenerationZ(5.0f * Config::CELL_SIZE),
-      cameraTrackZ(0.0f) {
+      cameraTrackZ(0.0f), score(0), startZ(0.0f), coinScore(0) {
     srand(static_cast<unsigned>(time(nullptr)));
+}
+
+void Game::resetGame() {
+    state = GAME_STATE_START_SCREEN;
+    eggClicks = 0;
+    coinScore = 0;
     score = 0;
-startZ = 0.0f;
+    
+    player.reset();
+    camera.resetToDefault();
+    
+    lanes.clear();
+    currentGenerationZ = 5.0f * Config::CELL_SIZE;
+    
+    // Rebuild initial zone
+    for (int i = 0; i < Config::INITIAL_SAFE_ZONE_LENGTH; i++) {
+        lanes.push_back(Lane(currentGenerationZ, LANE_GRASS));
+        currentGenerationZ -= Config::CELL_SIZE;
+    }
+    for (int i = 0; i < 5; i++) generateLaneBlock();
+    
+    cameraTrackZ = player.getPosition().z;
+    startZ = player.getPosition().z;
 }
 
 void Game::initialize() {
@@ -77,7 +97,7 @@ void Game::updateCameraAndFailState(float deltaTime) {
         idealCameraTrackZ = playerBasePos.z;
     }
     cameraTrackZ = idealCameraTrackZ;
-    
+
     // Calculate framerate-independent lerp factors
     float lerpFactorXY = 1.0f - std::exp(-Config::CAMERA_SMOOTH_SPEED_XY * deltaTime);
     float lerpFactorZ  = 1.0f - std::exp(-Config::CAMERA_SMOOTH_SPEED_Z * deltaTime);
@@ -114,23 +134,38 @@ void Game::maintainInfiniteLanes() {
 }
 
 void Game::update(float deltaTime) {
-    if (state != GAME_STATE_PLAYING) return;
-
-    player.update(deltaTime);
-
+    // 1. Always update lanes so cars/logs move even when dead or in start screen
     for (auto& lane : lanes) {
         lane.update(deltaTime);
     }
 
-    checkCollisions(deltaTime);
+    if (state == GAME_STATE_START_SCREEN) {
+        // Idle camera around the egg
+        smoothedCameraTarget = player.getBasePosition();
+        camera.update(deltaTime, windowWidth, windowHeight, smoothedCameraTarget);
+        return; 
+    }
 
-    if (state != GAME_STATE_PLAYING) return;
+    if (state == GAME_STATE_GAME_OVER) {
+        // Dramatic Zoom on the dead chicken
+        camera.setTargetRadius(UIConfig::DEAD_ZOOM_RADIUS);
+        camera.setLerpSpeed(UIConfig::DEAD_ZOOM_SPEED);
+        
+        // Lock camera purely to the player body
+        smoothedCameraTarget.x = glm::mix(smoothedCameraTarget.x, player.getPosition().x, 0.05f);
+        smoothedCameraTarget.z = glm::mix(smoothedCameraTarget.z, player.getPosition().z, 0.05f);
+        camera.update(deltaTime, windowWidth, windowHeight, smoothedCameraTarget);
+        return;
+    }
+
+    // --- NORMAL PLAYING STATE BELOW ---
+    player.update(deltaTime);
+    checkCollisions(deltaTime);
+    
+    if (state != GAME_STATE_PLAYING) return; // Catch death from collisions
 
     updateCameraAndFailState(deltaTime);
-    if (state != GAME_STATE_PLAYING) return;
-
     maintainInfiniteLanes();
-
     score = coinScore;
 }
 
@@ -156,6 +191,7 @@ void Game::checkCollisions(float deltaTime) {
         if (Collision::checkAABB(playerPos, playerSize, obs.getPosition(), obs.getSize())) {
 
             if (obs.getType() == OBSTACLE_CAR || obs.getType() == OBSTACLE_TRAIN) {
+                player.setDead(true); // Tell chicken to squish
                 state = GAME_STATE_GAME_OVER; 
                 return;
             } 
@@ -183,6 +219,7 @@ for (auto& coin : currentLane->coins) {
 }
 
     if (currentLane->getType() == LANE_RIVER && !player.getIsJumping() && !onLog) {
+        player.setDead(true);
         state = GAME_STATE_GAME_OVER; 
     }
 }
@@ -194,36 +231,25 @@ void Game::render() {
     for (auto& lane : lanes) {
         lane.render(renderer);
     }
-    player.render(renderer);
+
+    // Render Egg OR Chicken
+    if (state == GAME_STATE_START_SCREEN) {
+        glm::vec3 pos = player.getPosition();
+        // Calculate a wobble effect based on clicks
+        float wobble = (eggClicks > 0) ? sin(glutGet(GLUT_ELAPSED_TIME) * 0.01f) * 0.1f * eggClicks : 0.0f;
+        float scale = 0.6f + (eggClicks * 0.1f); // Grow slightly when clicked
+        
+        glPushMatrix();
+        glTranslatef(pos.x, pos.y, pos.z);
+        glRotatef(wobble * 50.0f, 0, 0, 1);
+        renderer.drawCube(glm::vec3(0,0,0), glm::vec3(scale, scale * 1.2f, scale), glm::vec3(1.0f, 0.95f, 0.9f));
+        glPopMatrix();
+    } else {
+        player.render(renderer);
+    }
 
     camera.renderOverlay(windowWidth, windowHeight);
-
-    // ===== SCORE DISPLAY (INSIDE FUNCTION) =====
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    gluOrtho2D(0, windowWidth, 0, windowHeight);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glColor3f(1.0f, 1.0f, 1.0f);
-
-    std::stringstream ss;
-    ss << "Score: " << score;
-    std::string text = ss.str();
-
-    glRasterPos2f(20, windowHeight - 30);
-
-    for (char c : text)
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
-
-    // restore matrices
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
+    renderUIOverlay();
 }
 
 void Game::onKeyPress(unsigned char key) {
@@ -248,3 +274,124 @@ void Game::onResize(int w, int h) {
     windowHeight = h;
 }
 
+void Game::renderUIOverlay() {
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    // Y=0 is at the bottom, Y=windowHeight is at the top
+    gluOrtho2D(0, windowWidth, 0, windowHeight); 
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // --- UNIVERSAL SCORE DISPLAY ---
+    if (state == GAME_STATE_PLAYING || state == GAME_STATE_GAME_OVER) {
+        // Draw Main Score (Top Left)
+        glColor3f(1.0f, 1.0f, 1.0f);
+        std::stringstream ss; 
+        ss << score;
+        std::string scoreStr = ss.str();
+        
+        // Use a larger font for the score if available, or scale it
+        // We'll use HELVETICA_18 and draw it near the top left
+        glRasterPos2f(20, windowHeight - 40);
+        for (char c : scoreStr) {
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+        }
+
+        // Draw Coin Score (Top Right)
+        std::stringstream css; 
+        css << coinScore << " c";
+        std::string coinStr = css.str();
+        
+        glColor3f(1.0f, 0.8f, 0.0f); // Yellowish for coins
+        // Approximate width offset
+        glRasterPos2f(windowWidth - 80, windowHeight - 40); 
+        for (char c : coinStr) {
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+        }
+    }
+
+    // --- STATE SPECIFIC UI ---
+    if (state == GAME_STATE_START_SCREEN) {
+        glColor3f(1.0f, 1.0f, 1.0f);
+        std::string msg = "Click the Egg to Hatch!";
+        glRasterPos2f(windowWidth / 2.0f - 80.0f, windowHeight / 2.0f + 100.0f);
+        for (char c : msg) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+    }
+    else if (state == GAME_STATE_GAME_OVER) {
+        // NO BLACK OVERLAY - Just draw the button right over the active game
+
+        // Button dimensions and position (Bottom Center)
+        float boxW = 140.0f, boxH = 60.0f;
+        float cx = windowWidth / 2.0f;
+        float cy = 80.0f; // 80 pixels from the bottom
+
+        // 1. Draw Orange Box
+        glColor3f(1.0f, 0.6f, 0.4f); // Peach/Orange color matching the image
+        glBegin(GL_QUADS);
+            glVertex2f(cx - boxW/2, cy - boxH/2);
+            glVertex2f(cx + boxW/2, cy - boxH/2);
+            glVertex2f(cx + boxW/2, cy + boxH/2);
+            glVertex2f(cx - boxW/2, cy + boxH/2);
+        glEnd();
+
+        // 2. Draw Dark Teal Outline (Optional, adds pop like the reference)
+        glLineWidth(4.0f);
+        glColor3f(0.1f, 0.4f, 0.5f);
+        glBegin(GL_LINE_LOOP);
+            glVertex2f(cx - boxW/2, cy - boxH/2);
+            glVertex2f(cx + boxW/2, cy - boxH/2);
+            glVertex2f(cx + boxW/2, cy + boxH/2);
+            glVertex2f(cx - boxW/2, cy + boxH/2);
+        glEnd();
+        glLineWidth(1.0f);
+
+        // 3. Draw White Play Triangle
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glBegin(GL_TRIANGLES);
+            glVertex2f(cx - 15, cy - 20); // Bottom-left of triangle
+            glVertex2f(cx - 15, cy + 20); // Top-left of triangle
+            glVertex2f(cx + 25, cy);      // Right point of triangle
+        glEnd();
+    } 
+
+    glEnable(GL_DEPTH_TEST);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+}
+
+
+void Game::onMouseClick(int button, int clickState, int x, int y) {
+    if (clickState != 0) return; // 0 is usually GLUT_DOWN
+
+    if (state == GAME_STATE_START_SCREEN) {
+        eggClicks++;
+        if (eggClicks >= UIConfig::MAX_EGG_CLICKS) {
+            state = GAME_STATE_PLAYING;
+            player.move(0.0f, 0.0f); 
+        }
+    } 
+    else if (state == GAME_STATE_GAME_OVER) {
+        // GLUT gives 'y' starting from 0 at the TOP of the window.
+        // Our OpenGL UI draws 'y' starting from 0 at the BOTTOM.
+        int invertedY = windowHeight - y; 
+        
+        // New button coordinates matching the render function
+        float boxW = 140.0f, boxH = 60.0f;
+        float cx = windowWidth / 2.0f;
+        float cy = 80.0f; // 80 pixels from the bottom
+
+        // Check if click is inside the orange button
+        if (x > cx - boxW/2 && x < cx + boxW/2 && 
+            invertedY > cy - boxH/2 && invertedY < cy + boxH/2) {
+            resetGame();
+        }
+    }
+}
