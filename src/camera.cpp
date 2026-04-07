@@ -92,7 +92,7 @@ void Camera::renderOverlay(int windowWidth, int windowHeight) {
     float dotY = params.overlayRadius * sin(currentPitch);
     float dotZ = params.overlayRadius * cos(currentPitch) * cos(currentYaw);
 
-    glTranslatef(dotX, dotY, dotZ);
+    glTranslatef(dotX, dotY, 0.0f);
     glColor4f(1.0f, 0.2f, 0.2f, alpha);
     glutSolidSphere(params.overlayRadius / 6.0f, 8, 8);
 
