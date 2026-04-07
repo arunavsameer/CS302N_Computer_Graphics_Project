@@ -66,7 +66,7 @@ void Camera::renderOverlay(int windowWidth, int windowHeight) {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, windowWidth, 0, windowHeight, -1, 1);
+    glOrtho(0, windowWidth, 0, windowHeight, -100, 100);
 
     // Save modelview
     glMatrixMode(GL_MODELVIEW);
