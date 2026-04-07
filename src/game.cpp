@@ -128,8 +128,13 @@ void Game::maintainInfiniteLanes() {
 
     // Drop lanes that are well behind the player so memory stays bounded.
     float pruneBehindZ = playerPos.z + Config::LANE_CLEANUP_BUFFER_BEHIND;
-    while (!lanes.empty() && lanes.front().getZPosition() > pruneBehindZ) {
-        lanes.erase(lanes.begin());
+    int removeCount = 0;
+    while (removeCount < lanes.size() && lanes[removeCount].getZPosition() > pruneBehindZ) {
+        removeCount++;
+    }
+    
+    if (removeCount > 0) {
+        lanes.erase(lanes.begin(), lanes.begin() + removeCount);
     }
 }
 

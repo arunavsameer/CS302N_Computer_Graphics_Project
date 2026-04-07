@@ -54,54 +54,55 @@ void Camera::apply() {
     );
 }
 
-// Draw the fading HUD over the screen
 void Camera::renderOverlay(int windowWidth, int windowHeight) {
     if (overlayFadeTimer <= 0.0f) return;
 
     float alpha = std::min(1.0f, overlayFadeTimer);
 
+    // Save current states
+    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
+
+    // Save projection
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, windowWidth, 0, windowHeight, -100, 100);
+    glOrtho(0, windowWidth, 0, windowHeight, -1, 1);
 
+    // Save modelview
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
 
+    // Setup safe state
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Dynamic padding: Keeps the UI anchored properly regardless of size
-    float padding = params.overlayRadius * 2.0f; 
+    float padding = params.overlayRadius * 2.0f;
     glTranslatef(windowWidth - padding, windowHeight - padding, 0.0f);
-    
     glRotatef(20.0f, 1.0f, 0.0f, 0.0f);
 
-    // 1. Draw the base sphere
-    glColor4f(1.0f, 1.0f, 1.0f, alpha * 0.3f); 
-    glutWireSphere(params.overlayRadius, 12, 12); // Uses the new variable
+    // Sphere
+    glColor4f(1.0f, 1.0f, 1.0f, alpha * 0.3f);
+    glutWireSphere(params.overlayRadius, 12, 12);
 
-    // 2. Calculate the red dot's position scaled to the new radius
+    // Dot
     float dotX = params.overlayRadius * cos(currentPitch) * sin(currentYaw);
     float dotY = params.overlayRadius * sin(currentPitch);
     float dotZ = params.overlayRadius * cos(currentPitch) * cos(currentYaw);
 
     glTranslatef(dotX, dotY, dotZ);
-    glColor4f(1.0f, 0.2f, 0.2f, alpha); 
-    
-    // Scale the red indicator dot proportionally (1/6th the size of the wireframe)
-    glutSolidSphere(params.overlayRadius / 6.0f, 8, 8); 
+    glColor4f(1.0f, 0.2f, 0.2f, alpha);
+    glutSolidSphere(params.overlayRadius / 6.0f, 8, 8);
 
-    glDisable(GL_BLEND);
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_DEPTH_TEST);
-
-    glPopMatrix();
+    // Restore matrices
+    glPopMatrix(); // modelview
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
+
+    // Restore everything
+    glPopAttrib();
     glMatrixMode(GL_MODELVIEW);
 }
 
