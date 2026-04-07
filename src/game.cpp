@@ -309,16 +309,16 @@ void Game::renderUIOverlay() {
         }
 
         // Draw Coin Score (Top Right)
-        std::stringstream css; 
-        css << coinScore << " c";
-        std::string coinStr = css.str();
+        // std::stringstream css; 
+        // css << coinScore << " c";
+        // std::string coinStr = css.str();
         
-        glColor3f(1.0f, 0.8f, 0.0f); // Yellowish for coins
-        // Approximate width offset
-        glRasterPos2f(windowWidth - 80, windowHeight - 40); 
-        for (char c : coinStr) {
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
-        }
+        // glColor3f(1.0f, 0.8f, 0.0f); // Yellowish for coins
+        // // Approximate width offset
+        // glRasterPos2f(windowWidth - 80, windowHeight - 40); 
+        // for (char c : coinStr) {
+        //     glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+        // }
     }
 
     // --- STATE SPECIFIC UI ---
