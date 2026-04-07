@@ -6,8 +6,13 @@
 │   └── textures
 │       ├── car.png
 │       ├── chicken.png
+│       ├── grass2.png
 │       ├── grass.png
-│       └── road.png
+│       ├── log.png
+│       ├── rail.png
+│       ├── river.png
+│       ├── road.png
+│       └── train.png
 ├── bin
 ├── build
 │   ├── bin
@@ -59,6 +64,7 @@
 │   │   │   └── src
 │   │   │       ├── camera.cpp.o
 │   │   │       ├── chicken.cpp.o
+│   │   │       ├── coin.cpp.o
 │   │   │       ├── collision.cpp.o
 │   │   │       ├── game.cpp.o
 │   │   │       ├── lane.cpp.o
@@ -117,6 +123,7 @@
 ├── include
 │   ├── camera.h
 │   ├── chicken.h
+│   ├── coin.h
 │   ├── collision.h
 │   ├── game.h
 │   ├── lane.h
@@ -130,6 +137,7 @@
 ├── src
 │   ├── camera.cpp
 │   ├── chicken.cpp
+│   ├── coin.cpp
 │   ├── collision.cpp
 │   ├── game.cpp
 │   ├── lane.cpp
@@ -139,4 +147,4 @@
 │   └── stb_implement.cpp
 └── tree.txt
 
-33 directories, 107 files
+33 directories, 115 files

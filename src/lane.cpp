@@ -38,7 +38,11 @@ void Lane::update(float deltaTime) {
 
 void Lane::render(Renderer& renderer) {
     std::string texName;
-    if (type == LANE_GRASS) texName = "grass";
+    
+    if (type == LANE_GRASS) {
+        int gridZ = std::abs(static_cast<int>(std::round(zPosition / Config::CELL_SIZE)));
+        texName = (gridZ % 2 == 0) ? "grass" : "grass2";
+    }
     else if (type == LANE_ROAD) texName = "road";
     else if (type == LANE_RAIL) texName = "rail"; 
     else if (type == LANE_RIVER) texName = "river"; 

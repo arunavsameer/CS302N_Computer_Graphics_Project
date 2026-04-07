@@ -39,6 +39,8 @@ public:
     void onResize(int w, int h);
     void onMouseDrag(float deltaX, float deltaY);
     void onMouseClick(int button, int state, int x, int y);
+
+    bool getjumpstatus() const { return player.getIsJumping(); }
 };
 
 #endif

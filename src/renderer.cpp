@@ -34,6 +34,7 @@ void Renderer::initialize() {
     mainShader = new Shader(vertShader.c_str(), fragShader.c_str());
     
     std::string grassTex = std::string(ASSET_DIR) + "textures/grass.png";
+    std::string grass2Tex = std::string(ASSET_DIR) + "textures/grass2.png";
     std::string roadTex = std::string(ASSET_DIR) + "textures/road.png";
     std::string chickenTex = std::string(ASSET_DIR) + "textures/chicken.png";
     std::string carTex = std::string(ASSET_DIR) + "textures/car.png";
@@ -44,6 +45,7 @@ void Renderer::initialize() {
 
     // Load Textures
     loadTexture(grassTex.c_str(), "grass");
+    loadTexture(grass2Tex.c_str(), "grass2");
     loadTexture(roadTex.c_str(), "road");
     loadTexture(chickenTex.c_str(), "chicken");
     loadTexture(carTex.c_str(), "car");

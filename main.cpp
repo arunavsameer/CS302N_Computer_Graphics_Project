@@ -7,6 +7,8 @@
 
 #include "game.h"
 
+#include <iostream>
+
 Game* game = nullptr;
 
 // State variables for tracking the mouse drag
@@ -21,6 +23,7 @@ void display() {
 
 void idle() {
     game->update(0.016f); // Approx 60 FPS delta time
+    // std::cout << game->getjumpstatus() << std::endl;
     glutPostRedisplay();
 }
 

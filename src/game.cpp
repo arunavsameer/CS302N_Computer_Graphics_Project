@@ -193,8 +193,14 @@ void Game::checkCollisions(float deltaTime) {
     for (const auto& obs : currentLane->getObstacles()) {
         if (!obs.getIsActive()) continue; // Ignore trains that have already passed by
 
-        if (Collision::checkAABB(playerPos, playerSize, obs.getPosition(), obs.getSize())) {
+        bool isColliding = false;
+        if (obs.getType() == OBSTACLE_LOG) {
+            isColliding = Collision::checkAABB(player.getBasePosition(), playerSize, obs.getPosition(), obs.getSize());
+        } else {
+            isColliding = Collision::checkAABB(playerPos, playerSize, obs.getPosition(), obs.getSize());
+        }
 
+        if (isColliding) {
             if (obs.getType() == OBSTACLE_CAR || obs.getType() == OBSTACLE_TRAIN) {
                 player.setDead(true); // Tell chicken to squish
                 state = GAME_STATE_GAME_OVER; 

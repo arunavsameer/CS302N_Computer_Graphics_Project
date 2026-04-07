@@ -1,4 +1,5 @@
 #include "../include/chicken.h"
+#include <iostream>
 #define GL_SILENCE_DEPRECATION
 #ifdef __APPLE__
     #include <GLUT/glut.h>
@@ -19,6 +20,7 @@ void Chicken::update(float deltaTime) {
     if (!isJumping) return;
 
     jumpProgress += deltaTime / JUMP_DURATION;
+    
 
     if (jumpProgress >= 1.0f) {
         position = targetPos;
@@ -114,9 +116,9 @@ void Chicken::move(float gridX, float gridZ) {
     targetPos = position + glm::vec3(gridX * Config::CELL_SIZE, 0.0f, gridZ * Config::CELL_SIZE);
     jumpProgress = 0.0f;
     if (gridZ < 0) rotationY = 90.0f;      // forward
-else if (gridZ > 0) rotationY = -90.0f; // backward
-else if (gridX > 0) rotationY = 0.0f;   // right
-else if (gridX < 0) rotationY = 180.0f; // left
+    else if (gridZ > 0) rotationY = -90.0f; // backward
+    else if (gridX > 0) rotationY = 0.0f;   // right
+    else if (gridX < 0) rotationY = 180.0f; // left
 
 
 }
@@ -130,10 +132,15 @@ glm::vec3 Chicken::getBasePosition() const {
 }
 
 void Chicken::applyLogVelocity(float velocityX, float deltaTime) {
+    float movement = velocityX * deltaTime;
+    
     if (!isJumping) {
-        position.x += velocityX * deltaTime;
+        position.x += movement;
         startPos.x = position.x; 
         targetPos.x = position.x;
+    } else {
+        startPos.x += movement;
+        targetPos.x += movement;
     }
 }
 

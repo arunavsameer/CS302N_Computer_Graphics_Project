@@ -19,7 +19,7 @@ private:
 
 public:
     static constexpr float JUMP_DURATION = 0.25f; 
-    static constexpr float JUMP_HEIGHT   = 1.5f;  
+    static constexpr float JUMP_HEIGHT   = 0.75f;  
 
     Chicken();
     
