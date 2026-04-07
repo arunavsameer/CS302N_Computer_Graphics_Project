@@ -5,13 +5,16 @@
 #include "types.h"
 #include "obstacle.h"
 #include "renderer.h"
+#include "coin.h"
+
 
 class Lane {
 private:
     float zPosition;
     LaneType type;
     std::vector<Obstacle> obstacles;
-
+public:
+    std::vector<Coin> coins;
 public:
     Lane(float z, LaneType t);
     void update(float deltaTime);

@@ -13,6 +13,17 @@
 #define ASSET_DIR "../../assets/" 
 #endif
 
+Renderer::Renderer() {
+    mainShader = nullptr;
+}
+
+Renderer::~Renderer() {
+    if (mainShader) {
+        delete mainShader;
+        mainShader = nullptr;
+    }
+}
+
 void Renderer::initialize() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
@@ -85,6 +96,53 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 scale, glm::vec3 color) {
     glutSolidCube(1.0f);
     glPopMatrix();
 }
+void Renderer::drawSprite(glm::vec3 position, glm::vec3 scale, const std::string& textureName, float rotationY) {
+    glPushMatrix();
+
+    glTranslatef(position.x, position.y, position.z);
+
+    // Apply rotation from your game
+    glRotatef(rotationY, 0, 1, 0);
+
+    glScalef(scale.x, scale.y, scale.z);
+
+    if (mainShader) {
+        mainShader->use();
+        mainShader->setInt("texture1", 0);
+    }
+
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textures[textureName]);
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+
+    // ✅ FRONT FACE
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f,  0.05f);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f( 0.5f, -0.5f,  0.05f);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f( 0.5f,  0.5f,  0.05f);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f,  0.5f,  0.05f);
+    glEnd();
+
+    // ✅ BACK FACE (so visible from both sides)
+    glBegin(GL_QUADS);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.05f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f( 0.5f, -0.5f, -0.05f);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f( 0.5f,  0.5f, -0.05f);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f,  0.5f, -0.05f);
+    glEnd();
+
+    glDisable(GL_BLEND);
+
+    if (mainShader) glUseProgram(0);
+
+    glPopMatrix();
+}
+
 
 void Renderer::drawTexturedCube(glm::vec3 position, glm::vec3 scale, const std::string& textureName, float rotationY) {
     glPushMatrix();

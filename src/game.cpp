@@ -4,7 +4,13 @@
 #include <ctime>
 #include <cmath>
 #include <algorithm>
-
+#include <sstream>
+#ifdef __APPLE__
+    #include <GLUT/glut.h>
+#else
+    #include <GL/glut.h>
+#endif
+#include "../include/coin.h"
 Game::Game(int width, int height)
     : windowWidth(width),
       windowHeight(height),
@@ -12,6 +18,8 @@ Game::Game(int width, int height)
       currentGenerationZ(5.0f * Config::CELL_SIZE),
       cameraTrackZ(0.0f) {
     srand(static_cast<unsigned>(time(nullptr)));
+    score = 0;
+startZ = 0.0f;
 }
 
 void Game::initialize() {
@@ -29,6 +37,7 @@ void Game::initialize() {
 
     // Keep the camera anchor aligned with the start position
     cameraTrackZ = player.getPosition().z;
+    startZ = player.getPosition().z;
 }
 
 void Game::generateLaneBlock() {
@@ -110,6 +119,8 @@ void Game::update(float deltaTime) {
     if (state != GAME_STATE_PLAYING) return;
 
     maintainInfiniteLanes();
+
+    score = coinScore;
 }
 
 void Game::checkCollisions(float deltaTime) {
@@ -143,6 +154,22 @@ void Game::checkCollisions(float deltaTime) {
             }
         }
     }
+     // ===== COIN COLLISION =====
+for (auto& coin : currentLane->coins) {
+
+    if (coin.collected) continue;
+
+    glm::vec3 coinPos = coin.getPosition();
+    float coinSize = coin.getSize();
+
+    if (fabs(playerPos.x - coinPos.x) < playerSize.x &&
+        fabs(playerPos.z - coinPos.z) < playerSize.z) {
+
+        coin.collected = true;
+
+        coinScore += 10;   // 🔥 ADD COIN SCORE
+    }
+}
 
     if (currentLane->getType() == LANE_RIVER && !player.getIsJumping() && !onLog) {
         state = GAME_STATE_GAME_OVER; 
@@ -159,6 +186,33 @@ void Game::render() {
     player.render(renderer);
 
     camera.renderOverlay(windowWidth, windowHeight);
+
+    // ===== SCORE DISPLAY (INSIDE FUNCTION) =====
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, windowWidth, 0, windowHeight);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+
+    std::stringstream ss;
+    ss << "Score: " << score;
+    std::string text = ss.str();
+
+    glRasterPos2f(20, windowHeight - 30);
+
+    for (char c : text)
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+
+    // restore matrices
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
 }
 
 void Game::onKeyPress(unsigned char key) {
@@ -182,3 +236,4 @@ void Game::onResize(int w, int h) {
     windowWidth = w;
     windowHeight = h;
 }
+

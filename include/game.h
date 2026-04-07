@@ -18,7 +18,9 @@ private:
     std::vector<Lane> lanes;
     float currentGenerationZ;
     float cameraTrackZ; // Moving world anchor for the camera and fail-behind check
-
+    int score;
+    float startZ;
+    int coinScore = 0;
     void generateLaneBlock();
     void checkCollisions(float deltaTime);
     void updateCameraAndFailState(float deltaTime);

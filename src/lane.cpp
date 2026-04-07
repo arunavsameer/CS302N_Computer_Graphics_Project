@@ -20,6 +20,11 @@ Lane::Lane(float z, LaneType t) : zPosition(z), type(t) {
         obstacles.push_back(Obstacle(glm::vec3(-5.0f, Config::CELL_SIZE * 0.2f, zPosition), speed, OBSTACLE_LOG));
         obstacles.push_back(Obstacle(glm::vec3(5.0f, Config::CELL_SIZE * 0.2f, zPosition), speed, OBSTACLE_LOG));
     }
+    // 🔥 COIN SPAWN (only on grass for now)
+if (type == LANE_GRASS && rand() % 5 == 0) {
+    float x = (rand() % 5 - 2) * Config::CELL_SIZE;
+    coins.emplace_back(glm::vec3(x, Config::CELL_SIZE * 0.6f, zPosition));
+}
 }
 
 void Lane::update(float deltaTime) {
@@ -37,4 +42,7 @@ void Lane::render(Renderer& renderer) {
     renderer.drawTexturedCube(glm::vec3(0.0f, yPos, zPosition), glm::vec3(30.0f, Config::CELL_SIZE * 0.2f, Config::CELL_SIZE), texName);
     
     for (auto& obs : obstacles) obs.render(renderer);
+        for (auto& coin : coins) {
+    coin.render(renderer);
+}
 }

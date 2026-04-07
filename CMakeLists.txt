@@ -52,6 +52,7 @@ set(SOURCES
     src/camera.cpp
     src/shader.cpp
     src/stb_implement.cpp
+    src/coin.cpp
 )
 
 # Create executable
