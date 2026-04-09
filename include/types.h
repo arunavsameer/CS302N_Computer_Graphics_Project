@@ -47,17 +47,17 @@ namespace Config {
 
     // ── Logs ─────────────────────────────────────────────────
     constexpr float LOG_SPEED_MIN   = 1.5f;
-    constexpr float LOG_SPEED_MAX   = 2.0f;
+    constexpr float LOG_SPEED_MAX   = 3.0f;
     constexpr int   LOG_COUNT_MIN   = 2;      // logs spawned per river lane
     constexpr int   LOG_COUNT_MAX   = 3;
-    constexpr float LOG_SPACING     = 4.0f;   // X distance between logs
+    constexpr float LOG_SPACING     = 4.5f;   // X distance between logs
     constexpr float LOG_WIDTH       = 2.8f;   // log length (X axis)
     constexpr float LOG_DEPTH       = 0.75f;  // log width  (Z axis)
     constexpr float LOG_HEIGHT      = 0.28f;  // log thickness (Y axis)
     constexpr float LOG_Y           = 0.14f;  // resting Y centre above ground
 
     // ── Log sinking (chicken riding effect) ──────────────────
-    constexpr float LOG_SINK_AMOUNT = 0.1f;  // how far down the log sinks
+    constexpr float LOG_SINK_AMOUNT = 0.07f;  // how far down the log sinks
     constexpr float LOG_SINK_SPEED  = 6.0f;   // lerp speed toward/away from sink
 }
 
