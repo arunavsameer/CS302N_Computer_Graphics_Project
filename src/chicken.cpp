@@ -9,18 +9,25 @@
 
 
 Chicken::Chicken() { 
-    position = glm::vec3(0.0f, Config::CELL_SIZE * 0.6f, 0.0f); 
+    position = glm::vec3(0.0f, Config::CELL_SIZE * 0.15f, 0.0f); 
     isJumping = false;
     jumpProgress = 0.0f;
     rotationY = 180.0f; 
     isDead = false;
 }
 
+void Chicken::reset() {
+    position = glm::vec3(0.0f, Config::CELL_SIZE * 0.15f, 0.0f);
+    isJumping = false;
+    isDead = false;
+    jumpProgress = 0.0f;
+    rotationY = 180.0f;
+}
+
 void Chicken::update(float deltaTime) {
     if (!isJumping) return;
 
     jumpProgress += deltaTime / JUMP_DURATION;
-    
 
     if (jumpProgress >= 1.0f) {
         position = targetPos;
@@ -36,74 +43,97 @@ void Chicken::update(float deltaTime) {
 }
 
 void Chicken::render(Renderer& renderer) {
-    glm::vec3 pos = position;
-    float s = Config::CELL_SIZE;
     glPushMatrix();
-    glTranslatef(pos.x, pos.y, pos.z);
-    glRotatef(rotationY, 0, 1, 0);
     
-    // Add squish effect if dead
+    glTranslatef(position.x, position.y, position.z);
+    glRotatef(rotationY, 0.0f, 1.0f, 0.0f);
+    
+    float s = Config::CELL_SIZE * 0.8f;
+    
     if (isDead) {
-        glTranslatef(0.0f, -0.4f * s, 0.0f); // Sink into ground
-        glScalef(1.2f, 0.15f, 1.2f);         // Flatten severely
+        glTranslatef(0.0f, -0.05f * s, 0.0f); 
+        glScalef(1.2f, 0.15f, 1.2f);
+    } else {
+        glScalef(s, s, s);
     }
     
-    glTranslatef(-pos.x, -pos.y, -pos.z);
-    // glUseProgram(0);
     glDisable(GL_TEXTURE_2D);
-    glColor3f(1.0f, 1.0f, 1.0f);
 
-    // ===== BODY =====
-    renderer.drawCube(pos + glm::vec3(0, 0.3f*s, 0),
-                      glm::vec3(0.6f*s),
-                      glm::vec3(1.0f, 1.0f, 1.0f));
+    // --- Palette (matching the reference Crossy Road chicken) ---
+    glm::vec3 white    = glm::vec3(1.00f, 1.00f, 1.00f);
+    glm::vec3 orange   = glm::vec3(1.00f, 0.50f, 0.05f);  // beak, legs, feet
+    glm::vec3 hotPink  = glm::vec3(1.00f, 0.20f, 0.55f);  // comb (pink like the image)
+    glm::vec3 red      = glm::vec3(0.85f, 0.10f, 0.10f);  // wattle
+    glm::vec3 black    = glm::vec3(0.05f, 0.05f, 0.05f);  // eyes
 
-    // ===== HEAD =====
-    renderer.drawCube(pos + glm::vec3(0, 0.75f*s, 0),
-                      glm::vec3(0.35f*s),
-                      glm::vec3(1.0f, 1.0f, 1.0f));
+    // =====================================================================
+    // BODY  –  tall white block, slightly raised so legs poke out below
+    // Body spans y: 0.20 → 0.80  (center=0.50, half-height=0.30 * scale 0.60)
+    // =====================================================================
+    renderer.drawCube(glm::vec3(0.0f,  0.50f,  0.0f),  glm::vec3(0.72f, 0.60f, 0.72f), white);
 
-    // ===== BEAK =====
-    renderer.drawCube(pos + glm::vec3(0.25f*s, 0.75f*s, 0),
-                      glm::vec3(0.2f*s, 0.15f*s, 0.2f*s),
-                      glm::vec3(1.0f, 0.5f, 0.2f));
+    // =====================================================================
+    // HEAD  –  slightly smaller cube sitting on the front-top of the body
+    // Faces +Z direction (beak points toward +Z in model space)
+    // =====================================================================
+    renderer.drawCube(glm::vec3(0.0f,  0.88f,  0.16f), glm::vec3(0.44f, 0.44f, 0.44f), white);
 
-    // ===== CREST =====
-    renderer.drawCube(pos + glm::vec3(0, 0.95f*s, 0),
-                      glm::vec3(0.25f*s, 0.15f*s, 0.25f*s),
-                      glm::vec3(1.0f, 0.2f, 0.4f));
+    // =====================================================================
+    // COMB  –  hot-pink block on top of head
+    // =====================================================================
+    renderer.drawCube(glm::vec3(0.0f,  1.13f,  0.16f), glm::vec3(0.16f, 0.26f, 0.22f), hotPink);
 
-    // ===== WING =====
-    renderer.drawCube(pos + glm::vec3(-0.35f*s, 0.4f*s, 0),
-                      glm::vec3(0.25f*s, 0.3f*s, 0.4f*s),
-                      glm::vec3(0.95f, 0.95f, 0.95f));
+    // =====================================================================
+    // BEAK  –  ORANGE (not yellow!)
+    // =====================================================================
+    renderer.drawCube(glm::vec3(0.0f,  0.86f,  0.42f), glm::vec3(0.13f, 0.10f, 0.16f), orange);
 
-    // ===== LEGS =====
-    renderer.drawCube(pos + glm::vec3(-0.1f*s, 0.05f*s, 0),
-                      glm::vec3(0.1f*s, 0.3f*s, 0.1f*s),
-                      glm::vec3(1.0f, 0.6f, 0.2f));
+    // =====================================================================
+    // WATTLE  –  small red blob below the beak
+    // =====================================================================
+    renderer.drawCube(glm::vec3(0.0f,  0.74f,  0.36f), glm::vec3(0.09f, 0.13f, 0.09f), red);
 
-    renderer.drawCube(pos + glm::vec3(0.1f*s, 0.05f*s, 0),
-                      glm::vec3(0.1f*s, 0.3f*s, 0.1f*s),
-                      glm::vec3(1.0f, 0.6f, 0.2f));
+    // =====================================================================
+    // EYES  –  two small black cubes on the left and right faces of the head
+    //          z ~= 0.30 puts them on the front quarter of the head
+    // =====================================================================
+    renderer.drawCube(glm::vec3(-0.23f, 0.92f, 0.30f), glm::vec3(0.07f, 0.09f, 0.05f), black);
+    renderer.drawCube(glm::vec3( 0.23f, 0.92f, 0.30f), glm::vec3(0.07f, 0.09f, 0.05f), black);
 
-    // ===== FEET =====
-    renderer.drawCube(pos + glm::vec3(-0.1f*s, -0.05f*s, 0.1f*s),
-                      glm::vec3(0.25f*s, 0.05f*s, 0.25f*s),
-                      glm::vec3(1.0f, 0.6f, 0.2f));
+    // =====================================================================
+    // LEGS  –  placed at x = ±0.20 so they CLEAR the body sides and show
+    //          Body bottom edge is at y = 0.50 - 0.30 = 0.20
+    //          Legs span y: 0.0 → 0.22  → clearly visible below the body
+    // =====================================================================
+    float legX   = 0.20f;
+    float legCY  = 0.11f;   // centre of leg cube
+    float legH   = 0.22f;   // height
+    float legW   = 0.11f;   // thickness
 
-    renderer.drawCube(pos + glm::vec3(0.1f*s, -0.05f*s, 0.1f*s),
-                      glm::vec3(0.25f*s, 0.05f*s, 0.25f*s),
-                      glm::vec3(1.0f, 0.6f, 0.2f));
-   
-    // ===== SHADOW (INSIDE FUNCTION) =====
-    glColor4f(0.0f, 0.0f, 0.0f, 0.3f);
+    // Left leg
+    renderer.drawCube(glm::vec3(-legX,  legCY, 0.0f),  glm::vec3(legW, legH, legW), orange);
+    // Left foot  (wider, points forward)
+    renderer.drawCube(glm::vec3(-legX,  0.03f, 0.10f), glm::vec3(0.24f, 0.06f, 0.28f), orange);
+
+    // Right leg
+    renderer.drawCube(glm::vec3( legX,  legCY, 0.0f),  glm::vec3(legW, legH, legW), orange);
+    // Right foot
+    renderer.drawCube(glm::vec3( legX,  0.03f, 0.10f), glm::vec3(0.24f, 0.06f, 0.28f), orange);
+
+    // =====================================================================
+    // DROP SHADOW
+    // =====================================================================
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(0.0f, 0.0f, 0.0f, 0.25f);
     glBegin(GL_QUADS);
-        glVertex3f(pos.x - 0.3f, pos.y, pos.z - 0.3f);
-        glVertex3f(pos.x + 0.3f, pos.y, pos.z - 0.3f);
-        glVertex3f(pos.x + 0.3f, pos.y, pos.z + 0.3f);
-        glVertex3f(pos.x - 0.3f, pos.y, pos.z + 0.3f);
+        glVertex3f(-0.40f, 0.01f, -0.40f); 
+        glVertex3f( 0.40f, 0.01f, -0.40f);
+        glVertex3f( 0.40f, 0.01f,  0.40f);
+        glVertex3f(-0.40f, 0.01f,  0.40f);
     glEnd();
+    glDisable(GL_BLEND);
+
     glPopMatrix();
 }
 
@@ -115,12 +145,20 @@ void Chicken::move(float gridX, float gridZ) {
     startPos = position;
     targetPos = position + glm::vec3(gridX * Config::CELL_SIZE, 0.0f, gridZ * Config::CELL_SIZE);
     jumpProgress = 0.0f;
-    if (gridZ < 0) rotationY = 90.0f;      // forward
-    else if (gridZ > 0) rotationY = -90.0f; // backward
-    else if (gridX > 0) rotationY = 0.0f;   // right
-    else if (gridX < 0) rotationY = 180.0f; // left
 
-
+    // -----------------------------------------------------------------
+    // The chicken model faces +Z at rotationY = 0.
+    // OpenGL glRotatef(angle, 0,1,0) maps +Z → +X at 90°, +Z → -Z at 180°
+    //
+    //   W  (gridZ = -1) → move toward -Z  → face -Z  → rotationY = 180
+    //   S  (gridZ = +1) → move toward +Z  → face +Z  → rotationY =   0
+    //   D  (gridX = +1) → move toward +X  → face +X  → rotationY =  90
+    //   A  (gridX = -1) → move toward -X  → face -X  → rotationY = 270
+    // -----------------------------------------------------------------
+    if      (gridZ < 0) rotationY = 180.0f;   // W – forward
+    else if (gridZ > 0) rotationY =   0.0f;   // S – backward
+    else if (gridX > 0) rotationY =  90.0f;   // D – right
+    else if (gridX < 0) rotationY = 270.0f;   // A – left
 }
 
 glm::vec3 Chicken::getBasePosition() const {
@@ -142,13 +180,4 @@ void Chicken::applyLogVelocity(float velocityX, float deltaTime) {
         startPos.x += movement;
         targetPos.x += movement;
     }
-}
-
-
-void Chicken::reset() {
-    position = glm::vec3(0.0f, Config::CELL_SIZE * 0.6f, 0.0f);
-    isJumping = false;
-    isDead = false;
-    jumpProgress = 0.0f;
-    rotationY = 180.0f;
 }

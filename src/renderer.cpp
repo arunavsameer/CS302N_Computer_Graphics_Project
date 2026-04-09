@@ -54,7 +54,7 @@ void Renderer::initialize() {
     loadTexture(trainTex.c_str(), "train");
     loadTexture(logTex.c_str(), "log");
 
-    glClearColor(0.4f, 0.7f, 1.0f, 1.0f);
+    glClearColor(0.29f, 0.59f, 0.86f, 1.0f); // Bright Crossy Road sky blue
 }
 
 void Renderer::loadTexture(const char* path, const std::string& name) {
@@ -98,6 +98,9 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 scale, glm::vec3 color) {
     glutSolidCube(1.0f);
     glPopMatrix();
 }
+
+
+
 void Renderer::drawSprite(glm::vec3 position, glm::vec3 scale, const std::string& textureName, float rotationY) {
     glPushMatrix();
 

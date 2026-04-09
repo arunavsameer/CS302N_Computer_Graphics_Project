@@ -190,7 +190,7 @@ void Game::checkCollisions(float deltaTime) {
 
     if (!currentLane) return; 
 
-    for (const auto& obs : currentLane->getObstacles()) {
+    for (auto& obs : currentLane->getObstacles()) {
         if (!obs.getIsActive()) continue; // Ignore trains that have already passed by
 
         bool isColliding = false;
@@ -208,6 +208,7 @@ void Game::checkCollisions(float deltaTime) {
             } 
             else if (obs.getType() == OBSTACLE_LOG) {
                 onLog = true;
+                obs.setSinking(true);   // trigger sinking effect this frame
                 player.applyLogVelocity(obs.getSpeed(), deltaTime);
             }
         }
@@ -253,7 +254,7 @@ void Game::render() {
         glPushMatrix();
         glTranslatef(pos.x, pos.y, pos.z);
         glRotatef(wobble * 50.0f, 0, 0, 1);
-        renderer.drawCube(glm::vec3(0,0,0), glm::vec3(scale, scale * 1.2f, scale), glm::vec3(1.0f, 0.95f, 0.9f));
+        renderer.drawCube(glm::vec3(0,0.4f,0), glm::vec3(scale, scale * 1.2f, scale), glm::vec3(1.0f, 0.95f, 0.9f));
         glPopMatrix();
     } else {
         player.render(renderer);

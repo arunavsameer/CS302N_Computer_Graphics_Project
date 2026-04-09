@@ -14,8 +14,8 @@ Camera::Camera() {
     overlayFadeTimer = 0.0f; // Start hidden
 
     // Presets
-    presets.push_back({glm::radians(45.0f), glm::radians(45.0f), 9.0f});
-    presets.push_back({0.0f, glm::radians(25.0f), 8.0f});
+    presets.push_back({glm::radians(20.0f), glm::radians(45.0f), 11.0f});
+    presets.push_back({0.0f, glm::radians(25.0f), 4.0f});
     presets.push_back({0.0f, glm::radians(85.0f), 18.0f});
 
     targetYaw = currentYaw = presets[0].yaw;

@@ -13,6 +13,8 @@ private:
     ObstacleType type;
     VehicleVariant vehicleVariant;
     bool isActive;
+    float sinkOffset = 0.0f;
+    bool  isSinking  = false;
 
 public:
     Obstacle(glm::vec3 startPos, float spd, ObstacleType t, VehicleVariant variant = VEHICLE_SMALL_CAR);
@@ -24,6 +26,7 @@ public:
     ObstacleType getType() const { return type; }
     float getSpeed() const { return speed; }
     bool getIsActive() const { return isActive; }
+    void setSinking(bool s) { isSinking = s; }
 };
 
 #endif

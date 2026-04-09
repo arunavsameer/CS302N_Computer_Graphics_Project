@@ -21,6 +21,7 @@ public:
     void render(Renderer& renderer);
 
     const std::vector<Obstacle>& getObstacles() const { return obstacles; }
+    std::vector<Obstacle>& getObstacles() { return obstacles; }
     LaneType getType() const { return type; }
     float getZPosition() const { return zPosition; }
 };
