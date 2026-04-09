@@ -46,8 +46,8 @@ namespace Config {
     constexpr float TRAIN_LENGTH = 15.0f;
 
     // ── Logs ─────────────────────────────────────────────────
-    constexpr float LOG_SPEED_MIN   = 1.5f;
-    constexpr float LOG_SPEED_MAX   = 3.0f;
+    constexpr float LOG_SPEED_MIN   = 0.75f;
+    constexpr float LOG_SPEED_MAX   = 1.5f;
     constexpr int   LOG_COUNT_MIN   = 2;      // logs spawned per river lane
     constexpr int   LOG_COUNT_MAX   = 3;
     constexpr float LOG_SPACING     = 4.5f;   // X distance between logs
