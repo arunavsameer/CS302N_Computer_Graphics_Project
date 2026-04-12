@@ -81,14 +81,26 @@ void Game::generateLaneBlock() {
 
     for (int i = 0; i < blockWidth; i++) {
         // smooth path movement
-int shift = rand() % 3 - 1; // -1, 0, +1
-safePathColumn += shift;
+        int shift = rand() % 3 - 1; // -1, 0, +1
+        safePathColumn += shift;
 
-// clamp so it doesn’t go out of bounds
-if (safePathColumn < -5) safePathColumn = -5;
-if (safePathColumn > 5)  safePathColumn = 5;
+        // clamp so it doesn’t go out of bounds
+        if (safePathColumn < -5) safePathColumn = -5;
+        if (safePathColumn > 5)  safePathColumn = 5;
 
-lanes.push_back(Lane(currentGenerationZ, nextType, safePathColumn));
+        // 🔥 NEW: Enforce Max 1 Lilypad rule
+        LaneType actualType = nextType;
+        if (nextType == LANE_RIVER) {
+            // Check if the immediately preceding lane was a lilypad lane
+            bool prevIsLilypad = (!lanes.empty() && lanes.back().getType() == LANE_LILYPAD);
+            
+            // If it wasn't, we have a 40% chance to make this river lane a lilypad lane
+            if (!prevIsLilypad && (rand() % 100 < 40)) {
+                actualType = LANE_LILYPAD;
+            }
+        }
+
+        lanes.push_back(Lane(currentGenerationZ, actualType, safePathColumn));
         currentGenerationZ -= Config::CELL_SIZE;
     }
 }
@@ -184,6 +196,7 @@ void Game::checkCollisions(float deltaTime) {
     glm::vec3 playerSize = player.getSize();
 
     bool  onLog      = false;
+    bool onLilypad  = false;
     Lane* currentLane = nullptr;
 
     for (auto& lane : lanes) {
@@ -198,7 +211,7 @@ void Game::checkCollisions(float deltaTime) {
         if (!obs.getIsActive()) continue;
 
         bool isColliding = false;
-        if (obs.getType() == OBSTACLE_LOG) {
+        if (obs.getType() == OBSTACLE_LOG || obs.getType() == OBSTACLE_LILYPAD) {
             isColliding = Collision::checkAABB(
                 player.getBasePosition(), playerSize,
                 obs.getPosition(), obs.getSize());
@@ -221,6 +234,9 @@ void Game::checkCollisions(float deltaTime) {
                 onLog = true;
                 obs.setSinking(true);
                 player.applyLogVelocity(obs.getSpeed(), deltaTime);
+            }
+            else if (obs.getType() == OBSTACLE_LILYPAD) {
+                onLilypad = true;
             }
         }
     }
@@ -245,7 +261,7 @@ for (auto& coin : currentLane->coins) {
     // ── Water death ──────────────────────────────────────────────────────────
     // The water surface top is at yPos + scale.y/2
     // = -CELL_SIZE*0.2 + CELL_SIZE*0.1 = -CELL_SIZE*0.1
-    if (currentLane->getType() == LANE_RIVER && !player.getIsJumping() && !onLog) {
+    if ((currentLane->getType() == LANE_RIVER || currentLane->getType() == LANE_LILYPAD) && !player.getIsJumping() && !onLog && !onLilypad) {
         const float waterSurface = -Config::CELL_SIZE * 0.1f;
         player.triggerWaterDeath(waterSurface);
         deathPosition = playerPos;   // lock camera here BEFORE auto-scroll moves it
@@ -334,7 +350,6 @@ void Game::onKeyPress(unsigned char key) {
         }
     }
 
-    // ✅ MOVE ONLY IF NOT BLOCKED
     if (!blocked) {
         player.move(dx, dz);
     }

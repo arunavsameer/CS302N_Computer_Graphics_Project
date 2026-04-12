@@ -59,6 +59,32 @@ Lane::Lane(float z, LaneType t, int safePath)
                 speed, OBSTACLE_LOG));
         }
     }
+    else if (type == LANE_LILYPAD) {
+        // 1. Guaranteed lilypad on the safe path so the player can cross
+        float safeX = safePathColumn * Config::CELL_SIZE;
+        obstacles.push_back(Obstacle(
+            glm::vec3(safeX, Config::LILYPAD_Y, zPosition), 
+            0.0f, OBSTACLE_LILYPAD));
+
+        // 2. Randomly spawn lilypads to the LEFT
+        float currX = safeX - (Config::LILYPAD_GAP_MIN + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / (Config::LILYPAD_GAP_MAX - Config::LILYPAD_GAP_MIN)));
+        while (currX > -15.0f) {
+            obstacles.push_back(Obstacle(
+                glm::vec3(currX, Config::LILYPAD_Y, zPosition), 
+                0.0f, OBSTACLE_LILYPAD));
+            currX -= (Config::LILYPAD_GAP_MIN + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / (Config::LILYPAD_GAP_MAX - Config::LILYPAD_GAP_MIN)));
+        }
+
+        // 3. Randomly spawn lilypads to the RIGHT
+        currX = safeX + (Config::LILYPAD_GAP_MIN + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / (Config::LILYPAD_GAP_MAX - Config::LILYPAD_GAP_MIN)));
+        while (currX < 15.0f) {
+            obstacles.push_back(Obstacle(
+                glm::vec3(currX, Config::LILYPAD_Y, zPosition), 
+                0.0f, OBSTACLE_LILYPAD));
+            currX += (Config::LILYPAD_GAP_MIN + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / (Config::LILYPAD_GAP_MAX - Config::LILYPAD_GAP_MIN)));
+        }
+    }
+
 
     // ===== 🌳🪨 DECORATIONS FIRST =====
     if (type == LANE_GRASS) {
@@ -135,6 +161,8 @@ Lane::Lane(float z, LaneType t, int safePath)
             }
         }
     }
+
+    
 }
 
 void Lane::update(float deltaTime) {
@@ -144,7 +172,7 @@ void Lane::update(float deltaTime) {
 void Lane::render(Renderer& renderer) {
 
     // ── RIVER: fully procedural animated water (no texture needed) ───────────
-    if (type == LANE_RIVER) {
+    if (type == LANE_RIVER || type == LANE_LILYPAD) {
         const float yPos = -Config::CELL_SIZE * 0.2f;
         renderer.drawAnimatedWater(
             glm::vec3(0.0f, yPos, zPosition),

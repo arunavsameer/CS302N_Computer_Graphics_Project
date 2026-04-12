@@ -20,6 +20,9 @@ Obstacle::Obstacle(glm::vec3 startPos, float spd, ObstacleType t, VehicleVariant
     else if (type == OBSTACLE_LOG) {
         size = glm::vec3(Config::LOG_WIDTH, Config::LOG_HEIGHT, Config::LOG_DEPTH);
     }
+    else if (type == OBSTACLE_LILYPAD) {
+        size = glm::vec3(Config::LILYPAD_SIZE, Config::LILYPAD_HEIGHT, Config::LILYPAD_SIZE);
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,6 +89,16 @@ void Obstacle::render(Renderer& renderer) {
         return;
     }
 
+    // ── LILYPAD ──────────────────────────────────────────────────────────────
+    if (type == OBSTACLE_LILYPAD) {
+        // Dark forest green for the center, bright yellow-green for the edges
+        glm::vec3 darkCenter(0.25f, 0.69f, 0.37f);
+        glm::vec3 lightEdge(0.36f, 0.87f, 0.51f);  
+
+        renderer.drawLilypad(position, size, darkCenter, lightEdge);
+        return;
+    }
+
     // ── CARS ─────────────────────────────────────────────────────────────────
     // dir = +1 when moving right, -1 when moving left.
     // The "front" of each vehicle faces in the direction of travel.
@@ -135,6 +148,8 @@ void Obstacle::render(Renderer& renderer) {
         // Wheels
         drawWheels(renderer, pos, -0.68f, 0.68f, 0.38f, 0.17f);
     }
+
+    
 
     // ── TRUCK  (blue cab + white trailer, exactly like the reference image) ──
     else {

@@ -3,8 +3,8 @@
 
 // --- Game Enums ---
 enum GameState { GAME_STATE_START_SCREEN, GAME_STATE_PLAYING, GAME_STATE_GAME_OVER };
-enum LaneType  { LANE_GRASS, LANE_ROAD, LANE_RAIL, LANE_RIVER };
-enum ObstacleType { OBSTACLE_CAR, OBSTACLE_TRAIN, OBSTACLE_LOG };
+enum LaneType  { LANE_GRASS, LANE_ROAD, LANE_RAIL, LANE_RIVER, LANE_LILYPAD }; // Added LILYPAD
+enum ObstacleType { OBSTACLE_CAR, OBSTACLE_TRAIN, OBSTACLE_LOG, OBSTACLE_LILYPAD }; // Added LILYPAD
 
 struct UIConfig {
     static constexpr int   MAX_EGG_CLICKS   = 3;
@@ -59,6 +59,13 @@ namespace Config {
     // ── Log sinking (chicken riding effect) ──────────────────
     constexpr float LOG_SINK_AMOUNT = 0.07f;  // how far down the log sinks
     constexpr float LOG_SINK_SPEED  = 6.0f;   // lerp speed toward/away from sink
+
+    // ── Lilypads ─────────────────────────────────────────────
+    constexpr float LILYPAD_SIZE    = 0.9f;   // Size of the voxel footprint
+    constexpr float LILYPAD_HEIGHT  = 0.15f;  // Thickness
+    constexpr float LILYPAD_Y       = -0.05f; // Resting Y above water
+    constexpr float LILYPAD_GAP_MIN = 1.2f;   // Minimum space between lilypads
+    constexpr float LILYPAD_GAP_MAX = 50.0f;   // Maximum space between lilypads
 }
 
 #endif

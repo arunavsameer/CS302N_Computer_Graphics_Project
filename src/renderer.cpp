@@ -293,3 +293,40 @@ void Renderer::drawAnimatedWater(glm::vec3 position, glm::vec3 scale) {
     glDisable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  drawLilypad – Sharp, voxel-style 3-band chevron pattern (Light-Dark-Light)
+// ─────────────────────────────────────────────────────────────────────────────
+void Renderer::drawLilypad(glm::vec3 position, glm::vec3 size, glm::vec3 centerColor, glm::vec3 edgeColor) {
+    // Divide the lilypad into a 3x3 grid
+    float vx = size.x / 4.0f;
+    float vz = size.z / 4.0f;
+    glm::vec3 voxelScale(vx, size.y, vz);
+
+    // Starting top-left corner of the lilypad's bounding box
+    float x0 = position.x - size.x / 2.0f;
+    float z0 = position.z - size.z / 2.0f;
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            // 1. Skip the (0,0) block to create the "cut corner"
+            if (i == 0 && j == 0) continue;
+
+            glm::vec3 cellPos(
+                x0 + i * vx + vx / 2.0f,
+                position.y,
+                z0 + j * vz + vz / 2.0f
+            );
+
+            // 2. Determine the color based on distance from the cut corner
+            glm::vec3 color = edgeColor; // Default to light green (Inner & Outer sections)
+            
+            if (((i == 2) or (j == 2)) and (i <= 2) and (j <= 2)) {
+                color = centerColor;
+            }
+
+            drawCube(cellPos, voxelScale, color);
+        }
+    }
+}

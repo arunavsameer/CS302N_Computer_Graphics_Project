@@ -27,6 +27,8 @@ public:
 
     // Procedural animated water – replaces the static river PNG
     void drawAnimatedWater(glm::vec3 position, glm::vec3 scale);
+    //lilypad drawing
+    void drawLilypad(glm::vec3 position, glm::vec3 size, glm::vec3 centerColor, glm::vec3 edgeColor);
 
 private:
     std::map<std::string, unsigned int> textures;
