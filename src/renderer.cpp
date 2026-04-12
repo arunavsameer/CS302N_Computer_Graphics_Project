@@ -82,14 +82,15 @@ void Renderer::loadTexture(const char* path, const std::string& name) {
 void Renderer::prepareFrame() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
-
 void Renderer::drawCube(glm::vec3 position, glm::vec3 scale, glm::vec3 color) {
+    glDisable(GL_TEXTURE_2D);   // ← prevent last-bound texture from tinting the cube
     glPushMatrix();
     glTranslatef(position.x, position.y, position.z);
     glScalef(scale.x, scale.y, scale.z);
     glColor3f(color.r, color.g, color.b);
     glutSolidCube(1.0f);
     glPopMatrix();
+    glEnable(GL_TEXTURE_2D);    // ← restore for whoever calls next
 }
 
 void Renderer::drawSprite(glm::vec3 position, glm::vec3 scale, const std::string& textureName, float rotationY) {
@@ -216,4 +217,79 @@ void Renderer::drawTexturedCube(glm::vec3 position, glm::vec3 scale, const std::
     if (mainShader) glUseProgram(0);
 
     glPopMatrix();
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  drawAnimatedWater – clean light-blue river surface.
+//  Kept intentionally simple: a solid base cube + a flat light-blue top face
+//  with one very slow, low-contrast shimmer pass so it reads clearly as water
+//  without distracting from gameplay.  The "animated" part matters mostly so
+//  death-particles have a real surface Y to splash into.
+// ─────────────────────────────────────────────────────────────────────────────
+void Renderer::drawAnimatedWater(glm::vec3 position, glm::vec3 scale) {
+    float t = static_cast<float>(glutGet(GLUT_ELAPSED_TIME)) * 0.001f;
+
+    glDisable(GL_TEXTURE_2D);
+    if (mainShader) glUseProgram(0);
+
+    // ── 1. Water body cube (medium blue) ────────────────────────────────────
+    glPushMatrix();
+    glTranslatef(position.x, position.y, position.z);
+    glScalef(scale.x, scale.y, scale.z);
+    glColor3f(0.30f, 0.65f, 0.90f);
+    glutSolidCube(1.0f);
+    glPopMatrix();
+
+    const float SY = position.y + scale.y * 0.5f + 0.003f;
+    const float X0 = position.x - scale.x * 0.5f;
+    const float X1 = position.x + scale.x * 0.5f;
+    const float Z0 = position.z - scale.z * 0.5f;
+    const float Z1 = position.z + scale.z * 0.5f;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // ── 2. Flat light-blue surface fill ─────────────────────────────────────
+    glColor4f(0.45f, 0.78f, 0.97f, 0.92f);
+    glBegin(GL_QUADS);
+        glVertex3f(X0, SY, Z0);  glVertex3f(X1, SY, Z0);
+        glVertex3f(X1, SY, Z1);  glVertex3f(X0, SY, Z1);
+    glEnd();
+
+    // ── 3. Single slow shimmer band – very subtle, just enough movement ─────
+    float scroll = std::fmod(t * 3.0f, scale.x + 8.0f) - 8.0f;
+    float bx0 = X0 + scroll;
+    float bx1 = bx0 + 8.0f;
+    float cx0  = bx0 < X0 ? X0 : bx0;
+    float cx1  = bx1 > X1 ? X1 : bx1;
+    if (cx0 < cx1) {
+        // Soft gradient alpha (bell curve)
+        float len  = bx1 - bx0;
+        float aL   = 1.0f - 2.0f * std::abs((cx0 - bx0) / len - 0.5f);
+        float aR   = 1.0f - 2.0f * std::abs((cx1 - bx0) / len - 0.5f);
+        aL *= 0.18f;
+        aR *= 0.18f;
+        glBegin(GL_QUADS);
+            glColor4f(0.75f, 0.92f, 1.00f, aL); glVertex3f(cx0, SY + 0.001f, Z0);
+            glColor4f(0.75f, 0.92f, 1.00f, aR); glVertex3f(cx1, SY + 0.001f, Z0);
+            glColor4f(0.75f, 0.92f, 1.00f, aR); glVertex3f(cx1, SY + 0.001f, Z1);
+            glColor4f(0.75f, 0.92f, 1.00f, aL); glVertex3f(cx0, SY + 0.001f, Z1);
+        glEnd();
+    }
+
+    // ── 4. Dark bank edges ───────────────────────────────────────────────────
+    const float edgeD = scale.z * 0.10f;
+    glColor4f(0.10f, 0.35f, 0.65f, 0.55f);
+    glBegin(GL_QUADS);  // near
+        glVertex3f(X0, SY+0.002f, Z0);        glVertex3f(X1, SY+0.002f, Z0);
+        glVertex3f(X1, SY+0.002f, Z0+edgeD);  glVertex3f(X0, SY+0.002f, Z0+edgeD);
+    glEnd();
+    glBegin(GL_QUADS);  // far
+        glVertex3f(X0, SY+0.002f, Z1-edgeD);  glVertex3f(X1, SY+0.002f, Z1-edgeD);
+        glVertex3f(X1, SY+0.002f, Z1);        glVertex3f(X0, SY+0.002f, Z1);
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
 }

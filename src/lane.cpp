@@ -142,6 +142,20 @@ void Lane::update(float deltaTime) {
 
 void Lane::render(Renderer& renderer) {
 
+    // ── RIVER: fully procedural animated water (no texture needed) ───────────
+    if (type == LANE_RIVER) {
+        const float yPos = -Config::CELL_SIZE * 0.2f;
+        renderer.drawAnimatedWater(
+            glm::vec3(0.0f, yPos, zPosition),
+            glm::vec3(30.0f, Config::CELL_SIZE * 0.2f, Config::CELL_SIZE));
+
+        for (auto& obs  : obstacles) obs.render(renderer);
+        for (auto& coin : coins)     coin.render(renderer);
+        return;
+    }
+
+    // ── All other lane types: textured cube ──
+
     std::string texName;
 
     if (type == LANE_GRASS) {

@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 
-#include "shader.h"   // ✅ FIX 1: include full shader
+#include "shader.h"
 
 class Renderer {
 public:
@@ -15,15 +15,18 @@ public:
     void initialize();
     void prepareFrame();
 
-    // ✅ MATCH EXACT SIGNATURES FROM .cpp
     void loadTexture(const char* path, const std::string& name);
 
     void drawCube(glm::vec3 position, glm::vec3 scale, glm::vec3 color);
 
-    void drawTexturedCube(glm::vec3 position, glm::vec3 scale, const std::string& textureName, float rotationY = 0.0f);
+    void drawTexturedCube(glm::vec3 position, glm::vec3 scale,
+                          const std::string& textureName, float rotationY = 0.0f);
 
-    // ✅ NEW (sprite with rotation support)
-    void drawSprite(glm::vec3 position, glm::vec3 scale, const std::string& textureName, float rotationY = 0.0f);
+    void drawSprite(glm::vec3 position, glm::vec3 scale,
+                    const std::string& textureName, float rotationY = 0.0f);
+
+    // Procedural animated water – replaces the static river PNG
+    void drawAnimatedWater(glm::vec3 position, glm::vec3 scale);
 
 private:
     std::map<std::string, unsigned int> textures;
