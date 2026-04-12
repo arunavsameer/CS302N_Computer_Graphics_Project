@@ -144,9 +144,15 @@ void Renderer::drawTexturedCube(glm::vec3 position, glm::vec3 scale, const std::
 
     glScalef(scale.x, scale.y, scale.z);
 
-    // 🔥 ADDED (only for logs)
-    bool isLog = (textureName == "log");
-    float repeat = isLog ? scale.x * 2.0f : 1.0f;
+    // 1. Set repetition multipliers based on the object's scale
+    // This makes 1 cell exactly 1 repeating texture tile.
+    float rx = scale.x;
+    float ry = scale.y;
+    float rz = scale.z;
+
+    if (textureName == "log") {
+        rx *= 2.0f; // Preserving your existing log specific logic
+    }
 
     if (mainShader) {
         mainShader->use();
@@ -161,36 +167,49 @@ void Renderer::drawTexturedCube(glm::vec3 position, glm::vec3 scale, const std::
 
         // FRONT
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f,  0.5f);
-        glTexCoord2f(repeat, 0.0f); glVertex3f( 0.5f, -0.5f,  0.5f);
-        glTexCoord2f(repeat, 1.0f); glVertex3f( 0.5f,  0.5f,  0.5f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f,  0.5f,  0.5f);
+        glTexCoord2f(rx,   0.0f); glVertex3f( 0.5f, -0.5f,  0.5f);
+        glTexCoord2f(rx,   ry);   glVertex3f( 0.5f,  0.5f,  0.5f);
+        glTexCoord2f(0.0f, ry);   glVertex3f(-0.5f,  0.5f,  0.5f);
 
         // BACK
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
-        glTexCoord2f(repeat, 0.0f); glVertex3f( 0.5f, -0.5f, -0.5f);
-        glTexCoord2f(repeat, 1.0f); glVertex3f( 0.5f,  0.5f, -0.5f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f,  0.5f, -0.5f);
+        glTexCoord2f(rx,   0.0f); glVertex3f( 0.5f, -0.5f, -0.5f);
+        glTexCoord2f(rx,   ry);   glVertex3f( 0.5f,  0.5f, -0.5f);
+        glTexCoord2f(0.0f, ry);   glVertex3f(-0.5f,  0.5f, -0.5f);
 
-        // REST unchanged
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f,  0.5f, -0.5f);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f,  0.5f,  0.5f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f( 0.5f,  0.5f,  0.5f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f( 0.5f,  0.5f, -0.5f);
+        // TOP (This is the ground we walk on)
+        if (textureName == "rail") {
+            // Your rail.png has vertical metal rails, but the lane spans horizontally.
+            // We rotate the UV map 90 degrees here so the tracks run left-to-right!
+            glTexCoord2f(rz,   rx);   glVertex3f(-0.5f,  0.5f, -0.5f);
+            glTexCoord2f(0.0f, rx);   glVertex3f(-0.5f,  0.5f,  0.5f);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f( 0.5f,  0.5f,  0.5f);
+            glTexCoord2f(rz,   0.0f); glVertex3f( 0.5f,  0.5f, -0.5f);
+        } else {
+            // Standard tiling for Grass, Road, and River
+            glTexCoord2f(0.0f, rz);   glVertex3f(-0.5f,  0.5f, -0.5f);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f,  0.5f,  0.5f);
+            glTexCoord2f(rx,   0.0f); glVertex3f( 0.5f,  0.5f,  0.5f);
+            glTexCoord2f(rx,   rz);   glVertex3f( 0.5f,  0.5f, -0.5f);
+        }
 
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f( 0.5f, -0.5f, -0.5f);
+        // BOTTOM
+        glTexCoord2f(rx,   rz);   glVertex3f(-0.5f, -0.5f, -0.5f);
+        glTexCoord2f(0.0f, rz);   glVertex3f( 0.5f, -0.5f, -0.5f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f( 0.5f, -0.5f,  0.5f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f,  0.5f);
+        glTexCoord2f(rx,   0.0f); glVertex3f(-0.5f, -0.5f,  0.5f);
 
-        glTexCoord2f(1.0f, 0.0f); glVertex3f( 0.5f, -0.5f, -0.5f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f( 0.5f,  0.5f, -0.5f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f( 0.5f,  0.5f,  0.5f);
+        // RIGHT
+        glTexCoord2f(rz,   0.0f); glVertex3f( 0.5f, -0.5f, -0.5f);
+        glTexCoord2f(rz,   ry);   glVertex3f( 0.5f,  0.5f, -0.5f);
+        glTexCoord2f(0.0f, ry);   glVertex3f( 0.5f,  0.5f,  0.5f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f( 0.5f, -0.5f,  0.5f);
 
+        // LEFT
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f,  0.5f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f,  0.5f,  0.5f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f,  0.5f, -0.5f);
+        glTexCoord2f(rz,   0.0f); glVertex3f(-0.5f, -0.5f,  0.5f);
+        glTexCoord2f(rz,   ry);   glVertex3f(-0.5f,  0.5f,  0.5f);
+        glTexCoord2f(0.0f, ry);   glVertex3f(-0.5f,  0.5f, -0.5f);
 
     glEnd();
 
