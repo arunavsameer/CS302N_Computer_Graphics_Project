@@ -17,10 +17,15 @@ private:
     Chicken player;
     std::vector<Lane> lanes;
     float currentGenerationZ;
-    float cameraTrackZ; // Moving world anchor for the camera and fail-behind check
+    float cameraTrackZ;
     int score;
     float startZ;
     int coinScore = 0;
+
+    // ── Death tracking ───────────────────────────────────────────────────────
+    glm::vec3 deathPosition;   // world-space position where the player died
+    bool      hasWaterDeath;   // true → camera should zoom to deathPosition
+
     void generateLaneBlock();
     void checkCollisions(float deltaTime);
     void updateCameraAndFailState(float deltaTime);
