@@ -12,6 +12,7 @@
     #include <GL/glut.h>
 #endif
 #include "../include/coin.h"
+int safePathColumn = 0;
 Game::Game(int width, int height)
     : windowWidth(width), windowHeight(height),
       state(GAME_STATE_START_SCREEN), // START HERE INSTEAD OF PLAYING
@@ -34,7 +35,7 @@ void Game::resetGame() {
     
     // Rebuild initial zone
     for (int i = 0; i < Config::INITIAL_SAFE_ZONE_LENGTH; i++) {
-        lanes.push_back(Lane(currentGenerationZ, LANE_GRASS));
+        lanes.push_back(Lane(currentGenerationZ, LANE_GRASS,safePathColumn));
         currentGenerationZ -= Config::CELL_SIZE;
     }
     for (int i = 0; i < 5; i++) generateLaneBlock();
@@ -48,7 +49,7 @@ void Game::initialize() {
 
     // Build the massive starting safe zone
     for (int i = 0; i < Config::INITIAL_SAFE_ZONE_LENGTH; i++) {
-        lanes.push_back(Lane(currentGenerationZ, LANE_GRASS));
+        lanes.push_back(Lane(currentGenerationZ, LANE_GRASS,safePathColumn));
         currentGenerationZ -= Config::CELL_SIZE;
     }
 
@@ -81,7 +82,15 @@ void Game::generateLaneBlock() {
     }
 
     for (int i = 0; i < blockWidth; i++) {
-        lanes.push_back(Lane(currentGenerationZ, nextType));
+        // smooth path movement
+int shift = rand() % 3 - 1; // -1, 0, +1
+safePathColumn += shift;
+
+// clamp so it doesn’t go out of bounds
+if (safePathColumn < -5) safePathColumn = -5;
+if (safePathColumn > 5)  safePathColumn = 5;
+
+lanes.push_back(Lane(currentGenerationZ, nextType, safePathColumn));
         currentGenerationZ -= Config::CELL_SIZE;
     }
 }
@@ -107,7 +116,7 @@ void Game::updateCameraAndFailState(float deltaTime) {
     smoothedCameraTarget.y = glm::mix(smoothedCameraTarget.y, playerBasePos.y, lerpFactorXY);
     smoothedCameraTarget.z = glm::mix(smoothedCameraTarget.z, cameraTrackZ,  lerpFactorZ);
 
-    // Pass the smoothed target to the actual camera matrix calculations
+    // Pass tflex item gap 6he smoothed target to the actual camera matrix calculations
     camera.update(deltaTime, windowWidth, windowHeight, smoothedCameraTarget);
 
     // Use the strict logical track (cameraTrackZ) for the death condition, 
@@ -229,11 +238,13 @@ for (auto& coin : currentLane->coins) {
         coinScore += 10;
     }
 }
+ // ===== 🌳🪨 DECORATION COLLISION
 
     if (currentLane->getType() == LANE_RIVER && !player.getIsJumping() && !onLog) {
         player.setDead(true);
         state = GAME_STATE_GAME_OVER; 
     }
+
 }
 
 void Game::render() {
@@ -267,11 +278,60 @@ void Game::render() {
 void Game::onKeyPress(unsigned char key) {
     if (state != GAME_STATE_PLAYING) return;
 
-    if (key == 'w' || key == 'W') player.move(0.0f, -1.0f);
-    if (key == 's' || key == 'S') player.move(0.0f, 1.0f);
-    if (key == 'a' || key == 'A') player.move(-1.0f, 0.0f);
-    if (key == 'd' || key == 'D') player.move(1.0f, 0.0f);
+    float dx = 0.0f, dz = 0.0f;
 
+    if (key == 'w' || key == 'W') dz = -1.0f;
+    if (key == 's' || key == 'S') dz =  1.0f;
+    if (key == 'a' || key == 'A') dx = -1.0f;
+    if (key == 'd' || key == 'D') dx =  1.0f;
+
+    if (dx == 0.0f && dz == 0.0f) {
+        if (key == 'v' || key == 'V') camera.cyclePreset();
+        if (key == 'c' || key == 'C') camera.toggleLock();
+        return;
+    }
+
+    // ===== PREDICT NEXT POSITION =====
+    glm::vec3 currentPos = player.getPosition();
+    glm::vec3 nextPos = currentPos + glm::vec3(
+        dx * Config::CELL_SIZE,
+        0.0f,
+        dz * Config::CELL_SIZE
+    );
+
+    // ===== FIND TARGET LANE =====
+    Lane* targetLane = nullptr;
+    for (auto& lane : lanes) {
+        if (std::abs(lane.getZPosition() - nextPos.z) < Config::CELL_SIZE / 2.0f) {
+            targetLane = &lane;
+            break;
+        }
+    }
+
+    bool blocked = false;
+
+    // ===== CHECK TREE/ROCK COLLISION =====
+    if (targetLane && targetLane->getType() == LANE_GRASS) {
+
+        for (auto& d : targetLane->decorations) {
+
+            float size = (d.type == 0) ? 0.6f : 0.5f;
+
+            if (fabs(nextPos.x - d.position.x) < size &&
+                fabs(nextPos.z - d.position.z) < size) {
+
+                blocked = true;
+                break;
+            }
+        }
+    }
+
+    // ✅ MOVE ONLY IF NOT BLOCKED
+    if (!blocked) {
+        player.move(dx, dz);
+    }
+
+    // camera controls
     if (key == 'v' || key == 'V') camera.cyclePreset();
     if (key == 'c' || key == 'C') camera.toggleLock();
 }
