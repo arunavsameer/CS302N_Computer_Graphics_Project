@@ -129,7 +129,7 @@ Lane::Lane(float z, LaneType t, int safePath)
         }
     }
 
-    // ===== 🪙 COINS AFTER DECORATIONS =====
+    // ===== COINS AFTER DECORATIONS =====
     if (type == LANE_GRASS&&(rand()%100)<35) {
 
         int tries = 5;
@@ -206,9 +206,12 @@ void Lane::render(Renderer& renderer) {
     for (auto& obs : obstacles) obs.render(renderer);
     for (auto& coin : coins) coin.render(renderer);
 
+    auto tree_offset = glm::vec3(0, 0.35f, 0);
+
     for (auto& d : decorations) {
 
         if (d.type == 0) {
+            d.position += tree_offset;
             renderer.drawCube(
                 d.position + glm::vec3(0, -0.2f, 0),
                 glm::vec3(0.25f, 0.6f * d.scale, 0.25f),
@@ -226,6 +229,7 @@ void Lane::render(Renderer& renderer) {
                 glm::vec3(0.5f, 0.5f, 0.5f),
                 d.color
             );
+            d.position -= tree_offset;
         }
         else {
             renderer.drawCube(

@@ -138,7 +138,7 @@ void Obstacle::render(Renderer& renderer) {
                           glm::vec3(1.90f, 0.36f, 0.86f), body);
         // Upper/roof cab (white, flush with body width to look boxy)
         renderer.drawCube(pos + glm::vec3(0.0f,  0.46f, 0.0f),
-                          glm::vec3(1.90f, 0.28f, 0.80f), roof);
+                          glm::vec3(1.90f, 0.25f, 0.80f), roof);
         // Front window
         renderer.drawCube(pos + glm::vec3(0.68f * dir, 0.50f, 0.0f),
                           glm::vec3(0.28f, 0.20f, 0.52f), win);
