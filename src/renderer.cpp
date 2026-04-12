@@ -8,7 +8,6 @@
 #endif
 #include <iostream>
 
-// Fallback macro just in case the CMake definition is missed
 #ifndef ASSET_DIR
 #define ASSET_DIR "../../assets/" 
 #endif
@@ -28,7 +27,6 @@ void Renderer::initialize() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
 
-    // Build the full paths using the CMake macro
     std::string vertShader = std::string(ASSET_DIR) + "shaders/vertex.glsl";
     std::string fragShader = std::string(ASSET_DIR) + "shaders/fragment.glsl";
     mainShader = new Shader(vertShader.c_str(), fragShader.c_str());
@@ -38,12 +36,11 @@ void Renderer::initialize() {
     std::string roadTex = std::string(ASSET_DIR) + "textures/road.png";
     std::string chickenTex = std::string(ASSET_DIR) + "textures/chicken.png";
     std::string carTex = std::string(ASSET_DIR) + "textures/car.png";
-    std::string railTex = std::string(ASSET_DIR) + "textures/rail.png"; // Assumes you add rail.png later
-    std::string riverTex = std::string(ASSET_DIR) + "textures/river.png"; // Assumes you add river.png later
-    std::string trainTex = std::string(ASSET_DIR) + "textures/train.png"; // Assumes you add train.png later
+    std::string railTex = std::string(ASSET_DIR) + "textures/rail.png";
+    std::string riverTex = std::string(ASSET_DIR) + "textures/river.png";
+    std::string trainTex = std::string(ASSET_DIR) + "textures/train.png";
     std::string logTex = std::string(ASSET_DIR) + "textures/log.png";
 
-    // Load Textures
     loadTexture(grassTex.c_str(), "grass");
     loadTexture(grass2Tex.c_str(), "grass2");
     loadTexture(roadTex.c_str(), "road");
@@ -54,7 +51,7 @@ void Renderer::initialize() {
     loadTexture(trainTex.c_str(), "train");
     loadTexture(logTex.c_str(), "log");
 
-    glClearColor(0.29f, 0.59f, 0.86f, 1.0f); // Bright Crossy Road sky blue
+    glClearColor(0.29f, 0.59f, 0.86f, 1.0f);
 }
 
 void Renderer::loadTexture(const char* path, const std::string& name) {
@@ -70,14 +67,10 @@ void Renderer::loadTexture(const char* path, const std::string& name) {
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true);
     
-    // The '4' at the end forces STB to output RGBA (4 channels)
     unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 4); 
     
     if (data) {
-        // Fix byte alignment issues just to be safe
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        
-        // Explicitly tell OpenGL the data is GL_RGBA
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         stbi_image_free(data);
         textures[name] = textureID;
@@ -99,16 +92,11 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 scale, glm::vec3 color) {
     glPopMatrix();
 }
 
-
-
 void Renderer::drawSprite(glm::vec3 position, glm::vec3 scale, const std::string& textureName, float rotationY) {
     glPushMatrix();
 
     glTranslatef(position.x, position.y, position.z);
-
-    // Apply rotation from your game
     glRotatef(rotationY, 0, 1, 0);
-
     glScalef(scale.x, scale.y, scale.z);
 
     if (mainShader) {
@@ -125,7 +113,6 @@ void Renderer::drawSprite(glm::vec3 position, glm::vec3 scale, const std::string
 
     glColor3f(1.0f, 1.0f, 1.0f);
 
-    // ✅ FRONT FACE
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f,  0.05f);
         glTexCoord2f(1.0f, 0.0f); glVertex3f( 0.5f, -0.5f,  0.05f);
@@ -133,7 +120,6 @@ void Renderer::drawSprite(glm::vec3 position, glm::vec3 scale, const std::string
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f,  0.5f,  0.05f);
     glEnd();
 
-    // ✅ BACK FACE (so visible from both sides)
     glBegin(GL_QUADS);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.05f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f( 0.5f, -0.5f, -0.05f);
@@ -148,57 +134,67 @@ void Renderer::drawSprite(glm::vec3 position, glm::vec3 scale, const std::string
     glPopMatrix();
 }
 
-
 void Renderer::drawTexturedCube(glm::vec3 position, glm::vec3 scale, const std::string& textureName, float rotationY) {
     glPushMatrix();
+
     glTranslatef(position.x, position.y, position.z);
-    if (rotationY != 0.0f) {
+
+    if (rotationY != 0.0f)
         glRotatef(rotationY, 0.0f, 1.0f, 0.0f);
-    }
+
     glScalef(scale.x, scale.y, scale.z);
-    
+
+    // 🔥 ADDED (only for logs)
+    bool isLog = (textureName == "log");
+    float repeat = isLog ? scale.x * 2.0f : 1.0f;
+
     if (mainShader) {
         mainShader->use();
         mainShader->setInt("texture1", 0);
     }
-    
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textures[textureName]);
-    glColor3f(1.0f, 1.0f, 1.0f); // Pure white so texture colors show correctly
+    glColor3f(1.0f, 1.0f, 1.0f);
 
     glBegin(GL_QUADS);
-        // Front
+
+        // FRONT
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f,  0.5f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f( 0.5f, -0.5f,  0.5f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f( 0.5f,  0.5f,  0.5f);
+        glTexCoord2f(repeat, 0.0f); glVertex3f( 0.5f, -0.5f,  0.5f);
+        glTexCoord2f(repeat, 1.0f); glVertex3f( 0.5f,  0.5f,  0.5f);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f,  0.5f,  0.5f);
-        // Back
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f,  0.5f, -0.5f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f( 0.5f,  0.5f, -0.5f);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f( 0.5f, -0.5f, -0.5f);
-        // Top
+
+        // BACK
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
+        glTexCoord2f(repeat, 0.0f); glVertex3f( 0.5f, -0.5f, -0.5f);
+        glTexCoord2f(repeat, 1.0f); glVertex3f( 0.5f,  0.5f, -0.5f);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f,  0.5f, -0.5f);
+
+        // REST unchanged
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f,  0.5f, -0.5f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f,  0.5f,  0.5f);
         glTexCoord2f(1.0f, 0.0f); glVertex3f( 0.5f,  0.5f,  0.5f);
         glTexCoord2f(1.0f, 1.0f); glVertex3f( 0.5f,  0.5f, -0.5f);
-        // Bottom
+
         glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
         glTexCoord2f(0.0f, 1.0f); glVertex3f( 0.5f, -0.5f, -0.5f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f( 0.5f, -0.5f,  0.5f);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f,  0.5f);
-        // Right
+
         glTexCoord2f(1.0f, 0.0f); glVertex3f( 0.5f, -0.5f, -0.5f);
         glTexCoord2f(1.0f, 1.0f); glVertex3f( 0.5f,  0.5f, -0.5f);
         glTexCoord2f(0.0f, 1.0f); glVertex3f( 0.5f,  0.5f,  0.5f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f( 0.5f, -0.5f,  0.5f);
-        // Left
+
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f,  0.5f);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f,  0.5f,  0.5f);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f,  0.5f, -0.5f);
+
     glEnd();
 
     if (mainShader) glUseProgram(0);
+
     glPopMatrix();
 }

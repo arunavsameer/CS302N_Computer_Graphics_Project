@@ -7,16 +7,28 @@
 #include "renderer.h"
 #include "coin.h"
 
-
 class Lane {
-private:
+public:
     float zPosition;
     LaneType type;
     std::vector<Obstacle> obstacles;
-public:
+
     std::vector<Coin> coins;
+
+    struct Decoration {
+        glm::vec3 position;
+        int type;
+        float scale;
+        glm::vec3 color;
+    };
+
+    std::vector<Decoration> decorations;
+
+    int safePathColumn; // 🔥 NEW
+
 public:
-    Lane(float z, LaneType t);
+    Lane(float z, LaneType t, int safePath); // 🔥 UPDATED
+
     void update(float deltaTime);
     void render(Renderer& renderer);
 
