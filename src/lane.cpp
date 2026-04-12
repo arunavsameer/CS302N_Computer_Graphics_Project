@@ -64,17 +64,18 @@ Lane::Lane(float z, LaneType t, int safePath)
     if (type == LANE_GRASS) {
 
         int pathWidth = 2;
+        int pathBufferZone = pathWidth + 1; // ✅ Prevent decorations from spawning directly on safe path
 
         for (int i = -15; i <= 15; i++) {
 
             float x = i * Config::CELL_SIZE * 0.9f;
 
-            // keep path open
-            if (std::abs(i - safePathColumn) <= pathWidth)
+            // ✅ ENFORCE: No decorations on the safe path (NEW FIX)
+            if (std::abs(i - safePathColumn) <= pathBufferZone)
                 continue;
 
             // less clutter near path
-            if (std::abs(i - safePathColumn) <= pathWidth + 2) {
+            if (std::abs(i - safePathColumn) <= pathBufferZone + 2) {
                 if (rand() % 100 > 30) continue;
             } else {
                 if (rand() % 100 > 75) continue;
@@ -84,7 +85,7 @@ Lane::Lane(float z, LaneType t, int safePath)
                 continue;
 
             Decoration d;
-            d.position = glm::vec3(x, Config::CELL_SIZE * 0.5f, zPosition);
+            d.position = glm::vec3(x, 0.15f, zPosition);
 
             if (rand() % 5 == 0) {
                 d.type = 1;
