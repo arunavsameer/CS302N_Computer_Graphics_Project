@@ -22,15 +22,15 @@ public:
     void drawTexturedCube(glm::vec3 position, glm::vec3 scale,
                           const std::string& textureName, float rotationY = 0.0f);
 
-    void drawSprite(glm::vec3 position, glm::vec3 scale,
-                    const std::string& textureName, float rotationY = 0.0f);
+    void drawSprite(glm::vec3 position, glm::vec3 scale, const std::string& textureName, float rotationY = 0.0f);
 
-    // Procedural animated water – replaces the static river PNG
     void drawAnimatedWater(glm::vec3 position, glm::vec3 scale);
-    //lilypad drawing
+    
     void drawLilypad(glm::vec3 position, glm::vec3 size, glm::vec3 centerColor, glm::vec3 edgeColor);
 
     void drawEgg(int clicks);
+
+    void drawSignalPost(glm::vec3 base, bool lightRed, bool lightGreen);
 
 private:
     std::map<std::string, unsigned int> textures;

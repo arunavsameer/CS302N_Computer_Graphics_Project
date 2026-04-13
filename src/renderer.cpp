@@ -390,3 +390,43 @@ void Renderer::drawEgg(int clicks) {
         }
     }
 }
+
+
+void Renderer::drawSignalPost(glm::vec3 base, bool lightRed, bool lightGreen) {
+    // ── Pole ─────────────────────────────────────────────────────────────────
+    drawCube(base + glm::vec3(0.0f, 0.55f, 0.0f),
+                      glm::vec3(0.09f, 1.10f, 0.09f),
+                      glm::vec3(0.40f, 0.40f, 0.42f));
+
+    // ── Signal housing (dark box) ─────────────────────────────────────────
+    drawCube(base + glm::vec3(0.0f, 1.20f, 0.0f),
+                      glm::vec3(0.34f, 0.52f, 0.22f),
+                      glm::vec3(0.13f, 0.13f, 0.15f));
+
+    // ── Red light (top) ──────────────────────────────────────────────────
+    glm::vec3 redCol = lightRed
+        ? glm::vec3(1.00f, 0.08f, 0.08f)
+        : glm::vec3(0.28f, 0.04f, 0.04f);
+    drawCube(base + glm::vec3(0.0f, 1.35f, 0.0f),
+                      glm::vec3(0.20f, 0.20f, 0.24f), redCol);
+
+    // ── Green light (bottom) ─────────────────────────────────────────────
+    glm::vec3 greenCol = lightGreen
+        ? glm::vec3(0.10f, 1.00f, 0.12f)
+        : glm::vec3(0.04f, 0.28f, 0.05f);
+    drawCube(base + glm::vec3(0.0f, 1.04f, 0.0f),
+                      glm::vec3(0.20f, 0.20f, 0.24f), greenCol);
+
+    // ── Crossbuck arm ────────────────────────────────────────────────────
+    drawCube(base + glm::vec3(0.0f, 0.86f, 0.0f),
+                      glm::vec3(0.56f, 0.09f, 0.09f),
+                      glm::vec3(0.92f, 0.92f, 0.92f));
+
+    // ── RR bump details on crossbuck ─────────────────────────────────────
+    drawCube(base + glm::vec3(-0.15f, 0.86f, 0.0f),
+                      glm::vec3(0.08f, 0.18f, 0.08f),
+                      glm::vec3(0.92f, 0.92f, 0.92f));
+    drawCube(base + glm::vec3( 0.15f, 0.86f, 0.0f),
+                      glm::vec3(0.08f, 0.18f, 0.08f),
+                      glm::vec3(0.92f, 0.92f, 0.92f));
+}

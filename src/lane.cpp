@@ -203,49 +203,6 @@ Lane::Lane(float z, LaneType t, int safePath)
 void Lane::update(float deltaTime) {
     for (auto& obs : obstacles) obs.update(deltaTime);
 }
-static void drawSignalPost(Renderer& renderer,
-                           glm::vec3 base,
-                           bool lightRed,
-                           bool lightGreen)
-{
-    // ── Pole ─────────────────────────────────────────────────────────────────
-    renderer.drawCube(base + glm::vec3(0.0f, 0.55f, 0.0f),
-                      glm::vec3(0.09f, 1.10f, 0.09f),
-                      glm::vec3(0.40f, 0.40f, 0.42f));
-
-    // ── Signal housing (dark box) ─────────────────────────────────────────
-    renderer.drawCube(base + glm::vec3(0.0f, 1.20f, 0.0f),
-                      glm::vec3(0.34f, 0.52f, 0.22f),
-                      glm::vec3(0.13f, 0.13f, 0.15f));
-
-    // ── Red light (top) ──────────────────────────────────────────────────
-    glm::vec3 redCol = lightRed
-        ? glm::vec3(1.00f, 0.08f, 0.08f)
-        : glm::vec3(0.28f, 0.04f, 0.04f);
-    renderer.drawCube(base + glm::vec3(0.0f, 1.35f, 0.0f),
-                      glm::vec3(0.20f, 0.20f, 0.24f), redCol);
-
-    // ── Green light (bottom) ─────────────────────────────────────────────
-    glm::vec3 greenCol = lightGreen
-        ? glm::vec3(0.10f, 1.00f, 0.12f)
-        : glm::vec3(0.04f, 0.28f, 0.05f);
-    renderer.drawCube(base + glm::vec3(0.0f, 1.04f, 0.0f),
-                      glm::vec3(0.20f, 0.20f, 0.24f), greenCol);
-
-    // ── Crossbuck arm ────────────────────────────────────────────────────
-    renderer.drawCube(base + glm::vec3(0.0f, 0.86f, 0.0f),
-                      glm::vec3(0.56f, 0.09f, 0.09f),
-                      glm::vec3(0.92f, 0.92f, 0.92f));
-
-    // ── RR bump details on crossbuck ─────────────────────────────────────
-    renderer.drawCube(base + glm::vec3(-0.15f, 0.86f, 0.0f),
-                      glm::vec3(0.08f, 0.18f, 0.08f),
-                      glm::vec3(0.92f, 0.92f, 0.92f));
-    renderer.drawCube(base + glm::vec3( 0.15f, 0.86f, 0.0f),
-                      glm::vec3(0.08f, 0.18f, 0.08f),
-                      glm::vec3(0.92f, 0.92f, 0.92f));
-}
-
 
 void Lane::render(Renderer& renderer) {
 
@@ -315,20 +272,20 @@ void Lane::render(Renderer& renderer) {
             if (obs.getType() == OBSTACLE_TRAIN && obs.getIsActive()) {
                 float absX = std::abs(obs.getPosition().x);
                 if      (absX < 14.0f) trainPassing  = true;
-                else if (absX < 25.0f) trainApproach = true;
+                else if (absX < 150.0f) trainApproach = true;
             }
         }
 
         // Flash at ~3 Hz when train is approaching
         float t       = static_cast<float>(glutGet(GLUT_ELAPSED_TIME)) * 0.001f;
-        bool  flashOn = ((int)(t * 6.0f) % 2) == 0;
+        bool  flashOn = ((int)(t * 6.0f) % 2) == 0; 
 
         bool lightRed   = trainPassing || (trainApproach && flashOn);
         bool lightGreen = !trainPassing && !trainApproach;
 
         // Draw every signal post stored in signalPosts
-        for (const auto& sp : signalPosts) {
-            drawSignalPost(renderer, sp.position, lightRed, lightGreen);
+        for (auto& sp : signalPosts) {
+            renderer.drawSignalPost(sp.position, lightRed, lightGreen);
         }
     }
 }
