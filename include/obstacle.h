@@ -15,6 +15,10 @@ private:
     bool isActive;
     float sinkOffset = 0.0f;
     bool  isSinking  = false;
+     // ── Train respawn ────────────────────────────────────────────────────────
+    glm::vec3 startPosition;   // original spawn position, used to reset
+    float     respawnTimer;    // counts DOWN to 0 then respawns
+    float     respawnDelay;    // randomised interval (seconds) between passes
 
 public:
     Obstacle(glm::vec3 startPos, float spd, ObstacleType t, VehicleVariant variant = VEHICLE_SMALL_CAR);

@@ -12,7 +12,9 @@
     #include <GL/glut.h>
 #endif
 #include "../include/coin.h"
+
 int safePathColumn = 0;
+
 Game::Game(int width, int height)
     : windowWidth(width), windowHeight(height),
       state(GAME_STATE_START_SCREEN),
@@ -38,7 +40,7 @@ void Game::resetGame() {
     currentGenerationZ = 5.0f * Config::CELL_SIZE;
 
     for (int i = 0; i < Config::INITIAL_SAFE_ZONE_LENGTH; i++) {
-        lanes.push_back(Lane(currentGenerationZ, LANE_GRASS,safePathColumn));
+        lanes.push_back(Lane(currentGenerationZ, LANE_GRASS, safePathColumn));
         currentGenerationZ -= Config::CELL_SIZE;
     }
     for (int i = 0; i < 5; i++) generateLaneBlock();
@@ -51,7 +53,7 @@ void Game::initialize() {
     renderer.initialize();
 
     for (int i = 0; i < Config::INITIAL_SAFE_ZONE_LENGTH; i++) {
-        lanes.push_back(Lane(currentGenerationZ, LANE_GRASS,safePathColumn));
+        lanes.push_back(Lane(currentGenerationZ, LANE_GRASS, safePathColumn));
         currentGenerationZ -= Config::CELL_SIZE;
     }
     for (int i = 0; i < 5; i++) generateLaneBlock();
@@ -65,38 +67,22 @@ void Game::generateLaneBlock() {
     LaneType nextType;
     int blockWidth = 1;
 
-    if (r < 30) {
-        nextType   = LANE_GRASS;
-        blockWidth = Config::MIN_GRASS_WIDTH + rand() % ((Config::MAX_GRASS_WIDTH - Config::MIN_GRASS_WIDTH) + 1);
-    } else if (r < 60) {
-        nextType   = LANE_ROAD;
-        blockWidth = Config::MIN_ROAD_WIDTH + rand() % ((Config::MAX_ROAD_WIDTH - Config::MIN_ROAD_WIDTH) + 1);
-    } else if (r < 80) {
-        nextType   = LANE_RIVER;
-        blockWidth = Config::MIN_RIVER_WIDTH + rand() % ((Config::MAX_RIVER_WIDTH - Config::MIN_RIVER_WIDTH) + 1);
-    } else {
-        nextType   = LANE_RAIL;
-        blockWidth = Config::MIN_RAIL_WIDTH + rand() % ((Config::MAX_RAIL_WIDTH - Config::MIN_RAIL_WIDTH) + 1);
-    }
+    if      (r < 30) { nextType = LANE_GRASS; blockWidth = Config::MIN_GRASS_WIDTH + rand() % ((Config::MAX_GRASS_WIDTH - Config::MIN_GRASS_WIDTH) + 1); }
+    else if (r < 60) { nextType = LANE_ROAD;  blockWidth = Config::MIN_ROAD_WIDTH  + rand() % ((Config::MAX_ROAD_WIDTH  - Config::MIN_ROAD_WIDTH)  + 1); }
+    else if (r < 80) { nextType = LANE_RIVER; blockWidth = Config::MIN_RIVER_WIDTH + rand() % ((Config::MAX_RIVER_WIDTH - Config::MIN_RIVER_WIDTH) + 1); }
+    else             { nextType = LANE_RAIL;  blockWidth = Config::MIN_RAIL_WIDTH  + rand() % ((Config::MAX_RAIL_WIDTH  - Config::MIN_RAIL_WIDTH)  + 1); }
 
     for (int i = 0; i < blockWidth; i++) {
-        // smooth path movement
-        int shift = rand() % 3 - 1; // -1, 0, +1
+        int shift = rand() % 3 - 1;
         safePathColumn += shift;
-
-        // clamp so it doesn’t go out of bounds
         if (safePathColumn < -5) safePathColumn = -5;
-        if (safePathColumn > 5)  safePathColumn = 5;
+        if (safePathColumn >  5) safePathColumn =  5;
 
         LaneType actualType = nextType;
         if (nextType == LANE_RIVER) {
-            // Check if the immediately preceding lane was a lilypad lane
             bool prevIsLilypad = (!lanes.empty() && lanes.back().getType() == LANE_LILYPAD);
-            
-            // If it wasn't, we have a 40% chance to make this river lane a lilypad lane
-            if (!prevIsLilypad && (rand() % 100 < 40)) {
+            if (!prevIsLilypad && (rand() % 100 < 40))
                 actualType = LANE_LILYPAD;
-            }
         }
 
         lanes.push_back(Lane(currentGenerationZ, actualType, safePathColumn));
@@ -118,11 +104,9 @@ void Game::updateCameraAndFailState(float deltaTime) {
     smoothedCameraTarget.y = glm::mix(smoothedCameraTarget.y, playerBasePos.y, lerpFactorXY);
     smoothedCameraTarget.z = glm::mix(smoothedCameraTarget.z, cameraTrackZ,    lerpFactorZ);
 
-    // Pass tflex item gap 6he smoothed target to the actual camera matrix calculations
     camera.update(deltaTime, windowWidth, windowHeight, smoothedCameraTarget);
 
     if (player.getPosition().z > cameraTrackZ + Config::CAMERA_BACKWARD_DEATH_DISTANCE) {
-        // Trigger squish animation before switching to game-over state
         if (!player.getIsDead()) {
             player.setDead(true);
             deathPosition = player.getPosition();
@@ -133,25 +117,22 @@ void Game::updateCameraAndFailState(float deltaTime) {
 }
 
 void Game::maintainInfiniteLanes() {
-    glm::vec3 playerPos      = player.getPosition();
-    float forwardReferenceZ  = std::min(playerPos.z, cameraTrackZ);
+    glm::vec3 playerPos     = player.getPosition();
+    float forwardReferenceZ = std::min(playerPos.z, cameraTrackZ);
 
-    while (currentGenerationZ > forwardReferenceZ - Config::LANE_GENERATION_BUFFER_AHEAD) {
+    while (currentGenerationZ > forwardReferenceZ - Config::LANE_GENERATION_BUFFER_AHEAD)
         generateLaneBlock();
-    }
 
     float pruneBehindZ = playerPos.z + Config::LANE_CLEANUP_BUFFER_BEHIND;
     int removeCount = 0;
     while (removeCount < (int)lanes.size() &&
-           lanes[removeCount].getZPosition() > pruneBehindZ) {
+           lanes[removeCount].getZPosition() > pruneBehindZ)
         removeCount++;
-    }
     if (removeCount > 0)
         lanes.erase(lanes.begin(), lanes.begin() + removeCount);
 }
 
 void Game::update(float deltaTime) {
-    // Always update lanes (cars/logs animate regardless of game state)
     for (auto& lane : lanes) lane.update(deltaTime);
 
     if (state == GAME_STATE_START_SCREEN) {
@@ -161,15 +142,10 @@ void Game::update(float deltaTime) {
     }
 
     if (state == GAME_STATE_GAME_OVER) {
-        // ── Must update player so water-death particles animate ──────────────
         player.update(deltaTime);
-
         camera.setTargetRadius(UIConfig::DEAD_ZOOM_RADIUS);
         camera.setLerpSpeed(UIConfig::DEAD_ZOOM_SPEED);
 
-        // For water death the chicken may be off-screen (scrolled away before
-        // death was triggered).  Use the stored deathPosition so the camera
-        // snaps back to where the splash actually happened.
         glm::vec3 trackPos  = hasWaterDeath ? deathPosition : player.getPosition();
         float     snapSpeed = hasWaterDeath ? 0.14f : 0.05f;
 
@@ -179,7 +155,6 @@ void Game::update(float deltaTime) {
         return;
     }
 
-    // --- NORMAL PLAYING STATE ---
     player.update(deltaTime);
     checkCollisions(deltaTime);
 
@@ -194,8 +169,8 @@ void Game::checkCollisions(float deltaTime) {
     glm::vec3 playerPos  = player.getPosition();
     glm::vec3 playerSize = player.getSize();
 
-    bool  onLog      = false;
-    bool onLilypad  = false;
+    bool  onLog     = false;
+    bool  onLilypad = false;
     Lane* currentLane = nullptr;
 
     for (auto& lane : lanes) {
@@ -205,6 +180,41 @@ void Game::checkCollisions(float deltaTime) {
         }
     }
     if (!currentLane) return;
+
+    // ── Train cross-lane kill check ──────────────────────────────────────────
+    // Trains are wide enough to reach adjacent lanes. We scan ALL rail lanes
+    // within 2 cells of the player in Z. We use getBasePosition() (not the
+    // animated Y position) so a jump doesn't let the player clip through.
+    // The Z hitbox is deliberately expanded beyond HITBOX_PADDING so any
+    // part of the train visual that overlaps the player causes death.
+    for (auto& lane : lanes) {
+        if (lane.getType() != LANE_RAIL) continue;
+        if (std::abs(lane.getZPosition() - playerPos.z) > Config::CELL_SIZE * 2.0f) continue;
+
+        for (auto& obs : lane.getObstacles()) {
+            if (obs.getType() != OBSTACLE_TRAIN || !obs.getIsActive()) continue;
+
+            glm::vec3 trainPos  = obs.getPosition();
+            glm::vec3 trainSize = obs.getSize();
+
+            // X check: standard AABB (train is 15 units wide)
+            bool hitX = fabs(player.getBasePosition().x - trainPos.x)
+                        < (player.getSize().x + trainSize.x) * 0.5f * Config::HITBOX_PADDING;
+
+            // Z check: expand to full cell size — if the train lane is within
+            // one cell of the player's lane, it counts as a hit
+            bool hitZ = fabs(playerPos.z - trainPos.z)
+                        < (Config::CELL_SIZE * 0.9f);
+
+            if (hitX && hitZ) {
+                player.setDead(true);
+                deathPosition = playerPos;
+                hasWaterDeath = false;
+                state         = GAME_STATE_GAME_OVER;
+                return;
+            }
+        }
+    }
 
     for (auto& obs : currentLane->getObstacles()) {
         if (!obs.getIsActive()) continue;
@@ -222,7 +232,6 @@ void Game::checkCollisions(float deltaTime) {
 
         if (isColliding) {
             if (obs.getType() == OBSTACLE_CAR || obs.getType() == OBSTACLE_TRAIN) {
-                // Squish death
                 player.setDead(true);
                 deathPosition = playerPos;
                 hasWaterDeath = false;
@@ -239,35 +248,28 @@ void Game::checkCollisions(float deltaTime) {
             }
         }
     }
-     // ===== COIN COLLISION =====
-for (auto& coin : currentLane->coins) {
 
-    if (coin.collected) continue;
-
-    glm::vec3 coinPos = coin.getPosition();
-    float coinSize = coin.getSize();
-
-    if (fabs(playerPos.x - coinPos.x) < playerSize.x &&
-        fabs(playerPos.z - coinPos.z) < playerSize.z) {
-
-        coin.collected = true;
-
-        coinScore += 10;
+    // ── Coin collision ───────────────────────────────────────────────────────
+    for (auto& coin : currentLane->coins) {
+        if (coin.collected) continue;
+        glm::vec3 coinPos  = coin.getPosition();
+        float     coinSize = coin.getSize();
+        if (fabs(playerPos.x - coinPos.x) < playerSize.x &&
+            fabs(playerPos.z - coinPos.z) < playerSize.z) {
+            coin.collected = true;
+            coinScore += 10;
+        }
     }
-}
- // ===== 🌳🪨 DECORATION COLLISION
 
     // ── Water death ──────────────────────────────────────────────────────────
-    // The water surface top is at yPos + scale.y/2
-    // = -CELL_SIZE*0.2 + CELL_SIZE*0.1 = -CELL_SIZE*0.1
-    if ((currentLane->getType() == LANE_RIVER || currentLane->getType() == LANE_LILYPAD) && !player.getIsJumping() && !onLog && !onLilypad) {
+    if ((currentLane->getType() == LANE_RIVER || currentLane->getType() == LANE_LILYPAD)
+        && !player.getIsJumping() && !onLog && !onLilypad) {
         const float waterSurface = -Config::CELL_SIZE * 0.1f;
         player.triggerWaterDeath(waterSurface);
-        deathPosition = playerPos;   // lock camera here BEFORE auto-scroll moves it
+        deathPosition = playerPos;
         hasWaterDeath = true;
         state         = GAME_STATE_GAME_OVER;
     }
-
 }
 
 void Game::render() {
@@ -276,7 +278,6 @@ void Game::render() {
 
     for (auto& lane : lanes) lane.render(renderer);
 
-    // Egg (start screen) or chicken (all other states)
     if (state == GAME_STATE_START_SCREEN) {
         glm::vec3 pos = player.getPosition();
         float wobble  = (eggClicks > 0) ?
@@ -302,7 +303,6 @@ void Game::onKeyPress(unsigned char key) {
     if (state != GAME_STATE_PLAYING) return;
 
     float dx = 0.0f, dz = 0.0f;
-
     if (key == 'w' || key == 'W') dz = -1.0f;
     if (key == 's' || key == 'S') dz =  1.0f;
     if (key == 'a' || key == 'A') dx = -1.0f;
@@ -314,15 +314,10 @@ void Game::onKeyPress(unsigned char key) {
         return;
     }
 
-    // ===== PREDICT NEXT POSITION =====
     glm::vec3 currentPos = player.getPosition();
     glm::vec3 nextPos = currentPos + glm::vec3(
-        dx * Config::CELL_SIZE,
-        0.0f,
-        dz * Config::CELL_SIZE
-    );
+        dx * Config::CELL_SIZE, 0.0f, dz * Config::CELL_SIZE);
 
-    // ===== FIND TARGET LANE =====
     Lane* targetLane = nullptr;
     for (auto& lane : lanes) {
         if (std::abs(lane.getZPosition() - nextPos.z) < Config::CELL_SIZE / 2.0f) {
@@ -333,16 +328,26 @@ void Game::onKeyPress(unsigned char key) {
 
     bool blocked = false;
 
-    // ===== CHECK TREE/ROCK COLLISION =====
+    // ── Grass: trees and rocks ───────────────────────────────────────────────
     if (targetLane && targetLane->getType() == LANE_GRASS) {
-
         for (auto& d : targetLane->decorations) {
+            float sz = (d.type == 0) ? 0.6f : 0.5f;
+            if (fabs(nextPos.x - d.position.x) < sz &&
+                fabs(nextPos.z - d.position.z) < sz) {
+                blocked = true;
+                break;
+            }
+        }
+    }
 
-            float size = (d.type == 0) ? 0.6f : 0.5f;
-
-            if (fabs(nextPos.x - d.position.x) < size &&
-                fabs(nextPos.z - d.position.z) < size) {
-
+    // ── Rail: signal posts are solid obstacles ───────────────────────────────
+    // Player movement snaps to integer lane Z positions, so nextPos.z == lane
+    // zPosition exactly.  Posts are offset in Z for visuals only — block on
+    // X alone with a generous radius so it always fires.
+    if (!blocked && targetLane && targetLane->getType() == LANE_RAIL) {
+        constexpr float POST_BLOCK_X = 0.45f;
+        for (const auto& sp : targetLane->signalPosts) {
+            if (fabs(nextPos.x - sp.position.x) < POST_BLOCK_X) {
                 blocked = true;
                 break;
             }
@@ -353,7 +358,6 @@ void Game::onKeyPress(unsigned char key) {
         player.move(dx, dz);
     }
 
-    // camera controls
     if (key == 'v' || key == 'V') camera.cyclePreset();
     if (key == 'c' || key == 'C') camera.toggleLock();
 }
@@ -381,7 +385,6 @@ void Game::renderUIOverlay() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // --- Score ---
     if (state == GAME_STATE_PLAYING || state == GAME_STATE_GAME_OVER) {
         glColor3f(1.0f, 1.0f, 1.0f);
         std::stringstream ss;
@@ -391,7 +394,6 @@ void Game::renderUIOverlay() {
         for (char c : scoreStr) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
     }
 
-    // --- State-specific UI ---
     if (state == GAME_STATE_START_SCREEN) {
         glColor3f(1.0f, 1.0f, 1.0f);
         std::string msg = "Click the Egg to Hatch!";
@@ -403,7 +405,6 @@ void Game::renderUIOverlay() {
         float cx   = windowWidth  / 2.0f;
         float cy   = 80.0f;
 
-        // Orange button
         glColor3f(1.0f, 0.6f, 0.4f);
         glBegin(GL_QUADS);
             glVertex2f(cx - boxW/2, cy - boxH/2);
@@ -412,7 +413,6 @@ void Game::renderUIOverlay() {
             glVertex2f(cx - boxW/2, cy + boxH/2);
         glEnd();
 
-        // Teal outline
         glLineWidth(4.0f);
         glColor3f(0.1f, 0.4f, 0.5f);
         glBegin(GL_LINE_LOOP);
@@ -423,7 +423,6 @@ void Game::renderUIOverlay() {
         glEnd();
         glLineWidth(1.0f);
 
-        // Play triangle
         glColor3f(1.0f, 1.0f, 1.0f);
         glBegin(GL_TRIANGLES);
             glVertex2f(cx - 15, cy - 20);
@@ -456,8 +455,7 @@ void Game::onMouseClick(int button, int clickState, int x, int y) {
         float cy   = 80.0f;
 
         if (x > cx - boxW/2 && x < cx + boxW/2 &&
-            invertedY > cy - boxH/2 && invertedY < cy + boxH/2) {
+            invertedY > cy - boxH/2 && invertedY < cy + boxH/2)
             resetGame();
-        }
     }
 }

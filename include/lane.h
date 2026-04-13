@@ -23,7 +23,10 @@ public:
     };
 
     std::vector<Decoration> decorations;
-
+    struct SignalPost {
+        glm::vec3 position;   // world-space centre (base of pole)
+    };
+    std::vector<SignalPost> signalPosts; 
     int safePathColumn; // 🔥 NEW
 
 public:
