@@ -88,7 +88,6 @@ void Game::generateLaneBlock() {
         if (safePathColumn < -5) safePathColumn = -5;
         if (safePathColumn > 5)  safePathColumn = 5;
 
-        // 🔥 NEW: Enforce Max 1 Lilypad rule
         LaneType actualType = nextType;
         if (nextType == LANE_RIVER) {
             // Check if the immediately preceding lane was a lilypad lane
