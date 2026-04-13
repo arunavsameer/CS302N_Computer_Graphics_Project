@@ -30,6 +30,8 @@ public:
     //lilypad drawing
     void drawLilypad(glm::vec3 position, glm::vec3 size, glm::vec3 centerColor, glm::vec3 edgeColor);
 
+    void drawEgg(int clicks);
+
 private:
     std::map<std::string, unsigned int> textures;
     Shader* mainShader;

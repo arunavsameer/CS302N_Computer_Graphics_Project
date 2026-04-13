@@ -1,6 +1,7 @@
 #include "../include/lane.h"
 #include <cstdlib>
 #include <cmath>
+// #include <iostream>
 
 static bool isFarEnough(const std::vector<Lane::Decoration>& decs, float x) {
     for (const auto& d : decs) {
@@ -193,7 +194,7 @@ void Lane::render(Renderer& renderer) {
     }
     else if (type == LANE_ROAD) texName = "road";
     else if (type == LANE_RAIL) texName = "rail";
-    else if (type == LANE_RIVER) texName = "river";
+    // else if (type == LANE_RIVER) texName = "river";
     else texName = "grass";
 
     float yPos = (type == LANE_RIVER) ? -Config::CELL_SIZE * 0.2f : 0.0f;

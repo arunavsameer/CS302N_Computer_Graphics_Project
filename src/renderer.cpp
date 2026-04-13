@@ -40,6 +40,8 @@ void Renderer::initialize() {
     std::string riverTex = std::string(ASSET_DIR) + "textures/river.png";
     std::string trainTex = std::string(ASSET_DIR) + "textures/train.png";
     std::string logTex = std::string(ASSET_DIR) + "textures/log.png";
+    // std::string roadNearTex = std::string(ASSET_DIR) + "textures/road_near.png";
+    // std::string roadFarTex = std::string(ASSET_DIR) + "textures/road_far.png";
 
     loadTexture(grassTex.c_str(), "grass");
     loadTexture(grass2Tex.c_str(), "grass2");
@@ -50,6 +52,8 @@ void Renderer::initialize() {
     loadTexture(riverTex.c_str(), "river");
     loadTexture(trainTex.c_str(), "train");
     loadTexture(logTex.c_str(), "log");
+    // loadTexture(roadNearTex.c_str(), "road_near");
+    // loadTexture(roadFarTex.c_str(), "road_far");
 
     glClearColor(0.29f, 0.59f, 0.86f, 1.0f);
 }
@@ -327,6 +331,63 @@ void Renderer::drawLilypad(glm::vec3 position, glm::vec3 size, glm::vec3 centerC
             }
 
             drawCube(cellPos, voxelScale, color);
+        }
+    }
+}
+
+void Renderer::drawEgg(int clicks) {
+    float vSize = 0.15f; // Size of each voxel block
+    glm::vec3 shellColor(0.98f, 0.98f, 0.98f); // Clean white shell
+
+    // Loop through a 3D grid to build the voxel shape
+    for (int y = 0; y < 7; y++) {
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                
+                bool isVoxel = false;
+                
+                // --- Shape the Egg ---
+                if (y == 0 && abs(x) <= 1 && abs(z) <= 1) isVoxel = true; // 3x3 base
+                if ((y >= 1 && y <= 3) && (abs(x) + abs(z) <= 3) && (abs(x) <= 2 && abs(z) <= 2)) isVoxel = true; // 5x5 rounded middle
+                if (y == 4 && abs(x) <= 1 && abs(z) <= 1) isVoxel = true; // 3x3 upper
+                if (y == 5 && (abs(x) + abs(z) <= 1)) isVoxel = true; // Plus shape near top
+                if (y == 6 && x == 0 && z == 0) isVoxel = true; // 1x1 Tip
+                
+                if (!isVoxel) continue;
+
+                // --- Cracking Logic ---
+                bool isCrack = false;
+                
+                // Click 1: First jagged crack appears
+                if (clicks >= 1) {
+                    if (y == 3 && x == 2 && z == 0) isCrack = true;
+                    if (y == 2 && x == 2 && z == 1) isCrack = true;
+                    if (y == 4 && x == 1 && z == 1) isCrack = true;
+                }
+                
+                // Click 2: A second crack forms on the other side
+                if (clicks >= 2) {
+                    if (y == 2 && x == -2 && z == 0) isCrack = true;
+                    if (y == 3 && x == -1 && z == -1) isCrack = true;
+                    if (y == 1 && x == -1 && z == -2) isCrack = true;
+                }
+
+                // Calculate where to draw this specific voxel
+                glm::vec3 pos(x * vSize, (y * vSize), z * vSize);
+                
+                if (isCrack) {
+                    // Draw the crack (a dark, slightly recessed block to look like the hollow inside/yolk)
+                    drawCube(pos, glm::vec3(vSize * 0.8f), glm::vec3(0.15f, 0.1f, 0.05f));
+                } else {
+                    // Fake shadow: Darken the blocks slightly near the bottom so the egg has depth
+                    // even without OpenGL lighting enabled.
+                    float depthTint = 1.0f - (y * 0.04f); 
+                    
+                    // We scale the cube to 0.93f of its size. This leaves a tiny gap between 
+                    // the blocks, creating that distinct, chunky "Voxel" outline look!
+                    drawCube(pos, glm::vec3(vSize * 0.93f), shellColor * depthTint);
+                }
+            }
         }
     }
 }

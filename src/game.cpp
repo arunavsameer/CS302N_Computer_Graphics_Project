@@ -99,6 +99,12 @@ void Game::generateLaneBlock() {
             }
         }
 
+        // if(actualType == LANE_ROAD){
+        //     Lane temp = Lane(currentGenerationZ, actualType, safePathColumn);
+        //     temp.blockWidth = blockWidth;
+        //     temp.lane_idx = i;
+        //     lanes.push_back(temp);
+        // }
         lanes.push_back(Lane(currentGenerationZ, actualType, safePathColumn));
         currentGenerationZ -= Config::CELL_SIZE;
     }
@@ -274,7 +280,9 @@ void Game::render() {
     renderer.prepareFrame();
     camera.apply();
 
-    for (auto& lane : lanes) lane.render(renderer);
+    for (auto& lane : lanes){
+        lane.render(renderer);
+    }
 
     // Egg (start screen) or chicken (all other states)
     if (state == GAME_STATE_START_SCREEN) {
