@@ -20,7 +20,8 @@ Game::Game(int width, int height)
       state(GAME_STATE_START_SCREEN),
       currentGenerationZ(5.0f * Config::CELL_SIZE),
       cameraTrackZ(0.0f), score(0), startZ(0.0f), coinScore(0),
-      deathPosition(0.0f), hasWaterDeath(false)
+      deathPosition(0.0f), hasWaterDeath(false), 
+      lastClickTime(0)
 {
     srand(static_cast<unsigned>(time(nullptr)));
 }
@@ -149,8 +150,14 @@ void Game::update(float deltaTime) {
 
     if (state == GAME_STATE_GAME_OVER) {
         player.update(deltaTime);
+<<<<<<< Updated upstream
         camera.setTargetRadius(UIConfig::DEAD_ZOOM_RADIUS);
         camera.setLerpSpeed(UIConfig::DEAD_ZOOM_SPEED);
+=======
+
+        camera.setTargetRadius(Config::DEAD_ZOOM_RADIUS);
+        camera.setLerpSpeed(Config::DEAD_ZOOM_SPEED);
+>>>>>>> Stashed changes
 
         glm::vec3 trackPos  = hasWaterDeath ? deathPosition : player.getPosition();
         float     snapSpeed = hasWaterDeath ? 0.14f : 0.05f;
@@ -288,19 +295,54 @@ void Game::render() {
 
     if (state == GAME_STATE_START_SCREEN) {
         glm::vec3 pos = player.getPosition();
-        float wobble  = (eggClicks > 0) ?
-            std::sin(glutGet(GLUT_ELAPSED_TIME) * 0.01f) * 0.1f * eggClicks : 0.0f;
-        float scale   = 0.6f + eggClicks * 0.1f;
+        
+        int currentTime = glutGet(GLUT_ELAPSED_TIME);
+        float timeSinceClick = (currentTime - lastClickTime) / 1000.0f;
+        
+        float wobble = 0.0f;
+        if (eggClicks > 0 && timeSinceClick < 0.25f) {
+            wobble = std::sin(timeSinceClick * 50.0f) * 0.3f;
+            wobble *= (1.0f - (timeSinceClick / 0.25f)); 
+        }
 
         glPushMatrix();
-        glTranslatef(pos.x, pos.y, pos.z);
-        glRotatef(wobble * 50.0f, 0, 0, 1);
-        renderer.drawCube(glm::vec3(0, 0.4f, 0),
-                          glm::vec3(scale, scale * 1.2f, scale),
-                          glm::vec3(1.0f, 0.95f, 0.9f));
+        glTranslatef(pos.x, pos.y + 0.6f, pos.z); 
+        glRotatef(wobble * 45.0f, 0, 0, 1);
+        glScalef(0.5f, 0.5f, 0.5f); 
+        
+        renderer.drawEgg(eggClicks);
+        
         glPopMatrix();
     } else {
-        player.render(renderer);
+        // --- CHICKEN SPAWN ANIMATION ---
+        int currentTime = glutGet(GLUT_ELAPSED_TIME);
+        float timeSinceStart = (currentTime - lastClickTime) / 1000.0f;
+        float spawnDuration = 0.4f; // 400ms spawn animation
+        
+        // Only play the animation if we just started playing
+        if (state == GAME_STATE_PLAYING && timeSinceStart < spawnDuration) {
+            float t = timeSinceStart / spawnDuration; // goes from 0.0 to 1.0
+            
+            // "OutBack" easing equation for a nice bouncy pop
+            float t1 = t - 1.0f;
+            float scale = (t1 * t1 * (2.5f * t1 + 1.5f) + 1.0f);
+            if (scale < 0.0f) scale = 0.0f; // Prevent negative scale on first frame
+
+            glm::vec3 pos = player.getPosition();
+            
+            glPushMatrix();
+            // Matrix trick: Move to player, scale, move back. 
+            // This forces the player.render() translation to scale from its center!
+            glTranslatef(pos.x, pos.y, pos.z);
+            glScalef(scale, scale, scale);
+            glTranslatef(-pos.x, -pos.y, -pos.z);
+            
+            player.render(renderer);
+            
+            glPopMatrix();
+        } else {
+            player.render(renderer);
+        }
     }
 
     camera.renderOverlay(windowWidth, windowHeight);
@@ -451,7 +493,8 @@ void Game::onMouseClick(int button, int clickState, int x, int y) {
 
     if (state == GAME_STATE_START_SCREEN) {
         eggClicks++;
-        if (eggClicks >= UIConfig::MAX_EGG_CLICKS) {
+        lastClickTime = glutGet(GLUT_ELAPSED_TIME);
+        if (eggClicks >= Config::MAX_EGG_CLICKS) {
             state = GAME_STATE_PLAYING;
             player.move(0.0f, 0.0f);
         }

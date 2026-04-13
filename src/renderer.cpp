@@ -1,5 +1,6 @@
 #include "../include/renderer.h"
 #include "../include/stb_image.h"
+#include "../include/types.h"
 #include <GL/glew.h>
 #ifdef __APPLE__
     #include <GLUT/glut.h>
@@ -336,8 +337,10 @@ void Renderer::drawLilypad(glm::vec3 position, glm::vec3 size, glm::vec3 centerC
 }
 
 void Renderer::drawEgg(int clicks) {
-    float vSize = 0.15f; // Size of each voxel block
-    glm::vec3 shellColor(0.98f, 0.98f, 0.98f); // Clean white shell
+    float vSize = Config::EGG_SIZE;
+    
+    // Changed to a constant, warm brown egg color
+    glm::vec3 shellColor(0.89f, 0.62f, 0.45f); 
 
     // Loop through a 3D grid to build the voxel shape
     for (int y = 0; y < 7; y++) {
@@ -368,24 +371,20 @@ void Renderer::drawEgg(int clicks) {
                 // Click 2: A second crack forms on the other side
                 if (clicks >= 2) {
                     if (y == 2 && x == -2 && z == 0) isCrack = true;
-                    if (y == 3 && x == -1 && z == -1) isCrack = true;
-                    if (y == 1 && x == -1 && z == -2) isCrack = true;
+                    if (y == 3 && x == -1 && z == 1) isCrack = true;
+                    if (y == 1 && x == -1 && z == 2) isCrack = true;
                 }
 
                 // Calculate where to draw this specific voxel
                 glm::vec3 pos(x * vSize, (y * vSize), z * vSize);
                 
                 if (isCrack) {
-                    // Draw the crack (a dark, slightly recessed block to look like the hollow inside/yolk)
+                    // Draw the crack (a dark, slightly recessed block)
                     drawCube(pos, glm::vec3(vSize * 0.8f), glm::vec3(0.15f, 0.1f, 0.05f));
                 } else {
-                    // Fake shadow: Darken the blocks slightly near the bottom so the egg has depth
-                    // even without OpenGL lighting enabled.
-                    float depthTint = 1.0f - (y * 0.04f); 
-                    
-                    // We scale the cube to 0.93f of its size. This leaves a tiny gap between 
-                    // the blocks, creating that distinct, chunky "Voxel" outline look!
-                    drawCube(pos, glm::vec3(vSize * 0.93f), shellColor * depthTint);
+                    // Draw the pure, unshadowed brown shell block.
+                    // Still scaled to 0.93f to maintain the distinct voxel outlines.
+                    drawCube(pos, glm::vec3(vSize * 0.93f), shellColor);
                 }
             }
         }

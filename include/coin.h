@@ -15,7 +15,7 @@ public:
     bool collected;
 
 private:
-    glm::vec3 position;   // 🔥 THIS WAS MISSING
+    glm::vec3 position;
 };
 
 #endif

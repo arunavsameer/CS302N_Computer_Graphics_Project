@@ -6,11 +6,6 @@ enum GameState { GAME_STATE_START_SCREEN, GAME_STATE_PLAYING, GAME_STATE_GAME_OV
 enum LaneType  { LANE_GRASS, LANE_ROAD, LANE_RAIL, LANE_RIVER, LANE_LILYPAD }; // Added LILYPAD
 enum ObstacleType { OBSTACLE_CAR, OBSTACLE_TRAIN, OBSTACLE_LOG, OBSTACLE_LILYPAD }; // Added LILYPAD
 
-struct UIConfig {
-    static constexpr int   MAX_EGG_CLICKS   = 3;
-    static constexpr float DEAD_ZOOM_RADIUS = 4.0f;
-    static constexpr float DEAD_ZOOM_SPEED  = 3.0f;
-};
 enum VehicleVariant { VEHICLE_SMALL_CAR, VEHICLE_BIG_CAR, VEHICLE_TRUCK };
 
 // =============================================================
@@ -66,6 +61,12 @@ namespace Config {
     constexpr float LILYPAD_Y       = -0.05f; // Resting Y above water
     constexpr float LILYPAD_GAP_MIN = 1.2f;   // Minimum space between lilypads
     constexpr float LILYPAD_GAP_MAX = 50.0f;   // Maximum space between lilypads
+
+
+    constexpr float EGG_SIZE = 0.35f;
+    constexpr int   MAX_EGG_CLICKS   = 3;
+    constexpr float DEAD_ZOOM_RADIUS = 4.0f;
+    constexpr float DEAD_ZOOM_SPEED  = 3.0f;
 }
 
 #endif
