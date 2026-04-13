@@ -150,14 +150,9 @@ void Game::update(float deltaTime) {
 
     if (state == GAME_STATE_GAME_OVER) {
         player.update(deltaTime);
-<<<<<<< Updated upstream
-        camera.setTargetRadius(UIConfig::DEAD_ZOOM_RADIUS);
-        camera.setLerpSpeed(UIConfig::DEAD_ZOOM_SPEED);
-=======
 
         camera.setTargetRadius(Config::DEAD_ZOOM_RADIUS);
         camera.setLerpSpeed(Config::DEAD_ZOOM_SPEED);
->>>>>>> Stashed changes
 
         glm::vec3 trackPos  = hasWaterDeath ? deathPosition : player.getPosition();
         float     snapSpeed = hasWaterDeath ? 0.14f : 0.05f;
