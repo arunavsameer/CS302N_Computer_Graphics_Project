@@ -8,6 +8,7 @@
 │       ├── chicken.png
 │       ├── grass2.png
 │       ├── grass.png
+│       ├── lily.png
 │       ├── log.png
 │       ├── rail.png
 │       ├── river.png
@@ -147,4 +148,4 @@
 │   └── stb_implement.cpp
 └── tree.txt
 
-33 directories, 115 files
+33 directories, 116 files

@@ -32,6 +32,7 @@ private:
     void maintainInfiniteLanes();
     glm::vec3 smoothedCameraTarget;
     int eggClicks = 0;
+    int lastClickTime = 0;
     void resetGame();
     void renderUIOverlay();
 

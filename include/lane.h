@@ -28,10 +28,11 @@ public:
     };
     std::vector<SignalPost> signalPosts; 
     int safePathColumn; // 🔥 NEW
+    // int blockWidth;
+    // int lane_idx;
 
 public:
     Lane(float z, LaneType t, int safePath); // 🔥 UPDATED
-
     void update(float deltaTime);
     void render(Renderer& renderer);
 

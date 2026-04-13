@@ -1,11 +1,15 @@
 #include "../include/lane.h"
 #include <cstdlib>
 #include <cmath>
+<<<<<<< HEAD
 #ifdef __APPLE__
     #include <GLUT/glut.h>
 #else
     #include <GL/glut.h>
 #endif
+=======
+// #include <iostream>
+>>>>>>> 25e359c1308fb6bfe14030818e084746de8e1e5f
 
 static bool isFarEnough(const std::vector<Lane::Decoration>& decs, float x) {
     for (const auto& d : decs) {
