@@ -210,10 +210,14 @@ void Chicken::render(Renderer& renderer) {
 
     float s = Config::CELL_SIZE * 0.8f;
 
-    if (isDead) {   // DEATH_SQUISH
+    if (isDead&&deathType != DEATH_WATER) {   // DEATH_SQUISH
         glTranslatef(0.0f, -0.05f * s, 0.0f);
         glScalef(1.2f, 0.15f, 1.2f);
-    } else {
+    }
+    else if(isDead&&deathType == DEATH_WATER){
+       glScalef(0, 0, 0);
+    }
+    else {
         glScalef(s, s, s);
     }
 
