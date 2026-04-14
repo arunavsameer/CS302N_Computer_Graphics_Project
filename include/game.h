@@ -23,15 +23,25 @@ private:
     int coinScore = 0;
 
     // ── Death tracking ───────────────────────────────────────────────────────
-    glm::vec3 deathPosition;   // world-space position where the player died
-    bool      hasWaterDeath;   // true → camera should zoom to deathPosition
+    glm::vec3 deathPosition;
+    bool      hasWaterDeath;
+
+    // ── Fast-stream death flag ────────────────────────────────────────────────
+    // Set true when the chicken is swept off the screen by a fast-stream log.
+    // The camera will zoom to deathPosition (same as water death).
+    bool      hasStreamDeath;
 
     void generateLaneBlock();
     void checkCollisions(float deltaTime);
     void updateCameraAndFailState(float deltaTime);
     void maintainInfiniteLanes();
+
+    // Renders the mountain walls, waterfalls, foam, and back wall
+    // based on the currently loaded lanes and the player's position.
+    void renderWorldBoundaries();
+
     glm::vec3 smoothedCameraTarget;
-    int eggClicks = 0;
+    int eggClicks    = 0;
     int lastClickTime = 0;
     void resetGame();
     void renderUIOverlay();
