@@ -163,7 +163,12 @@ void Obstacle::render(Renderer& renderer) {
         renderer.drawCube(loco+glm::vec3(dir*1.4f, 0.90f,0),   {0.42f,0.10f,0.42f}, stackCol);
         renderer.drawCube(loco+glm::vec3(dir*1.4f, 1.05f,0),   {0.34f,0.22f,0.34f}, steamCol);
         renderer.drawCube(loco+glm::vec3(dir*1.55f,1.22f,0),   {0.22f,0.16f,0.22f}, steamCol);
-        renderer.drawCube(loco+glm::vec3(dir*2.15f,0.14f,0),   {0.24f,0.22f,0.22f}, headlamp);
+        // ── Two emissive headlamp lenses (replaces the old single headlamp) ──
+        renderer.drawCubeEmissive(loco+glm::vec3(dir*2.15f, 0.14f,  0.18f), {0.18f,0.18f,0.14f}, headlamp);
+        renderer.drawCubeEmissive(loco+glm::vec3(dir*2.15f, 0.14f, -0.18f), {0.18f,0.18f,0.14f}, headlamp);
+        if (renderer.isNightMode())
+            renderer.drawHeadlightBeam(loco + glm::vec3(dir*2.15f, 0.14f, 0.0f),
+                                       dir, 1.40f, 0.55f, 8.0f);
         renderer.drawCube(loco+glm::vec3(-dir*0.30f,0.50f, 0.38f), {1.20f,0.28f,0.08f}, darkWin);
         renderer.drawCube(loco+glm::vec3(-dir*0.30f,0.50f,-0.38f), {1.20f,0.28f,0.08f}, darkWin);
         renderer.drawCube(loco+glm::vec3(dir*2.0f,  0.48f,0),      {0.08f,0.24f,0.60f}, darkWin);
@@ -213,6 +218,15 @@ void Obstacle::render(Renderer& renderer) {
         renderer.drawCube(pos+glm::vec3(0.12f*dir,0.42f,0),  {0.80f,0.24f,0.58f},roof);
         renderer.drawCube(pos+glm::vec3(0.34f*dir,0.48f,0),  {0.22f,0.16f,0.44f},win);
         drawWheels(renderer,pos,-0.48f,0.48f,0.34f,0.15f);
+        // ── Headlights ────────────────────────────────────────────────────
+        glm::vec3 hlCol(1.00f, 0.97f, 0.75f);
+        glm::vec3 hlSize(0.07f, 0.10f, 0.10f);
+        float frontX = 0.70f * dir;
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.18f,  0.24f), hlSize, hlCol);
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.18f, -0.24f), hlSize, hlCol);
+        if (renderer.isNightMode())
+            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.18f, 0.0f),
+                                       dir, 0.90f, 0.35f, 5.0f);
     }
     else if (vehicleVariant == VEHICLE_BIG_CAR) {
         glm::vec3 body(0.95f,0.38f,0.08f), roof(0.96f,0.96f,0.96f), win(0.08f,0.08f,0.08f);
@@ -221,6 +235,15 @@ void Obstacle::render(Renderer& renderer) {
         renderer.drawCube(pos+glm::vec3(0.68f*dir,0.50f,0),  {0.28f,0.20f,0.52f},win);
         renderer.drawCube(pos+glm::vec3(-0.60f*dir,0.50f,0), {0.24f,0.20f,0.52f},win);
         drawWheels(renderer,pos,-0.68f,0.68f,0.38f,0.17f);
+        // ── Headlights ────────────────────────────────────────────────────
+        glm::vec3 hlCol(1.00f, 0.97f, 0.75f);
+        glm::vec3 hlSize(0.07f, 0.12f, 0.12f);
+        float frontX = 0.95f * dir;
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.18f,  0.30f), hlSize, hlCol);
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.18f, -0.30f), hlSize, hlCol);
+        if (renderer.isNightMode())
+            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.18f, 0.0f),
+                                       dir, 1.10f, 0.40f, 5.5f);
     }
     else {  // TRUCK
         glm::vec3 trailer(0.88f,0.88f,0.92f), cab(0.18f,0.52f,0.92f), win(0.08f,0.08f,0.08f);
@@ -235,5 +258,14 @@ void Obstacle::render(Renderer& renderer) {
         renderer.drawCube(pos+glm::vec3(-0.20f*dir,-0.06f,-0.38f),{w,w,w},wc);
         renderer.drawCube(pos+glm::vec3(-0.90f*dir,-0.06f, 0.38f),{w,w,w},wc);
         renderer.drawCube(pos+glm::vec3(-0.90f*dir,-0.06f,-0.38f),{w,w,w},wc);
+        // ── Headlights (on cab front face) ────────────────────────────────
+        glm::vec3 hlCol(1.00f, 0.97f, 0.75f);
+        glm::vec3 hlSize(0.07f, 0.11f, 0.11f);
+        float frontX = 1.54f * dir;   // cab front: 1.10 + 0.44 half-width
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.28f,  0.26f), hlSize, hlCol);
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.28f, -0.26f), hlSize, hlCol);
+        if (renderer.isNightMode())
+            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.28f, 0.0f),
+                                       dir, 1.20f, 0.45f, 6.0f);
     }
 }

@@ -13,11 +13,26 @@ public:
     ~Renderer();
 
     void initialize();
-    void prepareFrame();
+    void prepareFrame();   // clears buffers; respects nightMode for sky colour
 
     void loadTexture(const char* path, const std::string& name);
 
     void drawCube(glm::vec3 position, glm::vec3 scale, glm::vec3 color);
+
+    // Like drawCube but bypasses the night-mode tint — use for emissive
+    // geometry such as headlights that should always appear at full brightness.
+    void drawCubeEmissive(glm::vec3 position, glm::vec3 scale, glm::vec3 color);
+
+    // Draws a semi-transparent light-cone fan in front of a headlight pair.
+    // origin   : midpoint between the two headlight lenses (world space)
+    // dirX     : +1 or -1 (vehicle travel direction along X)
+    // spreadZ  : half-width of the beam at its far end
+    // spreadY  : half-height of the beam at its far end
+    // length   : how far the cone reaches along X
+    // Only call when isNightMode() == true (it is a no-op otherwise but
+    // gating it avoids wasting draw calls during the day).
+    void drawHeadlightBeam(glm::vec3 origin, float dirX,
+                           float spreadZ, float spreadY, float length);
 
     void drawTexturedCube(glm::vec3 position, glm::vec3 scale,
                           const std::string& textureName, float rotationY = 0.0f);
@@ -35,28 +50,32 @@ public:
     void drawSignalPost(glm::vec3 base, bool lightRed, bool lightGreen);
 
     // ── World boundary / environment ─────────────────────────────────────────
-    // Draw one Z-slice of the left+right mountain walls.
-    // laneType tells us whether to cut a tunnel (ROAD/RAIL),
-    // render a waterfall gap (RIVER/LILYPAD), or solid rock (GRASS).
-    // logFlowDir: +1 = logs flow right (waterfall on left side),
-    //             -1 = logs flow left  (waterfall on right side),
-    //              0 = both sides (fallback / non-river lanes)
-    // isPortalFace: true  = draw the full decorative arch portal (once per lane entrance)
-    //               false = draw only rock + void interior (subsequent Z slices of
-    //                       the same multi-cell tunnel lane)
     void drawMountainSection(float z, LaneType laneType, float logFlowDir = 0.0f,
                              bool isPortalFace = true);
 
-    // Animated foam patch used at the river mouth where it meets the cliff.
-    // position = world-space centre of the foam slab.
     void drawFoam(glm::vec3 position, float width, float depth);
 
-    // Static back-wall mountain ridge drawn at the starting zone boundary.
     void drawBackWall();
+
+    // ── Night mode ───────────────────────────────────────────────────────────
+    // Toggle night mode on/off.  The renderer changes the sky clear-colour,
+    // passes u_nightMode to the shader, and darkens solid-colour drawCube calls.
+    void setNightMode(bool night);
+    bool isNightMode() const { return nightMode; }
 
 private:
     std::map<std::string, unsigned int> textures;
     Shader* mainShader;
+
+    bool nightMode;   // false = day (default), true = night
+
+    // Applies the shader and sets u_nightMode.  Call before any draw that
+    // uses mainShader so the uniform is always up-to-date.
+    void applyShader();
+
+    // Multiplies a colour by the night-mode ambient factor so solid cubes
+    // (drawCube) are also darkened consistently with textured geometry.
+    glm::vec3 applyNightTint(glm::vec3 color) const;
 
     // Shared height-noise helper used by mountain functions.
     static float heightNoise(float z, int col);

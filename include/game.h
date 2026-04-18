@@ -43,6 +43,7 @@ private:
     glm::vec3 smoothedCameraTarget;
     int eggClicks    = 0;
     int lastClickTime = 0;
+    bool nightMode   = false;   // toggled with N key
     void resetGame();
     void renderUIOverlay();
 

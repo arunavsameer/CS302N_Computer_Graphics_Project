@@ -18,11 +18,37 @@
 // ─────────────────────────────────────────────────────────────────────────────
 //  Construction / Destruction
 // ─────────────────────────────────────────────────────────────────────────────
-Renderer::Renderer() { mainShader = nullptr; }
+Renderer::Renderer() : mainShader(nullptr), nightMode(false) {}
 Renderer::~Renderer()
 {
     delete mainShader;
     mainShader = nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Night-mode helpers
+// ─────────────────────────────────────────────────────────────────────────────
+void Renderer::setNightMode(bool night)
+{
+    nightMode = night;
+}
+
+// Activate shader and push the u_nightMode uniform.
+// Call this instead of mainShader->use() in every draw that uses the shader.
+void Renderer::applyShader()
+{
+    if (!mainShader) return;
+    mainShader->use();
+    mainShader->setInt("texture1",  0);
+    mainShader->setInt("u_nightMode", nightMode ? 1 : 0);
+}
+
+// Darkens a solid colour to match what the fragment shader does for textures.
+// Same multiplier as vec3(0.22, 0.26, 0.42) in the shader.
+glm::vec3 Renderer::applyNightTint(glm::vec3 c) const
+{
+    if (!nightMode) return c;
+    return c * glm::vec3(0.22f, 0.26f, 0.42f);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,11 +73,16 @@ void Renderer::initialize()
     loadTexture((ad + "textures/train.png").c_str(), "train");
     loadTexture((ad + "textures/log.png").c_str(), "log");
 
+    // Day sky; night sky is set dynamically in prepareFrame()
     glClearColor(0.29f, 0.59f, 0.86f, 1.0f);
 }
 
 void Renderer::prepareFrame()
 {
+    if (nightMode)
+        glClearColor(0.04f, 0.04f, 0.12f, 1.0f);   // deep-night sky
+    else
+        glClearColor(0.29f, 0.59f, 0.86f, 1.0f);    // daytime sky
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -89,6 +120,24 @@ void Renderer::loadTexture(const char *path, const std::string &name)
 // ─────────────────────────────────────────────────────────────────────────────
 void Renderer::drawCube(glm::vec3 position, glm::vec3 scale, glm::vec3 color)
 {
+    glm::vec3 c = applyNightTint(color);
+    glDisable(GL_TEXTURE_2D);
+    glPushMatrix();
+    glTranslatef(position.x, position.y, position.z);
+    glScalef(scale.x, scale.y, scale.z);
+    glColor3f(c.r, c.g, c.b);
+    glutSolidCube(1.0f);
+    glPopMatrix();
+    glEnable(GL_TEXTURE_2D);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  drawCubeEmissive  (solid colour, no night tint — for headlights etc.)
+// ─────────────────────────────────────────────────────────────────────────────
+void Renderer::drawCubeEmissive(glm::vec3 position, glm::vec3 scale, glm::vec3 color)
+{
+    // Intentionally does NOT call applyNightTint — emissive surfaces are
+    // always drawn at the supplied colour regardless of night mode.
     glDisable(GL_TEXTURE_2D);
     glPushMatrix();
     glTranslatef(position.x, position.y, position.z);
@@ -100,8 +149,47 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 scale, glm::vec3 color)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  drawSprite
+//  drawHeadlightBeam  (semi-transparent tapered cone, only useful at night)
 // ─────────────────────────────────────────────────────────────────────────────
+void Renderer::drawHeadlightBeam(glm::vec3 origin, float dirX,
+                                 float spreadZ, float spreadY, float length)
+{
+    if (!nightMode) return;   // no-op in daytime
+
+    glDisable(GL_TEXTURE_2D);
+    if (mainShader) glUseProgram(0);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+
+    const float xTip = origin.x;
+    const float xFar = origin.x + dirX * length;
+    const float y    = origin.y;
+    const float z    = origin.z;
+    // warm yellow-white beam colour
+    const float R = 1.00f, G = 0.95f, B = 0.70f;
+    const float alphaTip = 0.22f, alphaFar = 0.0f;
+
+    // ── Horizontal fan (top-down) ──────────────────────────────────────────
+    glBegin(GL_TRIANGLES);
+      glColor4f(R, G, B, alphaTip);  glVertex3f(xTip, y, z);
+      glColor4f(R, G, B, alphaFar);  glVertex3f(xFar, y, z - spreadZ);
+      glColor4f(R, G, B, alphaFar);  glVertex3f(xFar, y, z + spreadZ);
+    glEnd();
+
+    // ── Vertical fan (side view) ───────────────────────────────────────────
+    glBegin(GL_TRIANGLES);
+      glColor4f(R, G, B, alphaTip);  glVertex3f(xTip, y,               z);
+      glColor4f(R, G, B, alphaFar);  glVertex3f(xFar, y + spreadY,     z);
+      glColor4f(R, G, B, alphaFar);  glVertex3f(xFar, y - spreadY * 0.4f, z);
+    glEnd();
+
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+}
+
+
 void Renderer::drawSprite(glm::vec3 position, glm::vec3 scale,
                           const std::string &textureName, float rotationY)
 {
@@ -112,8 +200,7 @@ void Renderer::drawSprite(glm::vec3 position, glm::vec3 scale,
 
     if (mainShader)
     {
-        mainShader->use();
-        mainShader->setInt("texture1", 0);
+        applyShader();
     }
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_ALPHA_TEST);
@@ -170,8 +257,7 @@ void Renderer::drawTexturedCube(glm::vec3 position, glm::vec3 scale,
 
     if (mainShader)
     {
-        mainShader->use();
-        mainShader->setInt("texture1", 0);
+        applyShader();
     }
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textures.at(textureName));
@@ -269,7 +355,8 @@ void Renderer::drawAnimatedWater(glm::vec3 position, glm::vec3 scale)
     glPushMatrix();
     glTranslatef(position.x, position.y, position.z);
     glScalef(scale.x, scale.y, scale.z);
-    glColor3f(0.30f, 0.65f, 0.90f);
+    glm::vec3 wBody = applyNightTint(glm::vec3(0.30f, 0.65f, 0.90f));
+    glColor3f(wBody.r, wBody.g, wBody.b);
     glutSolidCube(1.0f);
     glPopMatrix();
 
@@ -282,7 +369,8 @@ void Renderer::drawAnimatedWater(glm::vec3 position, glm::vec3 scale)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE);
-    glColor4f(0.45f, 0.78f, 0.97f, 0.92f);
+    glm::vec3 wSurf = applyNightTint(glm::vec3(0.45f, 0.78f, 0.97f));
+    glColor4f(wSurf.r, wSurf.g, wSurf.b, 0.92f);
     glBegin(GL_QUADS);
     glVertex3f(X0, SY, Z0);
     glVertex3f(X1, SY, Z0);

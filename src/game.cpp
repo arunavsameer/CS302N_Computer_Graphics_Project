@@ -556,6 +556,14 @@ void Game::render()
 // ─────────────────────────────────────────────────────────────────────────────
 void Game::onKeyPress(unsigned char key)
 {
+    // Night mode toggle works in all game states
+    if (key == 'n' || key == 'N')
+    {
+        nightMode = !nightMode;
+        renderer.setNightMode(nightMode);
+        return;
+    }
+
     if (state != GAME_STATE_PLAYING)
         return;
 
