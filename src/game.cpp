@@ -636,6 +636,12 @@ void Game::render()
         }
     }
 
+    else if (state == GAME_STATE_GAME_OVER)
+    {
+        // Render player death animation
+        player.render(renderer);
+    }
+
     camera.renderOverlay(windowWidth, windowHeight);
     renderUIOverlay();
 }
