@@ -222,7 +222,11 @@ void Game::update(float deltaTime)
 
     updateCameraAndFailState(deltaTime);
     maintainInfiniteLanes();
-    score = coinScore;
+    // score = coinScore;
+    int lanesMoved = static_cast<int>(std::round((startZ - player.getBasePosition().z) / Config::CELL_SIZE));
+    if (lanesMoved > score) {
+        score = lanesMoved;
+    }
 }
 
 void Game::checkCollisions(float deltaTime)
@@ -644,7 +648,7 @@ void Game::renderUIOverlay()
     {
         glColor3f(1, 1, 1);
         std::stringstream ss;
-        ss << score;
+        ss << "Score: " << score << "   Coins: " << coinScore;
         glRasterPos2f(20, windowHeight - 40);
         for (char c : ss.str())
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
