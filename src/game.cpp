@@ -589,7 +589,7 @@ void Game::render()
 
     renderShadows();
 
-    if (state == GAME_STATE_START_SCREEN)
+    if (state == GAME_STATE_MAIN_MENU || state == GAME_STATE_START_SCREEN || state == GAME_STATE_CHARACTER_SELECT)
     {
         glm::vec3 pos = player.getPosition();
         int currentTime = glutGet(GLUT_ELAPSED_TIME);
@@ -609,14 +609,13 @@ void Game::render()
         renderer.drawEgg(eggClicks);
         glPopMatrix();
     }
-    else
+    else if (state == GAME_STATE_PLAYING)
     {
-        // For Main Menu, Character Select, and Playing, show the character
         int currentTime = glutGet(GLUT_ELAPSED_TIME);
         float timeSinceStart = (currentTime - lastClickTime) / 1000.0f;
         float spawnDuration = 0.4f;
 
-        if (state == GAME_STATE_PLAYING && timeSinceStart < spawnDuration)
+        if (timeSinceStart < spawnDuration)
         {
             float t = timeSinceStart / spawnDuration;
             float t1 = t - 1.0f;
