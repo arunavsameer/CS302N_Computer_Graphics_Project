@@ -749,11 +749,10 @@ void Game::renderUIOverlay()
     int timeMs = glutGet(GLUT_ELAPSED_TIME);
 
     // --- FIXED TEXT RENDERER ---
-    // We only use shadows on big text now, and with a tight 1px offset to stop the "double text" glitch.
     auto drawText = [](float x, float y, std::string text, void* font, float r, float g, float b, bool useShadow = false) {
         if (useShadow) {
             glColor4f(0.0f, 0.0f, 0.0f, 0.8f); 
-            glRasterPos2f(x + 1.0f, y - 1.0f); // Tighter 1px offset
+            glRasterPos2f(x + 1.0f, y - 1.0f); 
             for (char c : text) glutBitmapCharacter(font, c);
         }
         glColor3f(r, g, b); 
@@ -763,43 +762,37 @@ void Game::renderUIOverlay()
 
     if (state == GAME_STATE_MAIN_MENU)
     {
-        // HUD
         std::stringstream tc; tc << "BANK: " << totalCoins;
         drawText(20.0f, windowHeight - 40.0f, tc.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 0.0f, true);
 
         std::stringstream hs; hs << "BEST: " << highScore;
         drawText(windowWidth - 120.0f, windowHeight - 40.0f, hs.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
 
-        // Perfectly centered Huge Game Title
         drawText(cx - 105.0f, cy + 120.0f, "CRAZY HOPPER", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f, true);
 
-        // Blinking "Tap to Play"
         if ((timeMs / 500) % 2 == 0) {
             drawText(cx - 95.0f, cy - 80.0f, "TAP ANYWHERE TO HOP", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
         }
 
-        // Clean Character Button (Bottom Left)
         float btnSize = 70.0f;
         float margin = 20.0f;
         
-        glColor3f(0.1f, 0.4f, 0.7f); // Shadow
+        glColor3f(0.1f, 0.4f, 0.7f); 
         glBegin(GL_QUADS);
         glVertex2f(margin, margin - 4.0f); glVertex2f(margin + btnSize, margin - 4.0f);
         glVertex2f(margin + btnSize, margin + btnSize); glVertex2f(margin, margin + btnSize);
         glEnd();
         
-        glColor3f(0.2f, 0.6f, 1.0f); // Blue Face
+        glColor3f(0.2f, 0.6f, 1.0f); 
         glBegin(GL_QUADS);
         glVertex2f(margin, margin); glVertex2f(margin + btnSize, margin);
         glVertex2f(margin + btnSize, margin + btnSize); glVertex2f(margin, margin + btnSize);
         glEnd();
 
-        // NO shadow on button text to keep it crisp
         drawText(margin + 8.0f, margin + 28.0f, "CHARS", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, false);
     }
     else if (state == GAME_STATE_CHARACTER_SELECT)
     {
-        // Smooth dark blue overlay
         glColor4f(0.05f, 0.1f, 0.15f, 0.85f);
         glBegin(GL_QUADS);
         glVertex2f(0, 0); glVertex2f(windowWidth, 0);
@@ -809,22 +802,18 @@ void Game::renderUIOverlay()
         drawText(cx - 95.0f, cy + 180.0f, "CHOOSE YOUR HOPPER", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
 
         float btnW = 200.0f, btnH = 45.0f;
-        
-        // Define Y positions for 5 buttons
         float yPos[] = { cy + 100.0f, cy + 45.0f, cy - 10.0f, cy - 65.0f, cy - 120.0f };
         std::string labels[] = { "CHICKEN", "FROG", "DINO", "CAT", "DOG" };
         glm::vec3 colors[] = { {0.9f, 0.9f, 0.9f}, {0.2f, 0.8f, 0.2f}, {0.3f, 0.7f, 0.2f}, {0.9f, 0.5f, 0.1f}, {0.7f, 0.5f, 0.3f} };
         glm::vec3 shadows[] = { {0.6f, 0.6f, 0.6f}, {0.1f, 0.4f, 0.1f}, {0.1f, 0.3f, 0.1f}, {0.5f, 0.2f, 0.0f}, {0.4f, 0.3f, 0.1f} };
 
         for (int i = 0; i < 5; i++) {
-            // Shadow
             glColor3f(shadows[i].r, shadows[i].g, shadows[i].b);
             glBegin(GL_QUADS);
             glVertex2f(cx - btnW/2, yPos[i] - btnH/2 - 4); glVertex2f(cx + btnW/2, yPos[i] - btnH/2 - 4);
             glVertex2f(cx + btnW/2, yPos[i] + btnH/2);     glVertex2f(cx - btnW/2, yPos[i] + btnH/2);
             glEnd();
             
-            // Button Face
             glColor3f(colors[i].r, colors[i].g, colors[i].b);
             glBegin(GL_QUADS);
             glVertex2f(cx - btnW/2, yPos[i] - btnH/2);     glVertex2f(cx + btnW/2, yPos[i] - btnH/2);
@@ -851,11 +840,7 @@ void Game::renderUIOverlay()
     }
     else if (state == GAME_STATE_GAME_OVER)
     {
-        glColor4f(0.15f, 0.0f, 0.0f, 0.75f); // Smooth red tint
-        glBegin(GL_QUADS);
-        glVertex2f(0, 0); glVertex2f(windowWidth, 0);
-        glVertex2f(windowWidth, windowHeight); glVertex2f(0, windowHeight);
-        glEnd();
+        // Red tint block removed here for normal screen appearance
 
         drawText(cx - 72.0f, cy + 80.0f, "GAME OVER", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 0.3f, 0.3f, true);
 
