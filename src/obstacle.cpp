@@ -161,8 +161,10 @@ void Obstacle::render(Renderer& renderer) {
 
         // ── Locomotive ────────────────────────────────────────────────────────
         renderer.drawCube(loco, {4.5f, 0.58f, 0.88f}, bodyBlue);
-        renderer.drawCube(loco + glm::vec3(-dir*0.65f, 0.48f, 0.0f), {3.0f, 0.36f, 0.82f}, roofWhite);
-        renderer.drawCube(loco + glm::vec3(-dir*0.65f, 0.73f, 0.0f), {2.8f, 0.12f, 0.80f}, bodyBlue);
+        // Roof lifted to y=0.50f so its bottom face (0.32f) clears the body top (0.29f) by 0.03f
+        renderer.drawCube(loco + glm::vec3(-dir*0.65f, 0.50f, 0.0f), {3.0f, 0.36f, 0.82f}, roofWhite);
+        // Roof-top band lifted to y=0.76f so its bottom (0.70f) clears the roof top (0.68f) by 0.02f
+        renderer.drawCube(loco + glm::vec3(-dir*0.65f, 0.76f, 0.0f), {2.8f, 0.12f, 0.80f}, bodyBlue);
         renderer.drawCube(loco + glm::vec3(dir*2.25f, -0.18f, 0.0f),  {0.48f, 0.24f, 0.86f}, cowcatch);
         renderer.drawCube(loco + glm::vec3(dir*0.3f, -0.22f, 0.0f),   {2.8f, 0.10f, 0.90f}, redStripe);
         renderer.drawCube(loco + glm::vec3(dir*1.4f, 0.68f, 0.0f),    {0.28f, 0.36f, 0.28f}, stackCol);
@@ -181,9 +183,16 @@ void Obstacle::render(Renderer& renderer) {
                                        dir, 1.40f, 0.50f, 8.0f);
         }
 
-        renderer.drawCube(loco + glm::vec3(-dir*0.30f, 0.50f,  0.47f), {1.20f, 0.28f, 0.04f}, glassCol);
-        renderer.drawCube(loco + glm::vec3(-dir*0.30f, 0.50f, -0.47f), {1.20f, 0.28f, 0.04f}, glassCol);
-        renderer.drawCube(loco + glm::vec3(dir*2.0f, 0.48f, 0.0f), {0.08f, 0.24f, 0.60f}, glassCol);
+        // Side windows: dark frame first, then glass proud of body (half-depth=0.44f)
+        // Frame inner face 0.427f < 0.44f  /  Glass inner face 0.425f < 0.44f
+        renderer.drawCube(loco + glm::vec3(-dir*0.30f, 0.50f,  0.437f), {1.30f, 0.30f, 0.02f}, stackCol);
+        renderer.drawCube(loco + glm::vec3(-dir*0.30f, 0.50f, -0.437f), {1.30f, 0.30f, 0.02f}, stackCol);
+        renderer.drawCube(loco + glm::vec3(-dir*0.30f, 0.50f,  0.445f), {1.20f, 0.26f, 0.04f}, glassCol);
+        renderer.drawCube(loco + glm::vec3(-dir*0.30f, 0.50f, -0.445f), {1.20f, 0.26f, 0.04f}, glassCol);
+        // Front window – center dir*2.24f so back face (2.22f) sits inside body front (2.25f)
+        renderer.drawCube(loco + glm::vec3( dir*2.24f, 0.48f,  0.0f), {0.04f, 0.24f, 0.60f}, glassCol);
+        // Rear cab window
+        renderer.drawCube(loco + glm::vec3(-dir*2.24f, 0.46f,  0.0f), {0.04f, 0.20f, 0.50f}, glassCol);
 
         // ── Locomotive wheels ─────────────────────────────────────────────────
         float locoWheelX[3] = { dir*1.6f, dir*0.2f, -dir*1.1f };
@@ -197,17 +206,23 @@ void Obstacle::render(Renderer& renderer) {
         // ── Passenger cars ────────────────────────────────────────────────────
         auto drawCar = [&](glm::vec3 centre) {
             renderer.drawCube(centre, {4.7f, 0.52f, 0.86f}, carBody);
-            renderer.drawCube(centre + glm::vec3(0.0f, 0.33f, 0.0f),  {4.7f, 0.12f, 0.84f}, bodyBlue);
-            renderer.drawCube(centre + glm::vec3(0.0f, -0.21f, 0.0f), {4.7f, 0.08f, 0.84f}, bodyBlue);
+            // Stripes shortened to 4.64f so their end faces don't coincide with body end faces
+            renderer.drawCube(centre + glm::vec3(0.0f,  0.33f, 0.0f), {4.64f, 0.12f, 0.84f}, bodyBlue);
+            renderer.drawCube(centre + glm::vec3(0.0f, -0.21f, 0.0f), {4.64f, 0.08f, 0.84f}, bodyBlue);
 
+            // Windows: frame at z=0.434f (inner 0.424f < body half 0.43f)
+            //          glass at z=0.440f (inner 0.420f < 0.43f, outer 0.460f > 0.43f) – visible
             float winX[3] = { -1.35f, 0.0f, 1.35f };
             for (int w = 0; w < 3; w++) {
-                renderer.drawCube(centre + glm::vec3(winX[w], 0.10f,  0.38f), {0.65f, 0.22f, 0.07f}, glassCol);
-                renderer.drawCube(centre + glm::vec3(winX[w], 0.10f, -0.38f), {0.65f, 0.22f, 0.07f}, glassCol);
+                renderer.drawCube(centre + glm::vec3(winX[w], 0.10f,  0.434f), {0.66f, 0.24f, 0.02f}, darkWin);
+                renderer.drawCube(centre + glm::vec3(winX[w], 0.10f, -0.434f), {0.66f, 0.24f, 0.02f}, darkWin);
+                renderer.drawCube(centre + glm::vec3(winX[w], 0.10f,  0.440f), {0.58f, 0.18f, 0.04f}, glassCol);
+                renderer.drawCube(centre + glm::vec3(winX[w], 0.10f, -0.440f), {0.58f, 0.18f, 0.04f}, glassCol);
             }
 
-            renderer.drawCube(centre + glm::vec3( 2.38f, 0.08f, 0.0f), {0.04f, 0.22f, 0.68f}, glassCol);
-            renderer.drawCube(centre + glm::vec3(-2.38f, 0.08f, 0.0f), {0.04f, 0.22f, 0.68f}, glassCol);
+            // End windows: center at 2.355f so back face (2.335f) < body half-length (2.35f)
+            renderer.drawCube(centre + glm::vec3( 2.355f, 0.08f, 0.0f), {0.04f, 0.20f, 0.60f}, glassCol);
+            renderer.drawCube(centre + glm::vec3(-2.355f, 0.08f, 0.0f), {0.04f, 0.20f, 0.60f}, glassCol);
 
             float wX[2] = { 1.4f, -1.4f };
             for (int w = 0; w < 2; w++) {
@@ -258,13 +273,16 @@ void Obstacle::render(Renderer& renderer) {
                           {0.78f, 0.22f, 0.60f}, cabinCol);
 
         // ── Windows ──────────────────────────────────────────────────────────
-        renderer.drawCube(pos + glm::vec3(0.10f*dir, 0.53f,  0.33f),
+        // Cabin half-depth=0.30f. Glass center at 0.305f: inner 0.285f < 0.30f, outer 0.325f > 0.30f
+        renderer.drawCube(pos + glm::vec3(0.10f*dir, 0.53f,  0.305f),
                           {0.60f, 0.17f, 0.04f}, glassCol);
-        renderer.drawCube(pos + glm::vec3(0.10f*dir, 0.53f, -0.33f),
+        renderer.drawCube(pos + glm::vec3(0.10f*dir, 0.53f, -0.305f),
                           {0.60f, 0.17f, 0.04f}, glassCol);
-        renderer.drawCube(pos + glm::vec3(0.52f*dir, 0.53f, 0.0f),
+        // Front: cabin front face at 0.49f*dir. Center 0.50f*dir: back 0.48f < 0.49f ✓
+        renderer.drawCube(pos + glm::vec3(0.50f*dir, 0.53f, 0.0f),
                           {0.04f, 0.17f, 0.52f}, glassCol);
-        renderer.drawCube(pos + glm::vec3(-0.32f*dir, 0.53f, 0.0f),
+        // Rear: cabin rear face at -0.29f*dir. Center -0.30f*dir: inner -0.28f*dir inside cabin ✓
+        renderer.drawCube(pos + glm::vec3(-0.30f*dir, 0.53f, 0.0f),
                           {0.04f, 0.17f, 0.52f}, glassCol);
 
         // ── Wheels ────────────────────────────────────────────────────────────
@@ -308,13 +326,15 @@ void Obstacle::render(Renderer& renderer) {
                           {1.88f, 0.28f, 0.78f}, cabinCol);
 
         // ── Windows ───────────────────────────────────────────────────────────
-        renderer.drawCube(pos + glm::vec3(0.0f, 0.57f,  0.42f),
+        // Cabin half-depth=0.39f. Glass center 0.395f: inner 0.375f < 0.39f ✓, outer 0.415f > 0.39f ✓
+        renderer.drawCube(pos + glm::vec3(0.0f, 0.57f,  0.395f),
                           {1.70f, 0.22f, 0.04f}, glassCol);
-        renderer.drawCube(pos + glm::vec3(0.0f, 0.57f, -0.42f),
+        renderer.drawCube(pos + glm::vec3(0.0f, 0.57f, -0.395f),
                           {1.70f, 0.22f, 0.04f}, glassCol);
-        renderer.drawCube(pos + glm::vec3(0.97f*dir, 0.57f, 0.0f),
+        // Front/rear: cabin half-length=0.94f. Center 0.95f: back face 0.93f < 0.94f ✓
+        renderer.drawCube(pos + glm::vec3( 0.95f*dir, 0.57f, 0.0f),
                           {0.04f, 0.24f, 0.70f}, glassCol);
-        renderer.drawCube(pos + glm::vec3(-0.97f*dir, 0.57f, 0.0f),
+        renderer.drawCube(pos + glm::vec3(-0.95f*dir, 0.57f, 0.0f),
                           {0.04f, 0.24f, 0.70f}, glassCol);
 
         // ── Wheels ────────────────────────────────────────────────────────────
@@ -353,33 +373,38 @@ void Obstacle::render(Renderer& renderer) {
         // ── Trailer body ──────────────────────────────────────────────────────
         renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.42f, 0.0f),
                           {2.10f, 0.72f, 0.84f}, trailerCol);
-        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.42f,  0.445f),
-                          {2.10f, 0.14f, 0.03f}, cabCol);
-        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.42f, -0.445f),
-                          {2.10f, 0.14f, 0.03f}, cabCol);
+        // Stripes shortened to 2.04f so end faces don't coincide with trailer end faces (2.10f)
+        // Center z=0.425f: inner 0.41f < trailer half-depth 0.42f ✓
+        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.42f,  0.425f),
+                          {2.04f, 0.14f, 0.03f}, cabCol);
+        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.42f, -0.425f),
+                          {2.04f, 0.14f, 0.03f}, cabCol);
 
         // ── Trailer side windows ───────────────────────────────────────────────
-        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.50f,  0.448f),
+        // Trailer half-depth=0.42f. Glass center 0.425f: inner 0.405f < 0.42f ✓, outer 0.445f > 0.42f ✓
+        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.50f,  0.425f),
                           {1.80f, 0.26f, 0.04f}, glassCol);
-        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.50f, -0.448f),
+        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.50f, -0.425f),
                           {1.80f, 0.26f, 0.04f}, glassCol);
 
         // ── Cab lower section ─────────────────────────────────────────────────
         renderer.drawCube(pos + glm::vec3(1.10f*dir, 0.34f, 0.0f),
                           {0.88f, 0.56f, 0.84f}, cabCol);
 
-        // ── Cab roof ──────────────────────────────────────────────────────────
-        renderer.drawCube(pos + glm::vec3(1.05f*dir, 0.73f, 0.0f),
+        // ── Cab roof – raised to y=0.75f so bottom (0.65f) clears cab lower top (0.62f) by 0.03f ──
+        renderer.drawCube(pos + glm::vec3(1.05f*dir, 0.75f, 0.0f),
                           {0.62f, 0.20f, 0.62f}, cabCol);
 
         // ── Cab side windows ──────────────────────────────────────────────────
-        renderer.drawCube(pos + glm::vec3(1.10f*dir, 0.42f,  0.445f),
+        // Cab half-depth=0.42f. Center 0.425f: inner 0.405f < 0.42f ✓, outer 0.445f > 0.42f ✓
+        renderer.drawCube(pos + glm::vec3(1.10f*dir, 0.42f,  0.425f),
                           {0.68f, 0.32f, 0.04f}, glassCol);
-        renderer.drawCube(pos + glm::vec3(1.10f*dir, 0.42f, -0.445f),
+        renderer.drawCube(pos + glm::vec3(1.10f*dir, 0.42f, -0.425f),
                           {0.68f, 0.32f, 0.04f}, glassCol);
 
         // ── Cab front windshield ──────────────────────────────────────────────
-        renderer.drawCube(pos + glm::vec3(1.57f*dir, 0.46f, 0.0f),
+        // Cab half-length=0.44f, front face at 1.54f*dir. Center 1.555f: back 1.535f < 1.54f ✓
+        renderer.drawCube(pos + glm::vec3(1.555f*dir, 0.46f, 0.0f),
                           {0.04f, 0.30f, 0.72f}, glassCol);
 
         // ── Truck wheels ──────────────────────────────────────────────────────
