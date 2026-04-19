@@ -41,7 +41,7 @@ void Game::resetGame()
     hasWaterDeath = false;
     hasStreamDeath = false;
     deathPosition = glm::vec3(0.0f);
-    currentGameTime = 0.0f; 
+    currentGameTime = 30.0f;  // Start at midday (daytime) for better gameplay visibility 
 
     player.reset();
     camera.resetToDefault();
