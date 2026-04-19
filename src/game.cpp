@@ -1,6 +1,7 @@
 #include "../include/game.h"
 #include "../include/collision.h"
 #include "../include/types.h"
+#include "../include/save_data.h"
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
@@ -24,6 +25,17 @@ Game::Game(int width, int height)
       lastClickTime(0)
 {
     srand(static_cast<unsigned>(time(nullptr)));
+    
+    // Load save data
+    uint64_t loadedCoins = 0;
+    uint64_t loadedScore = 0;
+    if (SaveManager::loadData(loadedCoins, loadedScore)) {
+        totalCoins = loadedCoins;
+        highScore = loadedScore;
+    } else {
+        totalCoins = 0;
+        highScore = 0;
+    }
 }
 
 void Game::initialize()
@@ -158,6 +170,7 @@ void Game::updateCameraAndFailState(float deltaTime)
             hasWaterDeath = false;
         }
         state = GAME_STATE_GAME_OVER;
+        SaveManager::saveData(totalCoins, highScore);
     }
 }
 
@@ -198,7 +211,6 @@ void Game::update(float deltaTime)
         player.update(deltaTime);
         camera.setTargetRadius(Config::DEAD_ZOOM_RADIUS);
         camera.setLerpSpeed(Config::DEAD_ZOOM_SPEED);
-
         bool useWater = hasWaterDeath || hasStreamDeath;
         glm::vec3 trackPos = useWater ? deathPosition : player.getPosition();
         float snapSpeed = useWater ? 0.14f : 0.05f;
@@ -271,6 +283,7 @@ void Game::checkCollisions(float deltaTime)
                 deathPosition = playerPos;
                 hasWaterDeath = false;
                 state = GAME_STATE_GAME_OVER;
+                SaveManager::saveData(totalCoins, highScore);
                 return;
             }
         }
@@ -307,6 +320,7 @@ void Game::checkCollisions(float deltaTime)
                 deathPosition = playerPos;
                 hasWaterDeath = false;
                 state = GAME_STATE_GAME_OVER;
+                SaveManager::saveData(totalCoins, highScore);
                 return;
             }
             else if (obsType == OBSTACLE_LOG)
@@ -328,6 +342,7 @@ void Game::checkCollisions(float deltaTime)
                     hasWaterDeath = true;
                     hasStreamDeath = true;
                     state = GAME_STATE_GAME_OVER;
+                    SaveManager::saveData(totalCoins, highScore);
                     return;
                 }
             }
@@ -362,6 +377,7 @@ void Game::checkCollisions(float deltaTime)
         hasWaterDeath = true;
         hasStreamDeath = false;
         state = GAME_STATE_GAME_OVER;
+        SaveManager::saveData(totalCoins, highScore);
     }
 }
 

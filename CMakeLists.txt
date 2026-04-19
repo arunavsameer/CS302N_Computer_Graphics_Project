@@ -59,6 +59,7 @@ set(SOURCES
     src/character_cat.cpp
     src/character_dog.cpp
     src/character_base.cpp
+    src/save_data.cpp
 )
 
 # Create executable
