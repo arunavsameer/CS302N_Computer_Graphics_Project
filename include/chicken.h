@@ -6,6 +6,9 @@
 #include "renderer.h"
 #include "types.h"
 
+// ── Added Character Models ─────────────────────────────────────────────────
+enum CharacterModel { MODEL_CHICKEN, MODEL_FROG };
+
 // ── Water-death splatter particle ──────────────────────────────────────────
 struct WaterParticle {
     glm::vec3 pos;
@@ -28,6 +31,9 @@ private:
     float     jumpProgress;
     float     rotationY;
     bool      isDead;
+
+    // --- Character State ---
+    CharacterModel currentModel;
 
     // --- Death Animation ---
     DeathType                  deathType;
@@ -55,6 +61,10 @@ public:
     glm::vec3 getSize()         const { return glm::vec3(Config::CELL_SIZE * 0.8f); }
     bool      getIsJumping()    const { return isJumping; }
     bool      getIsDead()       const { return isDead; }
+
+    // --- New getters/setters for models ---
+    void setModel(CharacterModel model) { currentModel = model; }
+    CharacterModel getModel() const { return currentModel; }
 
     // Squish death (car / train)
     void setDead(bool dead) { isDead = dead; if (dead) deathType = DEATH_SQUISH; }

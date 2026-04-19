@@ -515,6 +515,12 @@ void Game::onKeyPress(unsigned char key)
         return;
     }
 
+    // --- NEW: Swap character on the start screen ---
+    if (state == GAME_STATE_START_SCREEN) {
+        if (key == '1') player.setModel(MODEL_CHICKEN);
+        if (key == '2') player.setModel(MODEL_FROG);
+    }
+
     if (state != GAME_STATE_PLAYING)
         return;
 
@@ -586,7 +592,6 @@ void Game::onKeyPress(unsigned char key)
         }
     }
 
-    // removed because signal post sometimes blocked the only safe path, like lilypads just ahead of it...
     // if (!blocked && targetLane && targetLane->getType() == LANE_RAIL)
     // {
     //     for (const auto &sp : targetLane->signalPosts)
@@ -648,8 +653,8 @@ void Game::renderUIOverlay()
     if (state == GAME_STATE_START_SCREEN)
     {
         glColor3f(1, 1, 1);
-        std::string msg = "Click the Egg to Hatch!";
-        glRasterPos2f(windowWidth / 2.0f - 80.0f, windowHeight / 2.0f + 100.0f);
+        std::string msg = "Click Egg to Hatch! (Press 1: Chicken, 2: Frog)";
+        glRasterPos2f(windowWidth / 2.0f - 160.0f, windowHeight / 2.0f + 100.0f);
         for (char c : msg)
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
     }
