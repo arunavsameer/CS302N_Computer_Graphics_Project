@@ -19,8 +19,10 @@ private:
     float currentGenerationZ;
     float cameraTrackZ;
     int score;
+    int highScore; 
     float startZ;
     int coinScore = 0;
+    int totalCoins = 0; // <--- ADD THIS HERE
 
     // ── Death tracking ───────────────────────────────────────────────────────
     glm::vec3 deathPosition;

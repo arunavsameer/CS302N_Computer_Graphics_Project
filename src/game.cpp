@@ -17,31 +17,38 @@ int safePathColumn = 0;
 
 Game::Game(int width, int height)
     : windowWidth(width), windowHeight(height),
-      state(GAME_STATE_START_SCREEN),
+      state(GAME_STATE_MAIN_MENU), 
       currentGenerationZ(5.0f * Config::CELL_SIZE),
-      cameraTrackZ(0.0f), score(0), startZ(0.0f), coinScore(0),
+      cameraTrackZ(0.0f), score(0), highScore(0), startZ(0.0f), coinScore(0), totalCoins(0), // <-- Add totalCoins(0)
       deathPosition(0.0f), hasWaterDeath(false), hasStreamDeath(false),
       lastClickTime(0)
 {
     srand(static_cast<unsigned>(time(nullptr)));
 }
 
+void Game::initialize()
+{
+    renderer.initialize();
+    resetGame(); // Call reset right away to ensure a perfectly clean setup
+}
+
 void Game::resetGame()
 {
-    state = GAME_STATE_START_SCREEN;
+    // DO NOT reset highScore here!
     eggClicks = 0;
     coinScore = 0;
     score = 0;
     hasWaterDeath = false;
     hasStreamDeath = false;
     deathPosition = glm::vec3(0.0f);
-    currentGameTime = 0.0f;  // Reset day/night cycle
+    currentGameTime = 0.0f; 
 
     player.reset();
     camera.resetToDefault();
 
     lanes.clear();
     currentGenerationZ = 5.0f * Config::CELL_SIZE;
+    safePathColumn = 0;
 
     for (int i = 0; i < Config::INITIAL_SAFE_ZONE_LENGTH; i++)
     {
@@ -53,24 +60,9 @@ void Game::resetGame()
 
     cameraTrackZ = player.getPosition().z;
     startZ = player.getPosition().z;
+
+    state = GAME_STATE_MAIN_MENU; // Ensure we always return to the menu after a reset
 }
-
-void Game::initialize()
-{
-    renderer.initialize();
-
-    for (int i = 0; i < Config::INITIAL_SAFE_ZONE_LENGTH; i++)
-    {
-        lanes.push_back(Lane(currentGenerationZ, LANE_GRASS, safePathColumn));
-        currentGenerationZ -= Config::CELL_SIZE;
-    }
-    for (int i = 0; i < 5; i++)
-        generateLaneBlock();
-
-    cameraTrackZ = player.getPosition().z;
-    startZ = player.getPosition().z;
-}
-
 void Game::generateLaneBlock()
 {
     int r = rand() % 100;
@@ -191,10 +183,10 @@ void Game::update(float deltaTime)
     for (auto &lane : lanes)
         lane.update(deltaTime);
 
-    // Update the day/night cycle and lighting
     updateDayNightCycle(deltaTime);
 
-    if (state == GAME_STATE_START_SCREEN)
+    // Stop game logic from running during menus!
+    if (state == GAME_STATE_MAIN_MENU || state == GAME_STATE_CHARACTER_SELECT || state == GAME_STATE_START_SCREEN)
     {
         smoothedCameraTarget = player.getBasePosition();
         camera.update(deltaTime, windowWidth, windowHeight, smoothedCameraTarget);
@@ -204,7 +196,6 @@ void Game::update(float deltaTime)
     if (state == GAME_STATE_GAME_OVER)
     {
         player.update(deltaTime);
-
         camera.setTargetRadius(Config::DEAD_ZOOM_RADIUS);
         camera.setLerpSpeed(Config::DEAD_ZOOM_SPEED);
 
@@ -226,13 +217,16 @@ void Game::update(float deltaTime)
 
     updateCameraAndFailState(deltaTime);
     maintainInfiniteLanes();
-    // score = coinScore;
+
+    // High Score logic properly isolated here
     int lanesMoved = static_cast<int>(std::round((startZ - player.getBasePosition().z) / Config::CELL_SIZE));
     if (lanesMoved > score) {
         score = lanesMoved;
+        if (score > highScore) {
+            highScore = score;
+        }
     }
 }
-
 void Game::checkCollisions(float deltaTime)
 {
     glm::vec3 playerPos = player.getPosition();
@@ -349,6 +343,7 @@ void Game::checkCollisions(float deltaTime)
         {
             coin.collected = true;
             coinScore += 10;
+            totalCoins += 10; 
         }
     }
 
@@ -544,13 +539,11 @@ void Game::render()
     for (auto &lane : lanes)
         lane.render(renderer);
 
-    // Render shadows for game objects
     renderShadows();
 
     if (state == GAME_STATE_START_SCREEN)
     {
         glm::vec3 pos = player.getPosition();
-
         int currentTime = glutGet(GLUT_ELAPSED_TIME);
         float timeSinceClick = (currentTime - lastClickTime) / 1000.0f;
 
@@ -570,6 +563,7 @@ void Game::render()
     }
     else
     {
+        // For Main Menu, Character Select, and Playing, show the character
         int currentTime = glutGet(GLUT_ELAPSED_TIME);
         float timeSinceStart = (currentTime - lastClickTime) / 1000.0f;
         float spawnDuration = 0.4f;
@@ -579,8 +573,7 @@ void Game::render()
             float t = timeSinceStart / spawnDuration;
             float t1 = t - 1.0f;
             float scale = t1 * t1 * (2.5f * t1 + 1.5f) + 1.0f;
-            if (scale < 0.0f)
-                scale = 0.0f;
+            if (scale < 0.0f) scale = 0.0f;
 
             glm::vec3 pos = player.getPosition();
             glPushMatrix();
@@ -719,7 +712,6 @@ void Game::onResize(int w, int h)
     windowWidth = w;
     windowHeight = h;
 }
-
 void Game::renderUIOverlay()
 {
     glMatrixMode(GL_PROJECTION);
@@ -734,52 +726,151 @@ void Game::renderUIOverlay()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    if (state == GAME_STATE_PLAYING || state == GAME_STATE_GAME_OVER)
-    {
-        glColor3f(1, 1, 1);
-        std::stringstream ss;
-        ss << "Score: " << score << "   Coins: " << coinScore;
-        glRasterPos2f(20, windowHeight - 40);
-        for (char c : ss.str())
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
-    }
+    float cx = windowWidth / 2.0f;
+    float cy = windowHeight / 2.0f;
+    int timeMs = glutGet(GLUT_ELAPSED_TIME);
 
-    if (state == GAME_STATE_START_SCREEN)
+    // --- FIXED TEXT RENDERER ---
+    // We only use shadows on big text now, and with a tight 1px offset to stop the "double text" glitch.
+    auto drawText = [](float x, float y, std::string text, void* font, float r, float g, float b, bool useShadow = false) {
+        if (useShadow) {
+            glColor4f(0.0f, 0.0f, 0.0f, 0.8f); 
+            glRasterPos2f(x + 1.0f, y - 1.0f); // Tighter 1px offset
+            for (char c : text) glutBitmapCharacter(font, c);
+        }
+        glColor3f(r, g, b); 
+        glRasterPos2f(x, y);
+        for (char c : text) glutBitmapCharacter(font, c);
+    };
+
+    if (state == GAME_STATE_MAIN_MENU)
     {
-        glColor3f(1, 1, 1);
-        std::string msg = "Click Egg to Hatch! (Press 1: Chicken, 2: Frog)";
-        glRasterPos2f(windowWidth / 2.0f - 160.0f, windowHeight / 2.0f + 100.0f);
-        for (char c : msg)
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+        // HUD
+        std::stringstream tc; tc << "BANK: " << totalCoins;
+        drawText(20.0f, windowHeight - 40.0f, tc.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 0.0f, true);
+
+        std::stringstream hs; hs << "BEST: " << highScore;
+        drawText(windowWidth - 120.0f, windowHeight - 40.0f, hs.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
+
+        // Perfectly centered Huge Game Title
+        drawText(cx - 105.0f, cy + 120.0f, "CRAZY HOPPER", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f, true);
+
+        // Blinking "Tap to Play"
+        if ((timeMs / 500) % 2 == 0) {
+            drawText(cx - 95.0f, cy - 80.0f, "TAP ANYWHERE TO HOP", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
+        }
+
+        // Clean Character Button (Bottom Left)
+        float btnSize = 70.0f;
+        float margin = 20.0f;
+        
+        glColor3f(0.1f, 0.4f, 0.7f); // Shadow
+        glBegin(GL_QUADS);
+        glVertex2f(margin, margin - 4.0f); glVertex2f(margin + btnSize, margin - 4.0f);
+        glVertex2f(margin + btnSize, margin + btnSize); glVertex2f(margin, margin + btnSize);
+        glEnd();
+        
+        glColor3f(0.2f, 0.6f, 1.0f); // Blue Face
+        glBegin(GL_QUADS);
+        glVertex2f(margin, margin); glVertex2f(margin + btnSize, margin);
+        glVertex2f(margin + btnSize, margin + btnSize); glVertex2f(margin, margin + btnSize);
+        glEnd();
+
+        // NO shadow on button text to keep it crisp
+        drawText(margin + 8.0f, margin + 28.0f, "CHARS", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, false);
+    }
+    else if (state == GAME_STATE_CHARACTER_SELECT)
+    {
+        // Smooth dark blue overlay instead of harsh black
+        glColor4f(0.05f, 0.1f, 0.15f, 0.85f);
+        glBegin(GL_QUADS);
+        glVertex2f(0, 0); glVertex2f(windowWidth, 0);
+        glVertex2f(windowWidth, windowHeight); glVertex2f(0, windowHeight);
+        glEnd();
+
+        // Centered Title
+        drawText(cx - 95.0f, cy + 120.0f, "CHOOSE YOUR HOPPER", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
+
+        float btnW = 200.0f, btnH = 60.0f;
+        
+        // --- CHICKEN BUTTON ---
+        float chickY = cy + 20.0f;
+        glColor3f(0.6f, 0.6f, 0.6f); // Grey Shadow
+        glBegin(GL_QUADS);
+        glVertex2f(cx - btnW/2, chickY - btnH/2 - 5); glVertex2f(cx + btnW/2, chickY - btnH/2 - 5);
+        glVertex2f(cx + btnW/2, chickY + btnH/2); glVertex2f(cx - btnW/2, chickY + btnH/2);
+        glEnd();
+        
+        glColor3f(0.95f, 0.95f, 0.95f); // White Face
+        glBegin(GL_QUADS);
+        glVertex2f(cx - btnW/2, chickY - btnH/2); glVertex2f(cx + btnW/2, chickY - btnH/2);
+        glVertex2f(cx + btnW/2, chickY + btnH/2); glVertex2f(cx - btnW/2, chickY + btnH/2);
+        glEnd();
+        
+        drawText(cx - 38.0f, chickY - 6.0f, "CHICKEN", GLUT_BITMAP_HELVETICA_18, 0.1f, 0.1f, 0.1f, false);
+
+        // --- FROG BUTTON ---
+        float frogY = cy - 60.0f;
+        glColor3f(0.1f, 0.6f, 0.1f); // Dark Green Shadow
+        glBegin(GL_QUADS);
+        glVertex2f(cx - btnW/2, frogY - btnH/2 - 5); glVertex2f(cx + btnW/2, frogY - btnH/2 - 5);
+        glVertex2f(cx + btnW/2, frogY + btnH/2); glVertex2f(cx - btnW/2, frogY + btnH/2);
+        glEnd();
+
+        glColor3f(0.2f, 0.8f, 0.2f); // Bright Green Face
+        glBegin(GL_QUADS);
+        glVertex2f(cx - btnW/2, frogY - btnH/2); glVertex2f(cx + btnW/2, frogY - btnH/2);
+        glVertex2f(cx + btnW/2, frogY + btnH/2); glVertex2f(cx - btnW/2, frogY + btnH/2);
+        glEnd();
+        
+        drawText(cx - 22.0f, frogY - 6.0f, "FROG", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, false);
+    }
+    else if (state == GAME_STATE_PLAYING)
+    {
+        std::stringstream ss; ss << score;
+        drawText(windowWidth - 50.0f, windowHeight - 50.0f, ss.str(), GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f, true);
+        
+        std::stringstream cc; cc << "Coins: " << coinScore;
+        drawText(20.0f, windowHeight - 40.0f, cc.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 0.0f, true);
+    }
+    else if (state == GAME_STATE_START_SCREEN)
+    {
+        if ((timeMs / 300) % 2 == 0) {
+            drawText(cx - 85.0f, cy + 100.0f, "TAP EGG TO HATCH!", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
+        }
     }
     else if (state == GAME_STATE_GAME_OVER)
     {
-        float boxW = 140.0f, boxH = 60.0f;
-        float cx = windowWidth / 2.0f;
-        float cy = 80.0f;
-
-        glColor3f(1.0f, 0.6f, 0.4f);
+        glColor4f(0.15f, 0.0f, 0.0f, 0.75f); // Smooth red tint
         glBegin(GL_QUADS);
-        glVertex2f(cx - boxW / 2, cy - boxH / 2);
-        glVertex2f(cx + boxW / 2, cy - boxH / 2);
-        glVertex2f(cx + boxW / 2, cy + boxH / 2);
-        glVertex2f(cx - boxW / 2, cy + boxH / 2);
+        glVertex2f(0, 0); glVertex2f(windowWidth, 0);
+        glVertex2f(windowWidth, windowHeight); glVertex2f(0, windowHeight);
         glEnd();
-        glLineWidth(4.0f);
-        glColor3f(0.1f, 0.4f, 0.5f);
-        glBegin(GL_LINE_LOOP);
-        glVertex2f(cx - boxW / 2, cy - boxH / 2);
-        glVertex2f(cx + boxW / 2, cy - boxH / 2);
-        glVertex2f(cx + boxW / 2, cy + boxH / 2);
-        glVertex2f(cx - boxW / 2, cy + boxH / 2);
+
+        drawText(cx - 72.0f, cy + 80.0f, "GAME OVER", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 0.3f, 0.3f, true);
+
+        std::stringstream sText; sText << "SCORE: " << score;
+        drawText(cx - 40.0f, cy + 30.0f, sText.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
+        
+        std::stringstream cText; cText << "+" << coinScore << " COINS";
+        drawText(cx - 45.0f, cy, cText.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 0.0f, true);
+
+        float btnW = 200.0f, btnH = 60.0f;
+        float retryY = cy - 60.0f;
+        
+        glColor3f(0.1f, 0.6f, 0.1f);
+        glBegin(GL_QUADS);
+        glVertex2f(cx - btnW/2, retryY - btnH/2 - 5); glVertex2f(cx + btnW/2, retryY - btnH/2 - 5);
+        glVertex2f(cx + btnW/2, retryY + btnH/2); glVertex2f(cx - btnW/2, retryY + btnH/2);
         glEnd();
-        glLineWidth(1.0f);
-        glColor3f(1, 1, 1);
-        glBegin(GL_TRIANGLES);
-        glVertex2f(cx - 15, cy - 20);
-        glVertex2f(cx - 15, cy + 20);
-        glVertex2f(cx + 25, cy);
+
+        glColor3f(0.2f, 0.9f, 0.2f);
+        glBegin(GL_QUADS);
+        glVertex2f(cx - btnW/2, retryY - btnH/2); glVertex2f(cx + btnW/2, retryY - btnH/2);
+        glVertex2f(cx + btnW/2, retryY + btnH/2); glVertex2f(cx - btnW/2, retryY + btnH/2);
         glEnd();
+
+        drawText(cx - 45.0f, retryY - 6.0f, "TRY AGAIN", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, false);
     }
 
     glEnable(GL_DEPTH_TEST);
@@ -788,13 +879,43 @@ void Game::renderUIOverlay()
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
 }
-
 void Game::onMouseClick(int button, int clickState, int x, int y)
 {
-    if (clickState != 0)
-        return;
+    if (clickState != 0) return;
 
-    if (state == GAME_STATE_START_SCREEN)
+    int invertedY = windowHeight - y; 
+    float cx = windowWidth / 2.0f;
+    float cy = windowHeight / 2.0f;
+
+    if (state == GAME_STATE_MAIN_MENU)
+    {
+        float btnSize = 70.0f;
+        float margin = 20.0f;
+
+        if (x >= margin && x <= margin + btnSize && invertedY >= margin && invertedY <= margin + btnSize) {
+            state = GAME_STATE_CHARACTER_SELECT;
+        } 
+        else {
+            state = GAME_STATE_START_SCREEN;
+            eggClicks = 0;
+        }
+    }
+    else if (state == GAME_STATE_CHARACTER_SELECT)
+    {
+        float chickY = cy + 20.0f;
+        float frogY = cy - 60.0f;
+        float btnW = 200.0f, btnH = 60.0f;
+
+        if (x > cx - btnW/2 && x < cx + btnW/2 && invertedY > chickY - btnH/2 && invertedY < chickY + btnH/2) {
+            player.setModel(MODEL_CHICKEN);
+            state = GAME_STATE_MAIN_MENU;
+        }
+        else if (x > cx - btnW/2 && x < cx + btnW/2 && invertedY > frogY - btnH/2 && invertedY < frogY + btnH/2) {
+            player.setModel(MODEL_FROG);
+            state = GAME_STATE_MAIN_MENU;
+        }
+    }
+    else if (state == GAME_STATE_START_SCREEN)
     {
         eggClicks++;
         lastClickTime = glutGet(GLUT_ELAPSED_TIME);
@@ -806,13 +927,12 @@ void Game::onMouseClick(int button, int clickState, int x, int y)
     }
     else if (state == GAME_STATE_GAME_OVER)
     {
-        int invertedY = windowHeight - y;
-        float boxW = 140.0f, boxH = 60.0f;
-        float cx = windowWidth / 2.0f;
-        float cy = 80.0f;
+        float btnW = 200.0f, btnH = 60.0f;
+        float retryY = cy - 60.0f; 
 
-        if (x > cx - boxW / 2 && x < cx + boxW / 2 &&
-            invertedY > cy - boxH / 2 && invertedY < cy + boxH / 2)
+        if (x > cx - btnW / 2 && x < cx + btnW / 2 && invertedY > retryY - btnH / 2 && invertedY < retryY + btnH / 2) {
             resetGame();
+            state = GAME_STATE_MAIN_MENU; 
+        }
     }
 }

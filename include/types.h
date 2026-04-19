@@ -4,7 +4,15 @@
 #include <glm/glm.hpp>
 
 // --- Game Enums ---
-enum GameState { GAME_STATE_START_SCREEN, GAME_STATE_PLAYING, GAME_STATE_GAME_OVER };
+// ADDED: GAME_STATE_MAIN_MENU and GAME_STATE_CHARACTER_SELECT
+enum GameState { 
+    GAME_STATE_MAIN_MENU, 
+    GAME_STATE_CHARACTER_SELECT, 
+    GAME_STATE_START_SCREEN, 
+    GAME_STATE_PLAYING, 
+    GAME_STATE_GAME_OVER 
+};
+
 enum LaneType  { LANE_GRASS, LANE_ROAD, LANE_RAIL, LANE_RIVER, LANE_LILYPAD };
 enum ObstacleType { OBSTACLE_CAR, OBSTACLE_TRAIN, OBSTACLE_LOG, OBSTACLE_LILYPAD };
 
@@ -31,10 +39,10 @@ namespace Config {
     constexpr float BOUNDARY_BACK_Z     = 2.0f;
 
     // ── Lane generation ───────────────────────────────────────
-    constexpr int MIN_GRASS_WIDTH = 2;  constexpr int MAX_GRASS_WIDTH = 4;
+    constexpr int MIN_GRASS_WIDTH = 1;  constexpr int MAX_GRASS_WIDTH = 3;
     constexpr int MIN_ROAD_WIDTH  = 1;  constexpr int MAX_ROAD_WIDTH  = 3;
     constexpr int MIN_RAIL_WIDTH  = 1;  constexpr int MAX_RAIL_WIDTH  = 2;
-    constexpr int MIN_RIVER_WIDTH = 5;  constexpr int MAX_RIVER_WIDTH = 5;
+    constexpr int MIN_RIVER_WIDTH = 1;  constexpr int MAX_RIVER_WIDTH = 3;
 
     // ── Camera ────────────────────────────────────────────────
     constexpr float CAMERA_AUTO_SCROLL_SPEED        = 0.0f;
