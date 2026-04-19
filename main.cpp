@@ -6,8 +6,10 @@
 #endif
 
 #include "game.h"
+#include "types.h"
 
 #include <iostream>
+#include <chrono>
 
 Game* game = nullptr;
 
@@ -16,15 +18,24 @@ bool isDragging = false;
 int lastMouseX = -1;
 int lastMouseY = -1;
 
+// Frame rate limiting
+auto lastFrameTime = std::chrono::high_resolution_clock::now();
+
 void display() {
     game->render();
     glutSwapBuffers();
 }
 
 void idle() {
-    game->update(0.016f); // Approx 60 FPS delta time
-    // std::cout << game->getjumpstatus() << std::endl;
-    glutPostRedisplay();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> elapsed = currentTime - lastFrameTime;
+    
+    // Only update and render if enough time has passed for the next frame
+    if (elapsed.count() >= Config::FRAME_TIME) {
+        game->update(elapsed.count() * Config::GAME_SPEED_MULTIPLIER);
+        lastFrameTime = currentTime;
+        glutPostRedisplay();
+    }
 }
 
 void keyboard(unsigned char key, int x, int y) {
