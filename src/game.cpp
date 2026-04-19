@@ -602,10 +602,12 @@ void Game::onKeyPress(unsigned char key)
         return;
     }
 
-    // --- NEW: Swap character on the start screen ---
     if (state == GAME_STATE_START_SCREEN) {
         if (key == '1') player.setModel(MODEL_CHICKEN);
         if (key == '2') player.setModel(MODEL_FROG);
+        if (key == '3') player.setModel(MODEL_DINO); // <--- ADDED
+        if (key == '4') player.setModel(MODEL_CAT);  // <--- ADDED
+        if (key == '5') player.setModel(MODEL_DOG);  // <--- ADDED
     }
 
     if (state != GAME_STATE_PLAYING)
@@ -781,49 +783,41 @@ void Game::renderUIOverlay()
     }
     else if (state == GAME_STATE_CHARACTER_SELECT)
     {
-        // Smooth dark blue overlay instead of harsh black
+        // Smooth dark blue overlay
         glColor4f(0.05f, 0.1f, 0.15f, 0.85f);
         glBegin(GL_QUADS);
         glVertex2f(0, 0); glVertex2f(windowWidth, 0);
         glVertex2f(windowWidth, windowHeight); glVertex2f(0, windowHeight);
         glEnd();
 
-        // Centered Title
-        drawText(cx - 95.0f, cy + 120.0f, "CHOOSE YOUR HOPPER", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
+        drawText(cx - 95.0f, cy + 180.0f, "CHOOSE YOUR HOPPER", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
 
-        float btnW = 200.0f, btnH = 60.0f;
+        float btnW = 200.0f, btnH = 45.0f;
         
-        // --- CHICKEN BUTTON ---
-        float chickY = cy + 20.0f;
-        glColor3f(0.6f, 0.6f, 0.6f); // Grey Shadow
-        glBegin(GL_QUADS);
-        glVertex2f(cx - btnW/2, chickY - btnH/2 - 5); glVertex2f(cx + btnW/2, chickY - btnH/2 - 5);
-        glVertex2f(cx + btnW/2, chickY + btnH/2); glVertex2f(cx - btnW/2, chickY + btnH/2);
-        glEnd();
-        
-        glColor3f(0.95f, 0.95f, 0.95f); // White Face
-        glBegin(GL_QUADS);
-        glVertex2f(cx - btnW/2, chickY - btnH/2); glVertex2f(cx + btnW/2, chickY - btnH/2);
-        glVertex2f(cx + btnW/2, chickY + btnH/2); glVertex2f(cx - btnW/2, chickY + btnH/2);
-        glEnd();
-        
-        drawText(cx - 38.0f, chickY - 6.0f, "CHICKEN", GLUT_BITMAP_HELVETICA_18, 0.1f, 0.1f, 0.1f, false);
+        // Define Y positions for 5 buttons
+        float yPos[] = { cy + 100.0f, cy + 45.0f, cy - 10.0f, cy - 65.0f, cy - 120.0f };
+        std::string labels[] = { "CHICKEN", "FROG", "DINO", "CAT", "DOG" };
+        glm::vec3 colors[] = { {0.9f, 0.9f, 0.9f}, {0.2f, 0.8f, 0.2f}, {0.3f, 0.7f, 0.2f}, {0.9f, 0.5f, 0.1f}, {0.7f, 0.5f, 0.3f} };
+        glm::vec3 shadows[] = { {0.6f, 0.6f, 0.6f}, {0.1f, 0.4f, 0.1f}, {0.1f, 0.3f, 0.1f}, {0.5f, 0.2f, 0.0f}, {0.4f, 0.3f, 0.1f} };
 
-        // --- FROG BUTTON ---
-        float frogY = cy - 60.0f;
-        glColor3f(0.1f, 0.6f, 0.1f); // Dark Green Shadow
-        glBegin(GL_QUADS);
-        glVertex2f(cx - btnW/2, frogY - btnH/2 - 5); glVertex2f(cx + btnW/2, frogY - btnH/2 - 5);
-        glVertex2f(cx + btnW/2, frogY + btnH/2); glVertex2f(cx - btnW/2, frogY + btnH/2);
-        glEnd();
-
-        glColor3f(0.2f, 0.8f, 0.2f); // Bright Green Face
-        glBegin(GL_QUADS);
-        glVertex2f(cx - btnW/2, frogY - btnH/2); glVertex2f(cx + btnW/2, frogY - btnH/2);
-        glVertex2f(cx + btnW/2, frogY + btnH/2); glVertex2f(cx - btnW/2, frogY + btnH/2);
-        glEnd();
-        
-        drawText(cx - 22.0f, frogY - 6.0f, "FROG", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, false);
+        for (int i = 0; i < 5; i++) {
+            // Shadow
+            glColor3f(shadows[i].r, shadows[i].g, shadows[i].b);
+            glBegin(GL_QUADS);
+            glVertex2f(cx - btnW/2, yPos[i] - btnH/2 - 4); glVertex2f(cx + btnW/2, yPos[i] - btnH/2 - 4);
+            glVertex2f(cx + btnW/2, yPos[i] + btnH/2);     glVertex2f(cx - btnW/2, yPos[i] + btnH/2);
+            glEnd();
+            
+            // Button Face
+            glColor3f(colors[i].r, colors[i].g, colors[i].b);
+            glBegin(GL_QUADS);
+            glVertex2f(cx - btnW/2, yPos[i] - btnH/2);     glVertex2f(cx + btnW/2, yPos[i] - btnH/2);
+            glVertex2f(cx + btnW/2, yPos[i] + btnH/2);     glVertex2f(cx - btnW/2, yPos[i] + btnH/2);
+            glEnd();
+            
+            float textX = cx - (labels[i].length() * 4.5f); 
+            drawText(textX, yPos[i] - 6.0f, labels[i], GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, false);
+        }
     }
     else if (state == GAME_STATE_PLAYING)
     {
@@ -902,17 +896,36 @@ void Game::onMouseClick(int button, int clickState, int x, int y)
     }
     else if (state == GAME_STATE_CHARACTER_SELECT)
     {
-        float chickY = cy + 20.0f;
-        float frogY = cy - 60.0f;
-        float btnW = 200.0f, btnH = 60.0f;
-
-        if (x > cx - btnW/2 && x < cx + btnW/2 && invertedY > chickY - btnH/2 && invertedY < chickY + btnH/2) {
-            player.setModel(MODEL_CHICKEN);
-            state = GAME_STATE_MAIN_MENU;
-        }
-        else if (x > cx - btnW/2 && x < cx + btnW/2 && invertedY > frogY - btnH/2 && invertedY < frogY + btnH/2) {
-            player.setModel(MODEL_FROG);
-            state = GAME_STATE_MAIN_MENU;
+        float btnW = 200.0f, btnH = 45.0f;
+        
+        // Horizontal check (all buttons are centered on CX)
+        if (x > cx - btnW/2 && x < cx + btnW/2) {
+            
+            // Chicken (Top)
+            if (invertedY > (cy + 100.0f) - btnH/2 && invertedY < (cy + 100.0f) + btnH/2) {
+                player.setModel(MODEL_CHICKEN);
+                state = GAME_STATE_MAIN_MENU;
+            }
+            // Frog
+            else if (invertedY > (cy + 45.0f) - btnH/2 && invertedY < (cy + 45.0f) + btnH/2) {
+                player.setModel(MODEL_FROG);
+                state = GAME_STATE_MAIN_MENU;
+            }
+            // Dino
+            else if (invertedY > (cy - 10.0f) - btnH/2 && invertedY < (cy - 10.0f) + btnH/2) {
+                player.setModel(MODEL_DINO);
+                state = GAME_STATE_MAIN_MENU;
+            }
+            // Cat
+            else if (invertedY > (cy - 65.0f) - btnH/2 && invertedY < (cy - 65.0f) + btnH/2) {
+                player.setModel(MODEL_CAT);
+                state = GAME_STATE_MAIN_MENU;
+            }
+            // Dog (Bottom)
+            else if (invertedY > (cy - 120.0f) - btnH/2 && invertedY < (cy - 120.0f) + btnH/2) {
+                player.setModel(MODEL_DOG);
+                state = GAME_STATE_MAIN_MENU;
+            }
         }
     }
     else if (state == GAME_STATE_START_SCREEN)

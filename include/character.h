@@ -8,7 +8,7 @@
 #include "types.h"
 #include "character_base.h"
 
-enum CharacterModel { MODEL_CHICKEN, MODEL_FROG };
+enum CharacterModel { MODEL_CHICKEN, MODEL_FROG, MODEL_DINO, MODEL_CAT, MODEL_DOG };
 enum DeathType { DEATH_NONE, DEATH_SQUISH, DEATH_WATER };
 
 struct WaterParticle {

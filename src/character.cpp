@@ -1,6 +1,9 @@
 #include "../include/character.h"
 #include "../include/character_chicken.h"
 #include "../include/character_frog.h"
+#include "../include/character_dino.h"
+#include "../include/character_cat.h"
+#include "../include/character_dog.h"
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
@@ -10,12 +13,15 @@ Chicken::Chicken() {
     reset();
 }
 
+
 void Chicken::setModel(CharacterModel model) {
     currentModel = model;
-    if (model == MODEL_CHICKEN) {
-        modelRenderer = std::make_unique<CharacterChicken>();
-    } else if(model == MODEL_FROG) {
-        modelRenderer = std::make_unique<CharacterFrog>();
+    switch(model) {
+        case MODEL_CHICKEN: modelRenderer = std::make_unique<CharacterChicken>(); break;
+        case MODEL_FROG:    modelRenderer = std::make_unique<CharacterFrog>();    break;
+        case MODEL_DINO:    modelRenderer = std::make_unique<CharacterDino>();    break;
+        case MODEL_CAT:     modelRenderer = std::make_unique<CharacterCat>();     break;
+        case MODEL_DOG:     modelRenderer = std::make_unique<CharacterDog>();     break;
     }
 }
 

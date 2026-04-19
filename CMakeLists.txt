@@ -51,11 +51,14 @@ set(SOURCES
     src/renderer.cpp
     src/camera.cpp
     src/shader.cpp
-    src/stb_implement.cpp
-    src/character_frog.cpp
-    src/character_chicken.cpp   
-    src/character_base.cpp
     src/coin.cpp
+    src/stb_implement.cpp
+    src/character_chicken.cpp   
+    src/character_frog.cpp
+    src/character_dino.cpp
+    src/character_cat.cpp
+    src/character_dog.cpp
+    src/character_base.cpp
 )
 
 # Create executable
