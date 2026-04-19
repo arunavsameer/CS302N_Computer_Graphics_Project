@@ -1,4 +1,4 @@
-#include "../include/chicken.h"
+#include "../include/character.h"
 #include "../include/character_chicken.h"
 #include "../include/character_frog.h"
 #include <iostream>
@@ -14,7 +14,7 @@ void Chicken::setModel(CharacterModel model) {
     currentModel = model;
     if (model == MODEL_CHICKEN) {
         modelRenderer = std::make_unique<CharacterChicken>();
-    } else {
+    } else if(model == MODEL_FROG) {
         modelRenderer = std::make_unique<CharacterFrog>();
     }
 }

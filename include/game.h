@@ -5,7 +5,7 @@
 #include "types.h"
 #include "renderer.h"
 #include "camera.h"
-#include "chicken.h"
+#include "character.h"
 #include "lane.h"
 
 class Game {

@@ -67,6 +67,10 @@
 │   │   │   ├── progress.make
 │   │   │   └── src
 │   │   │       ├── camera.cpp.o
+│   │   │       ├── character_base.cpp.o
+│   │   │       ├── character_chicken.cpp.o
+│   │   │       ├── character.cpp.o
+│   │   │       ├── character_frog.cpp.o
 │   │   │       ├── chicken.cpp.o
 │   │   │       ├── coin.cpp.o
 │   │   │       ├── collision.cpp.o
@@ -126,7 +130,10 @@
 ├── CMakeLists.txt
 ├── include
 │   ├── camera.h
-│   ├── chicken.h
+│   ├── character_base.h
+│   ├── character_chicken.h
+│   ├── character_frog.h
+│   ├── character.h
 │   ├── coin.h
 │   ├── collision.h
 │   ├── game.h
@@ -140,7 +147,10 @@
 ├── Makefile
 ├── src
 │   ├── camera.cpp
-│   ├── chicken.cpp
+│   ├── character_base.cpp
+│   ├── character_chicken.cpp
+│   ├── character.cpp
+│   ├── character_frog.cpp
 │   ├── coin.cpp
 │   ├── collision.cpp
 │   ├── game.cpp
@@ -151,4 +161,4 @@
 │   └── stb_implement.cpp
 └── tree.txt
 
-33 directories, 119 files
+33 directories, 129 files

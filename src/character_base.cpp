@@ -1,5 +1,5 @@
 #include "../include/character_base.h"
-#include "../include/chicken.h"
+#include "../include/character.h"
 #include "../include/types.h"
 
 #define GL_SILENCE_DEPRECATION

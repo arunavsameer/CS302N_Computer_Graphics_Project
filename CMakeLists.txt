@@ -44,7 +44,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 set(SOURCES
     main.cpp
     src/game.cpp
-    src/chicken.cpp
+    src/character.cpp
     src/lane.cpp
     src/obstacle.cpp
     src/collision.cpp
