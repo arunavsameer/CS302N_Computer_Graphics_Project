@@ -113,10 +113,14 @@ static void drawWheels(Renderer& renderer,
 {
     glm::vec3 wc(0.08f, 0.08f, 0.08f);
     glm::vec3 ws(wheelSize);
-    renderer.drawCube(basePos + glm::vec3(xFront, 0.0f,  zSide), ws, wc);
-    renderer.drawCube(basePos + glm::vec3(xBack,  0.0f,  zSide), ws, wc);
-    renderer.drawCube(basePos + glm::vec3(xFront, 0.0f, -zSide), ws, wc);
-    renderer.drawCube(basePos + glm::vec3(xBack,  0.0f, -zSide), ws, wc);
+    
+    // Shifts center up so the bottom of the tire rests EXACTLY at local 0.0
+    float wheelY = wheelSize / 2.0f; 
+    
+    renderer.drawCube(basePos + glm::vec3(xFront, wheelY,  zSide), ws, wc);
+    renderer.drawCube(basePos + glm::vec3(xBack,  wheelY,  zSide), ws, wc);
+    renderer.drawCube(basePos + glm::vec3(xFront, wheelY, -zSide), ws, wc);
+    renderer.drawCube(basePos + glm::vec3(xBack,  wheelY, -zSide), ws, wc);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -140,6 +144,7 @@ void Obstacle::render(Renderer& renderer) {
 
         glm::vec3 bodyBlue (0.18f, 0.45f, 0.82f);
         glm::vec3 roofWhite(0.92f, 0.92f, 0.96f);
+        glm::vec3 glassCol (0.55f, 0.78f, 0.95f);   // tinted window glass
         glm::vec3 darkWin  (0.08f, 0.09f, 0.12f);
         glm::vec3 wheelCol (0.08f, 0.08f, 0.08f);
         glm::vec3 stackCol (0.28f, 0.28f, 0.30f);
@@ -154,57 +159,72 @@ void Obstacle::render(Renderer& renderer) {
         glm::vec3 c2  (p.x - dir * 2.15f, p.y, p.z);
         glm::vec3 c3  (p.x - dir * 7.15f, p.y, p.z);
 
-        renderer.drawCube(loco, {4.5f,0.58f,0.88f}, bodyBlue);
-        renderer.drawCube(loco+glm::vec3(-dir*0.65f, 0.44f,0), {3.0f,0.36f,0.82f}, roofWhite);
-        renderer.drawCube(loco+glm::vec3(-dir*0.65f, 0.68f,0), {2.8f,0.12f,0.80f}, bodyBlue);
-        renderer.drawCube(loco+glm::vec3(dir*2.25f,-0.18f,0),  {0.48f,0.24f,0.86f}, cowcatch);
-        renderer.drawCube(loco+glm::vec3(dir*0.3f,-0.22f,0),   {2.8f,0.10f,0.90f}, redStripe);
-        renderer.drawCube(loco+glm::vec3(dir*1.4f, 0.68f,0),   {0.28f,0.36f,0.28f}, stackCol);
-        renderer.drawCube(loco+glm::vec3(dir*1.4f, 0.90f,0),   {0.42f,0.10f,0.42f}, stackCol);
-        renderer.drawCube(loco+glm::vec3(dir*1.4f, 1.05f,0),   {0.34f,0.22f,0.34f}, steamCol);
-        renderer.drawCube(loco+glm::vec3(dir*1.55f,1.22f,0),   {0.22f,0.16f,0.22f}, steamCol);
-        // ── Two emissive headlamp lenses (replaces the old single headlamp) ──
-        renderer.drawCubeEmissive(loco+glm::vec3(dir*2.15f, 0.14f,  0.18f), {0.18f,0.18f,0.14f}, headlamp);
-        renderer.drawCubeEmissive(loco+glm::vec3(dir*2.15f, 0.14f, -0.18f), {0.18f,0.18f,0.14f}, headlamp);
-        if (renderer.isNightMode())
-            renderer.drawHeadlightBeam(loco + glm::vec3(dir*2.15f, 0.14f, 0.0f),
-                                       dir, 1.40f, 0.55f, 8.0f);
-        renderer.drawCube(loco+glm::vec3(-dir*0.30f,0.50f, 0.38f), {1.20f,0.28f,0.08f}, darkWin);
-        renderer.drawCube(loco+glm::vec3(-dir*0.30f,0.50f,-0.38f), {1.20f,0.28f,0.08f}, darkWin);
-        renderer.drawCube(loco+glm::vec3(dir*2.0f,  0.48f,0),      {0.08f,0.24f,0.60f}, darkWin);
+        // ── Locomotive ────────────────────────────────────────────────────────
+        renderer.drawCube(loco, {4.5f, 0.58f, 0.88f}, bodyBlue);
+        renderer.drawCube(loco + glm::vec3(-dir*0.65f, 0.48f, 0.0f), {3.0f, 0.36f, 0.82f}, roofWhite);
+        renderer.drawCube(loco + glm::vec3(-dir*0.65f, 0.73f, 0.0f), {2.8f, 0.12f, 0.80f}, bodyBlue);
+        renderer.drawCube(loco + glm::vec3(dir*2.25f, -0.18f, 0.0f),  {0.48f, 0.24f, 0.86f}, cowcatch);
+        renderer.drawCube(loco + glm::vec3(dir*0.3f, -0.22f, 0.0f),   {2.8f, 0.10f, 0.90f}, redStripe);
+        renderer.drawCube(loco + glm::vec3(dir*1.4f, 0.68f, 0.0f),    {0.28f, 0.36f, 0.28f}, stackCol);
+        renderer.drawCube(loco + glm::vec3(dir*1.4f, 0.93f, 0.0f),    {0.42f, 0.10f, 0.42f}, stackCol);
+        renderer.drawCube(loco + glm::vec3(dir*1.4f, 1.08f, 0.0f),    {0.34f, 0.22f, 0.34f}, steamCol);
+        renderer.drawCube(loco + glm::vec3(dir*1.55f, 1.26f, 0.0f),   {0.22f, 0.16f, 0.22f}, steamCol);
 
+        // ── Two emissive headlamp lenses on the loco front face ───────────────
+        renderer.drawCubeEmissive(loco + glm::vec3(dir*2.27f,  0.14f,  0.20f), {0.18f, 0.18f, 0.14f}, headlamp);
+        renderer.drawCubeEmissive(loco + glm::vec3(dir*2.27f,  0.14f, -0.20f), {0.18f, 0.18f, 0.14f}, headlamp);
+
+        if (renderer.isNightMode()) {
+            renderer.drawHeadlightBeam(loco + glm::vec3(dir*2.27f, 0.14f,  0.20f),
+                                       dir, 1.40f, 0.50f, 8.0f);
+            renderer.drawHeadlightBeam(loco + glm::vec3(dir*2.27f, 0.14f, -0.20f),
+                                       dir, 1.40f, 0.50f, 8.0f);
+        }
+
+        renderer.drawCube(loco + glm::vec3(-dir*0.30f, 0.50f,  0.47f), {1.20f, 0.28f, 0.04f}, glassCol);
+        renderer.drawCube(loco + glm::vec3(-dir*0.30f, 0.50f, -0.47f), {1.20f, 0.28f, 0.04f}, glassCol);
+        renderer.drawCube(loco + glm::vec3(dir*2.0f, 0.48f, 0.0f), {0.08f, 0.24f, 0.60f}, glassCol);
+
+        // ── Locomotive wheels ─────────────────────────────────────────────────
         float locoWheelX[3] = { dir*1.6f, dir*0.2f, -dir*1.1f };
         for (int w = 0; w < 3; w++) {
-            renderer.drawCube(loco+glm::vec3(locoWheelX[w],-0.32f, 0.43f), {0.28f,0.28f,0.22f}, wheelCol);
-            renderer.drawCube(loco+glm::vec3(locoWheelX[w],-0.32f,-0.43f), {0.28f,0.28f,0.22f}, wheelCol);
+            renderer.drawCube(loco + glm::vec3(locoWheelX[w], -0.32f,  0.43f), {0.28f, 0.28f, 0.22f}, wheelCol);
+            renderer.drawCube(loco + glm::vec3(locoWheelX[w], -0.32f, -0.43f), {0.28f, 0.28f, 0.22f}, wheelCol);
         }
-        renderer.drawCube(loco+glm::vec3(dir*0.9f,-0.30f, 0.43f), {1.40f,0.06f,0.06f}, {0.55f,0.55f,0.58f});
-        renderer.drawCube(loco+glm::vec3(dir*0.9f,-0.30f,-0.43f), {1.40f,0.06f,0.06f}, {0.55f,0.55f,0.58f});
+        renderer.drawCube(loco + glm::vec3(dir*0.9f, -0.30f,  0.43f), {1.40f, 0.06f, 0.06f}, {0.55f, 0.55f, 0.58f});
+        renderer.drawCube(loco + glm::vec3(dir*0.9f, -0.30f, -0.43f), {1.40f, 0.06f, 0.06f}, {0.55f, 0.55f, 0.58f});
 
+        // ── Passenger cars ────────────────────────────────────────────────────
         auto drawCar = [&](glm::vec3 centre) {
-            renderer.drawCube(centre,  {4.7f,0.52f,0.86f}, carBody);
-            renderer.drawCube(centre+glm::vec3(0,0.30f,0), {4.7f,0.10f,0.84f}, bodyBlue);
-            renderer.drawCube(centre+glm::vec3(0,-0.24f,0),{4.7f,0.08f,0.88f}, bodyBlue);
-            float winX[3]={-1.35f,0.0f,1.35f};
-            for (int w=0;w<3;w++){
-                renderer.drawCube(centre+glm::vec3(winX[w],0.10f, 0.37f),{0.65f,0.22f,0.08f},darkWin);
-                renderer.drawCube(centre+glm::vec3(winX[w],0.10f,-0.37f),{0.65f,0.22f,0.08f},darkWin);
+            renderer.drawCube(centre, {4.7f, 0.52f, 0.86f}, carBody);
+            renderer.drawCube(centre + glm::vec3(0.0f, 0.33f, 0.0f),  {4.7f, 0.12f, 0.84f}, bodyBlue);
+            renderer.drawCube(centre + glm::vec3(0.0f, -0.21f, 0.0f), {4.7f, 0.08f, 0.84f}, bodyBlue);
+
+            float winX[3] = { -1.35f, 0.0f, 1.35f };
+            for (int w = 0; w < 3; w++) {
+                renderer.drawCube(centre + glm::vec3(winX[w], 0.10f,  0.38f), {0.65f, 0.22f, 0.07f}, glassCol);
+                renderer.drawCube(centre + glm::vec3(winX[w], 0.10f, -0.38f), {0.65f, 0.22f, 0.07f}, glassCol);
             }
-            float wX[2]={1.4f,-1.4f};
-            for (int w=0;w<2;w++){
-                renderer.drawCube(centre+glm::vec3(wX[w],-0.32f, 0.42f),{0.26f,0.26f,0.22f},wheelCol);
-                renderer.drawCube(centre+glm::vec3(wX[w],-0.32f,-0.42f),{0.26f,0.26f,0.22f},wheelCol);
+
+            renderer.drawCube(centre + glm::vec3( 2.38f, 0.08f, 0.0f), {0.04f, 0.22f, 0.68f}, glassCol);
+            renderer.drawCube(centre + glm::vec3(-2.38f, 0.08f, 0.0f), {0.04f, 0.22f, 0.68f}, glassCol);
+
+            float wX[2] = { 1.4f, -1.4f };
+            for (int w = 0; w < 2; w++) {
+                renderer.drawCube(centre + glm::vec3(wX[w], -0.32f,  0.42f), {0.26f, 0.26f, 0.22f}, wheelCol);
+                renderer.drawCube(centre + glm::vec3(wX[w], -0.32f, -0.42f), {0.26f, 0.26f, 0.22f}, wheelCol);
             }
         };
+
         drawCar(c1); drawCar(c2); drawCar(c3);
-        renderer.drawCube(c3+glm::vec3(-dir*2.42f,0,0), {0.10f,0.30f,0.70f}, redStripe);
+        renderer.drawCube(c3 + glm::vec3(-dir*2.42f, 0.0f, 0.0f), {0.10f, 0.30f, 0.70f}, redStripe);
         return;
     }
 
     // ── LILYPAD ───────────────────────────────────────────────────────────────
     if (type == OBSTACLE_LILYPAD) {
         renderer.drawLilypad(position, size,
-                             {0.25f,0.69f,0.37f}, {0.36f,0.87f,0.51f});
+                             {0.25f, 0.69f, 0.37f}, {0.36f, 0.87f, 0.51f});
         return;
     }
 
@@ -212,60 +232,187 @@ void Obstacle::render(Renderer& renderer) {
     const float dir = (speed >= 0.0f) ? 1.0f : -1.0f;
     glm::vec3   pos = position;
 
+    // ==========================================================================
+    // TWEAK THIS OFF-SET TO MATCH YOUR TERRAIN HEIGHT
+    // I made all vehicle tires bottom out exactly at local 0.0. 
+    // Tweak this variable to drop the vehicles precisely onto your visual road.
+    // E.g., if it still floats slightly, try -0.25f. If it clips, try -0.15f.
+    // ==========================================================================
+    const float ROAD_SURFACE_OFFSET = -0.20f; 
+    pos.y += ROAD_SURFACE_OFFSET;
+
     if (vehicleVariant == VEHICLE_SMALL_CAR) {
-        glm::vec3 body(0.28f,0.82f,0.42f), roof(0.18f,0.58f,0.28f), win(0.08f,0.08f,0.08f);
-        renderer.drawCube(pos+glm::vec3(0,0.18f,0),          {1.40f,0.32f,0.74f},body);
-        renderer.drawCube(pos+glm::vec3(0.12f*dir,0.42f,0),  {0.80f,0.24f,0.58f},roof);
-        renderer.drawCube(pos+glm::vec3(0.34f*dir,0.48f,0),  {0.22f,0.16f,0.44f},win);
-        drawWheels(renderer,pos,-0.48f,0.48f,0.34f,0.15f);
-        // ── Headlights ────────────────────────────────────────────────────
-        glm::vec3 hlCol(1.00f, 0.97f, 0.75f);
-        glm::vec3 hlSize(0.07f, 0.10f, 0.10f);
-        float frontX = 0.70f * dir;
-        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.18f,  0.24f), hlSize, hlCol);
-        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.18f, -0.24f), hlSize, hlCol);
-        if (renderer.isNightMode())
-            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.18f, 0.0f),
-                                       dir, 0.90f, 0.35f, 5.0f);
+        // ── Palette ──────────────────────────────────────────────────────────
+        glm::vec3 bodyCol (0.28f, 0.82f, 0.42f);   // bright green
+        glm::vec3 cabinCol(0.18f, 0.58f, 0.28f);   // darker green
+        glm::vec3 glassCol(0.55f, 0.78f, 0.95f);   // tinted blue glass
+        glm::vec3 hlCol   (1.00f, 0.97f, 0.75f);   // headlight warm yellow
+        glm::vec3 tlCol   (0.95f, 0.10f, 0.05f);   // tail-light red
+
+        // ── Lower body ───────────────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(0.0f, 0.22f, 0.0f),
+                          {1.40f, 0.32f, 0.76f}, bodyCol);
+
+        // ── Cabin ────────────────────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(0.10f*dir, 0.53f, 0.0f),
+                          {0.78f, 0.22f, 0.60f}, cabinCol);
+
+        // ── Windows ──────────────────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(0.10f*dir, 0.53f,  0.33f),
+                          {0.60f, 0.17f, 0.04f}, glassCol);
+        renderer.drawCube(pos + glm::vec3(0.10f*dir, 0.53f, -0.33f),
+                          {0.60f, 0.17f, 0.04f}, glassCol);
+        renderer.drawCube(pos + glm::vec3(0.52f*dir, 0.53f, 0.0f),
+                          {0.04f, 0.17f, 0.52f}, glassCol);
+        renderer.drawCube(pos + glm::vec3(-0.32f*dir, 0.53f, 0.0f),
+                          {0.04f, 0.17f, 0.52f}, glassCol);
+
+        // ── Wheels ────────────────────────────────────────────────────────────
+        drawWheels(renderer, pos, -0.48f, 0.48f, 0.38f, 0.16f);
+
+        // ── Lights ────────────────────────────────────────────────────────────
+        const float frontX = 0.72f * dir;
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX, 0.22f,  0.25f),
+                                  {0.06f, 0.10f, 0.10f}, hlCol);
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX, 0.22f, -0.25f),
+                                  {0.06f, 0.10f, 0.10f}, hlCol);
+
+        const float rearX = -0.72f * dir;
+        renderer.drawCubeEmissive(pos + glm::vec3(rearX, 0.22f,  0.25f),
+                                  {0.05f, 0.08f, 0.08f}, tlCol);
+        renderer.drawCubeEmissive(pos + glm::vec3(rearX, 0.22f, -0.25f),
+                                  {0.05f, 0.08f, 0.08f}, tlCol);
+
+        // ── Night beams ───────────────────────────────────────────────────────
+        if (renderer.isNightMode()) {
+            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.22f,  0.25f),
+                                       dir, 0.88f, 0.30f, 5.0f);
+            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.22f, -0.25f),
+                                       dir, 0.88f, 0.30f, 5.0f);
+        }
     }
     else if (vehicleVariant == VEHICLE_BIG_CAR) {
-        glm::vec3 body(0.95f,0.38f,0.08f), roof(0.96f,0.96f,0.96f), win(0.08f,0.08f,0.08f);
-        renderer.drawCube(pos+glm::vec3(0,0.18f,0),          {1.90f,0.36f,0.86f},body);
-        renderer.drawCube(pos+glm::vec3(0,0.46f,0),          {1.90f,0.25f,0.80f},roof);
-        renderer.drawCube(pos+glm::vec3(0.68f*dir,0.50f,0),  {0.28f,0.20f,0.52f},win);
-        renderer.drawCube(pos+glm::vec3(-0.60f*dir,0.50f,0), {0.24f,0.20f,0.52f},win);
-        drawWheels(renderer,pos,-0.68f,0.68f,0.38f,0.17f);
-        // ── Headlights ────────────────────────────────────────────────────
-        glm::vec3 hlCol(1.00f, 0.97f, 0.75f);
-        glm::vec3 hlSize(0.07f, 0.12f, 0.12f);
-        float frontX = 0.95f * dir;
-        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.18f,  0.30f), hlSize, hlCol);
-        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.18f, -0.30f), hlSize, hlCol);
-        if (renderer.isNightMode())
-            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.18f, 0.0f),
-                                       dir, 1.10f, 0.40f, 5.5f);
+        // ── Palette ──────────────────────────────────────────────────────────
+        glm::vec3 bodyCol (0.95f, 0.38f, 0.08f);   // orange body
+        glm::vec3 cabinCol(0.96f, 0.96f, 0.96f);   // white cabin / roof
+        glm::vec3 glassCol(0.55f, 0.78f, 0.95f);   // tinted glass
+        glm::vec3 hlCol   (1.00f, 0.97f, 0.75f);
+        glm::vec3 tlCol   (0.95f, 0.10f, 0.05f);
+
+        // ── Lower body ────────────────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(0.0f, 0.22f, 0.0f),
+                          {1.88f, 0.36f, 0.86f}, bodyCol);
+
+        // ── Cabin ─────────────────────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(0.0f, 0.57f, 0.0f),
+                          {1.88f, 0.28f, 0.78f}, cabinCol);
+
+        // ── Windows ───────────────────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(0.0f, 0.57f,  0.42f),
+                          {1.70f, 0.22f, 0.04f}, glassCol);
+        renderer.drawCube(pos + glm::vec3(0.0f, 0.57f, -0.42f),
+                          {1.70f, 0.22f, 0.04f}, glassCol);
+        renderer.drawCube(pos + glm::vec3(0.97f*dir, 0.57f, 0.0f),
+                          {0.04f, 0.24f, 0.70f}, glassCol);
+        renderer.drawCube(pos + glm::vec3(-0.97f*dir, 0.57f, 0.0f),
+                          {0.04f, 0.24f, 0.70f}, glassCol);
+
+        // ── Wheels ────────────────────────────────────────────────────────────
+        drawWheels(renderer, pos, -0.68f, 0.68f, 0.40f, 0.17f);
+
+        // ── Lights ────────────────────────────────────────────────────────────
+        const float frontX = 0.96f * dir;
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX, 0.22f,  0.30f),
+                                  {0.06f, 0.12f, 0.12f}, hlCol);
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX, 0.22f, -0.30f),
+                                  {0.06f, 0.12f, 0.12f}, hlCol);
+
+        const float rearX = -0.96f * dir;
+        renderer.drawCubeEmissive(pos + glm::vec3(rearX, 0.22f,  0.30f),
+                                  {0.05f, 0.10f, 0.10f}, tlCol);
+        renderer.drawCubeEmissive(pos + glm::vec3(rearX, 0.22f, -0.30f),
+                                  {0.05f, 0.10f, 0.10f}, tlCol);
+
+        // ── Night beams ───────────────────────────────────────────────────────
+        if (renderer.isNightMode()) {
+            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.22f,  0.30f),
+                                       dir, 1.10f, 0.38f, 5.5f);
+            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.22f, -0.30f),
+                                       dir, 1.10f, 0.38f, 5.5f);
+        }
     }
-    else {  // TRUCK
-        glm::vec3 trailer(0.88f,0.88f,0.92f), cab(0.18f,0.52f,0.92f), win(0.08f,0.08f,0.08f);
-        renderer.drawCube(pos+glm::vec3(-0.55f*dir,0.42f,0), {2.10f,0.72f,0.84f},trailer);
-        renderer.drawCube(pos+glm::vec3( 1.10f*dir,0.34f,0), {0.88f,0.56f,0.84f},cab);
-        renderer.drawCube(pos+glm::vec3( 1.05f*dir,0.66f,0), {0.62f,0.20f,0.60f},cab);
-        renderer.drawCube(pos+glm::vec3( 1.36f*dir,0.52f,0), {0.20f,0.24f,0.42f},win);
-        float w=0.20f; glm::vec3 wc(0.08f,0.08f,0.08f);
-        renderer.drawCube(pos+glm::vec3( 0.90f*dir,-0.06f, 0.38f),{w,w,w},wc);
-        renderer.drawCube(pos+glm::vec3( 0.90f*dir,-0.06f,-0.38f),{w,w,w},wc);
-        renderer.drawCube(pos+glm::vec3(-0.20f*dir,-0.06f, 0.38f),{w,w,w},wc);
-        renderer.drawCube(pos+glm::vec3(-0.20f*dir,-0.06f,-0.38f),{w,w,w},wc);
-        renderer.drawCube(pos+glm::vec3(-0.90f*dir,-0.06f, 0.38f),{w,w,w},wc);
-        renderer.drawCube(pos+glm::vec3(-0.90f*dir,-0.06f,-0.38f),{w,w,w},wc);
-        // ── Headlights (on cab front face) ────────────────────────────────
-        glm::vec3 hlCol(1.00f, 0.97f, 0.75f);
-        glm::vec3 hlSize(0.07f, 0.11f, 0.11f);
-        float frontX = 1.54f * dir;   // cab front: 1.10 + 0.44 half-width
-        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.28f,  0.26f), hlSize, hlCol);
-        renderer.drawCubeEmissive(pos + glm::vec3(frontX,  0.28f, -0.26f), hlSize, hlCol);
-        if (renderer.isNightMode())
-            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.28f, 0.0f),
-                                       dir, 1.20f, 0.45f, 6.0f);
+    else {  // ── TRUCK ──────────────────────────────────────────────────────
+        // ── Palette ──────────────────────────────────────────────────────────
+        glm::vec3 trailerCol(0.88f, 0.88f, 0.92f);  // silver trailer
+        glm::vec3 cabCol    (0.18f, 0.52f, 0.92f);  // blue cab
+        glm::vec3 glassCol  (0.55f, 0.78f, 0.95f);  // glass
+        glm::vec3 hlCol     (1.00f, 0.97f, 0.75f);
+        glm::vec3 tlCol     (0.95f, 0.10f, 0.05f);
+        glm::vec3 wc        (0.08f, 0.08f, 0.08f);
+
+        // ── Trailer body ──────────────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.42f, 0.0f),
+                          {2.10f, 0.72f, 0.84f}, trailerCol);
+        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.42f,  0.445f),
+                          {2.10f, 0.14f, 0.03f}, cabCol);
+        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.42f, -0.445f),
+                          {2.10f, 0.14f, 0.03f}, cabCol);
+
+        // ── Trailer side windows ───────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.50f,  0.448f),
+                          {1.80f, 0.26f, 0.04f}, glassCol);
+        renderer.drawCube(pos + glm::vec3(-0.55f*dir, 0.50f, -0.448f),
+                          {1.80f, 0.26f, 0.04f}, glassCol);
+
+        // ── Cab lower section ─────────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(1.10f*dir, 0.34f, 0.0f),
+                          {0.88f, 0.56f, 0.84f}, cabCol);
+
+        // ── Cab roof ──────────────────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(1.05f*dir, 0.73f, 0.0f),
+                          {0.62f, 0.20f, 0.62f}, cabCol);
+
+        // ── Cab side windows ──────────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(1.10f*dir, 0.42f,  0.445f),
+                          {0.68f, 0.32f, 0.04f}, glassCol);
+        renderer.drawCube(pos + glm::vec3(1.10f*dir, 0.42f, -0.445f),
+                          {0.68f, 0.32f, 0.04f}, glassCol);
+
+        // ── Cab front windshield ──────────────────────────────────────────────
+        renderer.drawCube(pos + glm::vec3(1.57f*dir, 0.46f, 0.0f),
+                          {0.04f, 0.30f, 0.72f}, glassCol);
+
+        // ── Truck wheels ──────────────────────────────────────────────────────
+        float w = 0.20f;
+        // Shifts center up so the bottom of the tire rests EXACTLY at local 0.0
+        float truckWheelY = w / 2.0f;
+        
+        renderer.drawCube(pos + glm::vec3( 0.90f*dir, truckWheelY,  0.38f), {w, w, w}, wc);
+        renderer.drawCube(pos + glm::vec3( 0.90f*dir, truckWheelY, -0.38f), {w, w, w}, wc);
+        renderer.drawCube(pos + glm::vec3(-0.20f*dir, truckWheelY,  0.38f), {w, w, w}, wc);
+        renderer.drawCube(pos + glm::vec3(-0.20f*dir, truckWheelY, -0.38f), {w, w, w}, wc);
+        renderer.drawCube(pos + glm::vec3(-0.90f*dir, truckWheelY,  0.38f), {w, w, w}, wc);
+        renderer.drawCube(pos + glm::vec3(-0.90f*dir, truckWheelY, -0.38f), {w, w, w}, wc);
+
+        // ── Lights ────────────────────────────────────────────────────────────
+        const float frontX = 1.56f * dir;
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX, 0.24f,  0.28f),
+                                  {0.06f, 0.11f, 0.11f}, hlCol);
+        renderer.drawCubeEmissive(pos + glm::vec3(frontX, 0.24f, -0.28f),
+                                  {0.06f, 0.11f, 0.11f}, hlCol);
+
+        const float rearX = -1.62f * dir;
+        renderer.drawCubeEmissive(pos + glm::vec3(rearX, 0.32f,  0.30f),
+                                  {0.06f, 0.10f, 0.10f}, tlCol);
+        renderer.drawCubeEmissive(pos + glm::vec3(rearX, 0.32f, -0.30f),
+                                  {0.06f, 0.10f, 0.10f}, tlCol);
+
+        // ── Night beams ───────────────────────────────────────────────────────
+        if (renderer.isNightMode()) {
+            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.24f,  0.28f),
+                                       dir, 1.20f, 0.42f, 6.0f);
+            renderer.drawHeadlightBeam(pos + glm::vec3(frontX, 0.24f, -0.28f),
+                                       dir, 1.20f, 0.42f, 6.0f);
+        }
     }
 }
