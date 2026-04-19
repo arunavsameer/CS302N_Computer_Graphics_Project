@@ -66,24 +66,38 @@ Lane::Lane(float z, LaneType t, int safePath)
         }
     }
     else if (type == LANE_RIVER) {
-        float speed = dir * (Config::LOG_SPEED_MIN +
-            static_cast<float>(rand()) /
-            (static_cast<float>(RAND_MAX) / (Config::LOG_SPEED_MAX - Config::LOG_SPEED_MIN)));
-
-        int logCount = Config::LOG_COUNT_MIN +
-            rand() % (Config::LOG_COUNT_MAX - Config::LOG_COUNT_MIN + 1);
-
-        float totalSpan = (logCount - 1) * Config::LOG_SPACING;
-        float startX = -totalSpan / 2.0f;
-
-        for (int i = 0; i < logCount; i++) {
-            float x = startX + i * Config::LOG_SPACING;
-
-            obstacles.push_back(Obstacle(
-                glm::vec3(x, Config::LOG_Y, zPosition),
-                speed, OBSTACLE_LOG));
+            float speed = dir * (Config::LOG_SPEED_MIN +
+                static_cast<float>(rand()) /
+                (static_cast<float>(RAND_MAX) / (Config::LOG_SPEED_MAX - Config::LOG_SPEED_MIN)));
+            
+            // Calculate where the very first set should start so they are spread out
+            float startSetX = -((Config::LOG_SETS - 1) * Config::LOG_SET_GAP) / 2.0f;
+            
+            // Loop to create multiple SETS of logs
+            for (int s = 0; s < Config::LOG_SETS; s++) {
+                
+                // Randomize how many logs are in THIS specific set (1 to 3)
+                int logCount = Config::LOG_COUNT_MIN +
+                    rand() % (Config::LOG_COUNT_MAX - Config::LOG_COUNT_MIN + 1);
+            
+                float totalSpan = (logCount - 1) * Config::LOG_SPACING;
+                
+                // The center point for this set of logs
+                float setCenterX = startSetX + (s * Config::LOG_SET_GAP);
+                
+                // The starting X position for the first log in this set
+                float startX = setCenterX - (totalSpan / 2.0f);
+            
+                // Loop to create the individual logs inside the set
+                for (int i = 0; i < logCount; i++) {
+                    float x = startX + i * Config::LOG_SPACING;
+                
+                    obstacles.push_back(Obstacle(
+                        glm::vec3(x, Config::LOG_Y, zPosition),
+                        speed, OBSTACLE_LOG));
+                }
+            }
         }
-    }
     else if (type == LANE_LILYPAD) {
         // 1. Guaranteed lilypad on the safe path so the player can cross
         float safeX = safePathColumn * Config::CELL_SIZE;

@@ -34,7 +34,7 @@ namespace Config {
     constexpr int MIN_GRASS_WIDTH = 2;  constexpr int MAX_GRASS_WIDTH = 4;
     constexpr int MIN_ROAD_WIDTH  = 1;  constexpr int MAX_ROAD_WIDTH  = 3;
     constexpr int MIN_RAIL_WIDTH  = 1;  constexpr int MAX_RAIL_WIDTH  = 2;
-    constexpr int MIN_RIVER_WIDTH = 1;  constexpr int MAX_RIVER_WIDTH = 3;
+    constexpr int MIN_RIVER_WIDTH = 5;  constexpr int MAX_RIVER_WIDTH = 5;
 
     // ── Camera ────────────────────────────────────────────────
     constexpr float CAMERA_AUTO_SCROLL_SPEED        = 0.0f;
@@ -57,11 +57,13 @@ namespace Config {
     constexpr float LOG_SPEED_MAX   = 1.5f;
     constexpr int   LOG_COUNT_MIN   = 2;
     constexpr int   LOG_COUNT_MAX   = 3;
-    constexpr float LOG_SPACING     = 4.5f;
+    constexpr float LOG_SPACING     = 4.0f;
     constexpr float LOG_WIDTH       = 2.8f;
     constexpr float LOG_DEPTH       = 0.75f;
     constexpr float LOG_HEIGHT      = 0.28f;
     constexpr float LOG_Y           = 0.14f;
+    constexpr int LOG_SETS = 2; 
+    constexpr float LOG_SET_GAP = 15.0f;
 
     // ── Log sinking ───────────────────────────────────────────
     constexpr float LOG_SINK_AMOUNT = 0.07f;
