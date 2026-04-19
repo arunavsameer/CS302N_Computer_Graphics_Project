@@ -45,9 +45,9 @@ namespace Config {
     constexpr int MIN_RIVER_WIDTH = 1;  constexpr int MAX_RIVER_WIDTH = 3;
 
     // ── Rendering ────────────────────────────────────────────
-    constexpr int   TARGET_FPS                      = 60;
+    constexpr int   TARGET_FPS                      = 120;
     constexpr float FRAME_TIME                      = 1.0f / TARGET_FPS;  // ~0.0167 seconds per frame
-    constexpr float GAME_SPEED_MULTIPLIER           = 2.0f;  // Multiplier for delta time (speeds up game logic)
+    constexpr float GAME_SPEED_MULTIPLIER           = 2.6f;  // Multiplier for delta time (speeds up game logic)
 
     // ── Camera ────────────────────────────────────────────────
     constexpr float CAMERA_AUTO_SCROLL_SPEED        = 0.0f;
