@@ -97,10 +97,6 @@ void Game::generateLaneBlock()
         blockWidth = Config::MIN_RAIL_WIDTH + rand() % (Config::MAX_RAIL_WIDTH - Config::MIN_RAIL_WIDTH + 1);
     }
 
-    // ── Guard: prevent ROAD and RAIL from being directly adjacent ────────────
-    // Both types punch a tunnel arch through the same mountain wall face.
-    // When they meet without a gap the arches overlap, creating Z-fighting
-    // geometry and a confusing visual.  Force a GRASS buffer between them.
     if (!lanes.empty())
     {
         LaneType prevBlockType = lanes.back().getType();
@@ -109,7 +105,6 @@ void Game::generateLaneBlock()
 
         if (prevIsTunnel && nextIsTunnel && prevBlockType != nextType)
         {
-            // Insert a mandatory GRASS separator block first
             int bufWidth = Config::MIN_GRASS_WIDTH + rand() % (Config::MAX_GRASS_WIDTH - Config::MIN_GRASS_WIDTH + 1);
             for (int g = 0; g < bufWidth; g++)
             {
@@ -230,9 +225,6 @@ void Game::update(float deltaTime)
     score = coinScore;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  checkCollisions
-// ─────────────────────────────────────────────────────────────────────────────
 void Game::checkCollisions(float deltaTime)
 {
     glm::vec3 playerPos = player.getPosition();
@@ -253,7 +245,6 @@ void Game::checkCollisions(float deltaTime)
     if (!currentLane)
         return;
 
-    // ── Train cross-lane kill check ──────────────────────────────────────────
     for (auto &lane : lanes)
     {
         if (lane.getType() != LANE_RAIL)
@@ -315,16 +306,12 @@ void Game::checkCollisions(float deltaTime)
                 obs.setSinking(true);
                 player.applyLogVelocity(obs.getSpeed(), deltaTime);
 
-                // ── Fast-stream detection ─────────────────────────────────────
-                // If the log has drifted into the boundary foam zone, kick it
-                // into fast-stream mode and carry the chicken off the screen.
                 float logX = obs.getPosition().x;
                 if (std::abs(logX) > Config::LOG_STREAM_TRIGGER_X)
                 {
                     obs.setFastStream(true);
                 }
 
-                // Kill chicken once it's been swept past the mountain wall
                 if (std::abs(playerPos.x) > Config::BOUNDARY_X + 0.5f)
                 {
                     const float waterSurface = -Config::CELL_SIZE * 0.1f;
@@ -343,7 +330,6 @@ void Game::checkCollisions(float deltaTime)
         }
     }
 
-    // ── Coin collision ───────────────────────────────────────────────────────
     for (auto &coin : currentLane->coins)
     {
         if (coin.collected)
@@ -358,7 +344,6 @@ void Game::checkCollisions(float deltaTime)
         }
     }
 
-    // ── Plain water / no platform death ─────────────────────────────────────
     if ((currentLane->getType() == LANE_RIVER || currentLane->getType() == LANE_LILYPAD) && !player.getIsJumping() && !onLog && !onLilypad)
     {
         const float waterSurface = -Config::CELL_SIZE * 0.1f;
@@ -370,33 +355,23 @@ void Game::checkCollisions(float deltaTime)
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  renderWorldBoundaries
-//
-//  Draws:
-//    • Left + right mountain wall slices for every visible Z position
-//    • Animated foam patches at both ends of each river / lilypad lane
-//    • The static back-wall ridge at the start zone
-// ─────────────────────────────────────────────────────────────────────────────
 void Game::renderWorldBoundaries()
 {
     const glm::vec3 playerPos = player.getPosition();
 
+    // Snap the Z calculation to the grid so mountains don't slide as the player smoothly jumps
+    float snappedZ = std::round(playerPos.z / Config::CELL_SIZE) * Config::CELL_SIZE;
+    
     // Z range to render: a little behind the player to well ahead.
-    const float zStart = playerPos.z + 9.0f;
-    const float zEnd = playerPos.z - 38.0f;
+    const float zStart = snappedZ + 9.0f * Config::CELL_SIZE;
+    const float zEnd = snappedZ - 38.0f * Config::CELL_SIZE;
     const float step = Config::CELL_SIZE;
 
-    // ── Pass 1: pre-scan every Z step and record its lane type ───────────────
-    // We need both the previous AND the next type for each step so we can
-    // correctly place entrance arches (first cell of a tunnel block) and
-    // exit arches (last cell of a tunnel block, only when the block is wide
-    // enough that both arches don't overlap).
     struct SliceInfo
     {
         float z;
         LaneType ltype;
-        float logFlowDir; // +1 / -1 / 0 for water lanes
+        float logFlowDir;
     };
 
     std::vector<SliceInfo> slices;
@@ -429,19 +404,6 @@ void Game::renderWorldBoundaries()
         slices.push_back({z, ltype, lfd});
     }
 
-    // ── Pass 2: render each slice with correct portal-face flag ───────────────
-    //
-    //  isPortalFace rules for tunnel slices (ROAD / RAIL):
-    //    • ENTRANCE arch  – first cell of a same-type block  (prevType != ltype)
-    //    • EXIT arch      – last cell of a same-type block   (nextType != ltype),
-    //                       but ONLY if there is at least one interior cell between
-    //                       entrance and exit (blockWidth >= 3), otherwise the two
-    //                       arches would be only 1-2 units apart and their
-    //                       geometry (±1.3 Z extent) would Z-fight badly.
-    //    • INTERIOR slice – neither entrance nor exit → plain rock + void
-    //
-    //  For single-cell tunnels entrance == exit, counted as entrance only (one arch).
-    //
     const int nSlices = static_cast<int>(slices.size());
     for (int i = 0; i < nSlices; i++)
     {
@@ -450,21 +412,20 @@ void Game::renderWorldBoundaries()
         float lfd = slices[i].logFlowDir;
         bool isTunnel = (ltype == LANE_ROAD || ltype == LANE_RAIL);
 
-        bool isPortalFace = true; // non-tunnel paths ignore this flag anyway
+        bool isPortalFace = true;
 
         if (isTunnel)
         {
             LaneType prev = (i > 0) ? slices[i - 1].ltype : LANE_GRASS;
             LaneType next = (i < nSlices - 1) ? slices[i + 1].ltype : LANE_GRASS;
 
-            bool isEntrance = (prev != ltype); // first cell of this type-block
-            isPortalFace = isEntrance;         // arch only at tunnel entrance; exit faces are plain rock
+            bool isEntrance = (prev != ltype);
+            isPortalFace = isEntrance;
         }
 
         renderer.drawMountainSection(z, ltype, lfd, isPortalFace);
     }
 
-    // ── Foam patches at both ends of water lanes ─────────────────────────────
     for (const auto &lane : lanes)
     {
         LaneType lt = lane.getType();
@@ -479,20 +440,14 @@ void Game::renderWorldBoundaries()
         renderer.drawFoam({Config::BOUNDARY_X - 0.25f, foamY, z}, 1.2f, 0.9f);
     }
 
-    // ── Static back-wall mountain ridge ──────────────────────────────────────
     renderer.drawBackWall();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  render
-// ─────────────────────────────────────────────────────────────────────────────
 void Game::render()
 {
     renderer.prepareFrame();
     camera.apply();
 
-    // Draw world boundaries (mountains / waterfalls / foam) FIRST so they
-    // sit behind the lane surfaces in depth order.
     renderWorldBoundaries();
 
     for (auto &lane : lanes)
@@ -551,12 +506,8 @@ void Game::render()
     renderUIOverlay();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  onKeyPress  –  includes left/right/back boundary enforcement
-// ─────────────────────────────────────────────────────────────────────────────
 void Game::onKeyPress(unsigned char key)
 {
-    // Night mode toggle works in all game states
     if (key == 'n' || key == 'N')
     {
         nightMode = !nightMode;
@@ -591,27 +542,24 @@ void Game::onKeyPress(unsigned char key)
                                                0.0f,
                                                dz * Config::CELL_SIZE);
 
-    // ── Left / right boundary (mountain walls) ───────────────────────────────
     if (std::abs(nextPos.x) >= Config::BOUNDARY_X)
     {
         if (key == 'v' || key == 'V')
             camera.cyclePreset();
         if (key == 'c' || key == 'C')
             camera.toggleLock();
-        return; // blocked by mountain
+        return;
     }
 
-    // ── Back boundary (starting ridge) ──────────────────────────────────────
     if (nextPos.z > Config::BOUNDARY_BACK_Z)
     {
         if (key == 'v' || key == 'V')
             camera.cyclePreset();
         if (key == 'c' || key == 'C')
             camera.toggleLock();
-        return; // blocked by back wall
+        return;
     }
 
-    // ── Find target lane for decoration / signal-post collision ─────────────
     Lane *targetLane = nullptr;
     for (auto &lane : lanes)
     {
@@ -624,7 +572,6 @@ void Game::onKeyPress(unsigned char key)
 
     bool blocked = false;
 
-    // Trees and rocks block on grass
     if (targetLane && targetLane->getType() == LANE_GRASS)
     {
         for (auto &d : targetLane->decorations)
@@ -639,7 +586,6 @@ void Game::onKeyPress(unsigned char key)
         }
     }
 
-    // Signal posts block on rail
     if (!blocked && targetLane && targetLane->getType() == LANE_RAIL)
     {
         for (const auto &sp : targetLane->signalPosts)
@@ -674,9 +620,6 @@ void Game::onResize(int w, int h)
     windowHeight = h;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  renderUIOverlay
-// ─────────────────────────────────────────────────────────────────────────────
 void Game::renderUIOverlay()
 {
     glMatrixMode(GL_PROJECTION);
@@ -746,9 +689,6 @@ void Game::renderUIOverlay()
     glMatrixMode(GL_MODELVIEW);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  onMouseClick
-// ─────────────────────────────────────────────────────────────────────────────
 void Game::onMouseClick(int button, int clickState, int x, int y)
 {
     if (clickState != 0)

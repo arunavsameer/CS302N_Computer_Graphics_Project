@@ -12,6 +12,9 @@
 │       ├── log.png
 │       ├── rail.png
 │       ├── river.png
+│       ├── road_far.png
+│       ├── road_near.png
+│       ├── road_old.png
 │       ├── road.png
 │       └── train.png
 ├── bin
@@ -148,4 +151,4 @@
 │   └── stb_implement.cpp
 └── tree.txt
 
-33 directories, 116 files
+33 directories, 119 files
