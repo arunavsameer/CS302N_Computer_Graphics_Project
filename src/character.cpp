@@ -26,6 +26,7 @@ void Chicken::reset() {
     jumpProgress        = 0.0f;
     rotationY           = 180.0f;
     deathType           = DEATH_NONE;
+    deathTimer          = 0.0f; 
     waterDeathSinkTimer = 0.0f;
     waterDeathExploded  = false;
     waterParticles.clear();
@@ -99,6 +100,10 @@ void Chicken::updateWaterParticles(float deltaTime) {
 }
 
 void Chicken::update(float deltaTime) {
+    if (isDead) {
+        deathTimer += deltaTime;
+    }
+
     if (deathType == DEATH_WATER) {
         if (!waterDeathExploded) {
             waterDeathSinkTimer -= deltaTime;

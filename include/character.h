@@ -34,6 +34,7 @@ private:
     std::unique_ptr<CharacterBase> modelRenderer; // The rendering delegate
 
     DeathType                  deathType;
+    float                      deathTimer; // <-- ADDED for animations
     std::vector<WaterParticle> waterParticles;
     float                      waterSurfaceY;
     float                      waterDeathSinkTimer;
@@ -62,6 +63,7 @@ public:
     
     // Getters so the separate renderer class can access state
     int       getDeathType()    const { return deathType; }
+    float     getDeathTimer()   const { return deathTimer; } // <-- ADDED getter
     bool      getWaterDeathExploded() const { return waterDeathExploded; }
     const std::vector<WaterParticle>& getWaterParticles() const { return waterParticles; }
 

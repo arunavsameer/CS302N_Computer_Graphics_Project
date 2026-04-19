@@ -64,6 +64,9 @@ void CharacterBase::render(Renderer& renderer, const Chicken& player) {
     // Call the specific character's geometry
     drawModel(renderer);
 
+    // Render character-specific extras (like the animated tongue)
+    drawExtra(renderer, player);
+
     // Drop shadow
     // glEnable(GL_BLEND);
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

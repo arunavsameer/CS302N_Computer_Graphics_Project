@@ -22,6 +22,9 @@ public:
 protected:
     // Specific characters implement this to draw their actual body cubes
     virtual void drawModel(Renderer& renderer) const = 0;
+    
+    // Allows characters to draw animated extras based on player state (like the tongue)
+    virtual void drawExtra(Renderer& renderer, const Chicken& player) const {} 
 };
 
 #endif
