@@ -208,7 +208,7 @@ void Lane::update(float deltaTime) {
     for (auto& obs : obstacles) obs.update(deltaTime);
 }
 
-void Lane::render(Renderer& renderer) {
+void Lane::render(Renderer& renderer, float sunAngle) {
 
     // ── RIVER / LILYPAD: animated water ──────────────────────────────────────
     if (type == LANE_RIVER || type == LANE_LILYPAD) {
@@ -247,13 +247,15 @@ void Lane::render(Renderer& renderer) {
         for (auto& d : decorations) {
             if (d.type == 0) {
                 d.position += tree_offset;
+                // Draw trunk (brown)
                 renderer.drawCube(d.position + glm::vec3(0, -0.2f, 0),
                                   glm::vec3(0.25f, 0.6f * d.scale, 0.25f),
                                   glm::vec3(0.55f, 0.27f, 0.07f));
-                renderer.drawCube(d.position + glm::vec3(0, 0.3f * d.scale, 0),
-                                  glm::vec3(0.7f, 0.7f, 0.7f), d.color);
-                renderer.drawCube(d.position + glm::vec3(0, 0.7f * d.scale, 0),
-                                  glm::vec3(0.5f, 0.5f, 0.5f), d.color);
+                // Draw foliage with sun-based shading
+                renderer.drawCubeShaded(d.position + glm::vec3(0, 0.3f * d.scale, 0),
+                                        glm::vec3(0.7f, 0.7f, 0.7f), d.color, sunAngle);
+                renderer.drawCubeShaded(d.position + glm::vec3(0, 0.7f * d.scale, 0),
+                                        glm::vec3(0.5f, 0.5f, 0.5f), d.color, sunAngle);
                 d.position -= tree_offset;
             } else {
                 renderer.drawCube(d.position,

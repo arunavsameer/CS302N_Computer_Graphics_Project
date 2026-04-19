@@ -23,6 +23,11 @@ public:
     // geometry such as headlights that should always appear at full brightness.
     void drawCubeEmissive(glm::vec3 position, glm::vec3 scale, glm::vec3 color);
 
+    // Draws a cube with shading based on sun angle (left/right sun direction).
+    // The side where the shadow falls (determined by sunAngle) gets a darker shade,
+    // and the opposite side gets a brighter shade.
+    void drawCubeShaded(glm::vec3 position, glm::vec3 scale, glm::vec3 baseColor, float sunAngle);
+
     // Draws a semi-transparent light-cone fan in front of a headlight pair.
     // origin   : midpoint between the two headlight lenses (world space)
     // dirX     : +1 or -1 (vehicle travel direction along X)
@@ -81,6 +86,12 @@ public:
     
     // Render shadow for a signal post
     void drawSignalPostShadow(glm::vec3 basePosition, float sunAngle, float sunAngleMagnitude, float shadowFadeFactor, LaneType laneType);
+    
+    // Render shadow for a tree
+    void drawTreeShadow(glm::vec3 position, float scale, float sunAngle, float sunAngleMagnitude, float shadowFadeFactor, LaneType laneType);
+    
+    // Render shadow for a rock
+    void drawRockShadow(glm::vec3 position, float scale, float sunAngle, float sunAngleMagnitude, float shadowFadeFactor, LaneType laneType);
     
     // Helper to get shadow Y height based on lane type
     float getShadowYHeight(LaneType laneType) const;

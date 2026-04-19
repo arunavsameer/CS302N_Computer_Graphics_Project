@@ -34,7 +34,7 @@ public:
 public:
     Lane(float z, LaneType t, int safePath); // 🔥 UPDATED
     void update(float deltaTime);
-    void render(Renderer& renderer);
+    void render(Renderer& renderer, float sunAngle = 0.0f);
 
     const std::vector<Obstacle>& getObstacles() const { return obstacles; }
     std::vector<Obstacle>& getObstacles() { return obstacles; }

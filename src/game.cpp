@@ -485,11 +485,10 @@ void Game::renderShadows()
         return;
     
     // OPTIMIZATION: Calculate fade factor and sun angle magnitude ONCE per frame
-    // instead of recalculating for every shadow
     float sunAngleMagnitude = std::abs(sunAngle);
     float shadowFadeFactor = renderer.getShadowFadeFactor(sunAngle);
     
-    // Skip entire shadow rendering if fade factor is zero
+    // Skip shadow rendering if not enough light
     if (shadowFadeFactor <= 0.0f)
         return;
     
@@ -535,6 +534,32 @@ void Game::renderShadows()
                 renderer.drawObstacleShadow(obsPos, obsSize, sunAngle, sunAngleMagnitude, shadowFadeFactor, laneType);
             }
         }
+        
+        // Render shadows for decorations (trees and rocks)
+        if (laneType == LANE_GRASS)
+        {
+            for (const auto &dec : lane.decorations)
+            {
+                glm::vec3 decPos = dec.position;
+                
+                // OPTIMIZATION: Skip decorations that are too far away
+                float distanceFromPlayer = std::abs(decPos.z - playerZ);
+                if (distanceFromPlayer > SHADOW_RENDER_DISTANCE)
+                    continue;
+                
+                // Render shadows for trees (type 0) and rocks (type 1)
+                if (dec.type == 0)
+                {
+                    // Tree shadow
+                    renderer.drawTreeShadow(decPos, dec.scale, sunAngle, sunAngleMagnitude, shadowFadeFactor, laneType);
+                }
+                else if (dec.type == 1)
+                {
+                    // Rock shadow
+                    renderer.drawRockShadow(decPos, dec.scale, sunAngle, sunAngleMagnitude, shadowFadeFactor, laneType);
+                }
+            }
+        }
     }
     
     // Restore GL state
@@ -553,7 +578,7 @@ void Game::render()
     renderWorldBoundaries();
 
     for (auto &lane : lanes)
-        lane.render(renderer);
+        lane.render(renderer, sunAngle);
 
     renderShadows();
 

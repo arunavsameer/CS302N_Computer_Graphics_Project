@@ -108,6 +108,7 @@ namespace Config {
     // ── Day/Night Cycle & Shadows ────────────────────────────
     constexpr float TIME_SPEED = 0.01f;           // rate of day/night cycle (seconds/cycle)
     constexpr float TRANSITION_SMOOTHNESS = 4.0f; // duration of day/night blend (seconds)
+    constexpr float TRANSITION_ZONE_WIDTH = 0.20f; // width of transition window around horizon (radians)
     constexpr float SUN_LIGHT_INTENSITY = 1.2f;   // sun brightness multiplier
     constexpr float MOON_LIGHT_INTENSITY = 0.5f;  // moon brightness multiplier
     
@@ -117,7 +118,7 @@ namespace Config {
     
     // Shadow rendering parameters
     constexpr float SHADOW_Y_OFFSET = 0.02f;     // height above ground to prevent z-fighting (tweakable)
-    constexpr float SHADOW_Z_OFFSET = 0.1f;      // z-axis offset for shadows (0 = no offset between lanes)
+    constexpr float SHADOW_Z_OFFSET = -0.1f;      // z-axis offset for shadows (0 = no offset between lanes)
     constexpr float SHADOW_OPACITY = 0.4f;       // alpha/opacity of shadows
     constexpr float SHADOW_MAX_LENGTH = 3.0f;    // maximum shadow projection length
     constexpr float SHADOW_MIN_LENGTH = 0.5f;    // minimum shadow length (when sun is overhead)

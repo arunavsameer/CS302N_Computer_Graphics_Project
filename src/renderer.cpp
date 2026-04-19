@@ -149,6 +149,129 @@ void Renderer::drawCubeEmissive(glm::vec3 position, glm::vec3 scale, glm::vec3 c
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  drawCubeShaded  (draws cube with per-face sun-based shading)
+//
+//  Each face is shaded based on its orientation relative to the light direction
+//  determined by the sun angle. Faces directly facing the sun are bright, while
+//  faces away from the sun are dark, creating realistic directional lighting.
+// ─────────────────────────────────────────────────────────────────────────────
+void Renderer::drawCubeShaded(glm::vec3 position, glm::vec3 scale, glm::vec3 baseColor, float sunAngle)
+{
+    // Calculate light direction from sun angle with smooth transitions everywhere
+    // Syncs with shadows during day, smoothly cycles at night without rapid jumps
+    // Only smooth transitions occur during the day/night transition window
+    
+    const float HORIZON_ANGLE = 3.14159f / 4.0f;  // π/4 (when sun is at horizon)
+    const float TRANSITION_WIDTH = Config::TRANSITION_ZONE_WIDTH;  // Configurable transition zone
+    float absSunAngle = std::abs(sunAngle);
+    
+    glm::vec3 lightDir;
+    
+    // Smooth step function to blend from day to night
+    // This creates a transition window around the horizon
+    auto smoothstep = [](float edge0, float edge1, float x) {
+        if (x < edge0) return 0.0f;
+        if (x > edge1) return 1.0f;
+        float t = (x - edge0) / (edge1 - edge0);
+        return t * t * (3.0f - 2.0f * t);  // Smooth step curve
+    };
+    
+    float transitionFactor = smoothstep(
+        HORIZON_ANGLE - TRANSITION_WIDTH,
+        HORIZON_ANGLE + TRANSITION_WIDTH,
+        absSunAngle
+    );
+    
+    // Day light direction (sun arc)
+    glm::vec3 dayLightDir = glm::vec3(std::sin(sunAngle), std::cos(sunAngle), 0.1f);
+    
+    // Night light direction (smooth cyclic)
+    float nightProgress = (absSunAngle - HORIZON_ANGLE) / (3.14159f - HORIZON_ANGLE);
+    float smoothY = 0.35f + 0.1f * std::sin(nightProgress * 3.14159f);
+    glm::vec3 nightLightDir = glm::vec3(std::sin(sunAngle), smoothY, 0.1f);
+    
+    // Blend between day and night light directions
+    lightDir = glm::mix(dayLightDir, nightLightDir, transitionFactor);
+    
+    lightDir = glm::normalize(lightDir);
+    
+    // Define face normals for a cube
+    glm::vec3 normals[6] = {
+        glm::vec3(1, 0, 0),    // Right face (X+)
+        glm::vec3(-1, 0, 0),   // Left face (X-)
+        glm::vec3(0, 1, 0),    // Top face (Y+)
+        glm::vec3(0, -1, 0),   // Bottom face (Y-)
+        glm::vec3(0, 0, 1),    // Front face (Z+)
+        glm::vec3(0, 0, -1)    // Back face (Z-)
+    };
+    
+    // Calculate shading for each face based on dot product with light direction
+    float dotProducts[6];
+    for (int i = 0; i < 6; i++)
+    {
+        // Clamp dot product to 0.3 - 1.0 range (minimum ambient light = 0.3)
+        dotProducts[i] = std::max(0.3f, glm::dot(normals[i], lightDir));
+    }
+    
+    glm::vec3 c = applyNightTint(baseColor);
+    
+    glDisable(GL_TEXTURE_2D);
+    glPushMatrix();
+    glTranslatef(position.x, position.y, position.z);
+    glScalef(scale.x, scale.y, scale.z);
+    
+    // Draw 6 faces with per-face shading
+    glBegin(GL_QUADS);
+    
+    // Right face (X+)
+    glColor3f(c.r * dotProducts[0], c.g * dotProducts[0], c.b * dotProducts[0]);
+    glVertex3f(0.5f, -0.5f, -0.5f);
+    glVertex3f(0.5f, -0.5f, 0.5f);
+    glVertex3f(0.5f, 0.5f, 0.5f);
+    glVertex3f(0.5f, 0.5f, -0.5f);
+    
+    // Left face (X-)
+    glColor3f(c.r * dotProducts[1], c.g * dotProducts[1], c.b * dotProducts[1]);
+    glVertex3f(-0.5f, -0.5f, -0.5f);
+    glVertex3f(-0.5f, 0.5f, -0.5f);
+    glVertex3f(-0.5f, 0.5f, 0.5f);
+    glVertex3f(-0.5f, -0.5f, 0.5f);
+    
+    // Top face (Y+)
+    glColor3f(c.r * dotProducts[2], c.g * dotProducts[2], c.b * dotProducts[2]);
+    glVertex3f(-0.5f, 0.5f, -0.5f);
+    glVertex3f(0.5f, 0.5f, -0.5f);
+    glVertex3f(0.5f, 0.5f, 0.5f);
+    glVertex3f(-0.5f, 0.5f, 0.5f);
+    
+    // Bottom face (Y-)
+    glColor3f(c.r * dotProducts[3], c.g * dotProducts[3], c.b * dotProducts[3]);
+    glVertex3f(-0.5f, -0.5f, -0.5f);
+    glVertex3f(-0.5f, -0.5f, 0.5f);
+    glVertex3f(0.5f, -0.5f, 0.5f);
+    glVertex3f(0.5f, -0.5f, -0.5f);
+    
+    // Front face (Z+)
+    glColor3f(c.r * dotProducts[4], c.g * dotProducts[4], c.b * dotProducts[4]);
+    glVertex3f(-0.5f, -0.5f, 0.5f);
+    glVertex3f(0.5f, -0.5f, 0.5f);
+    glVertex3f(0.5f, 0.5f, 0.5f);
+    glVertex3f(-0.5f, 0.5f, 0.5f);
+    
+    // Back face (Z-)
+    glColor3f(c.r * dotProducts[5], c.g * dotProducts[5], c.b * dotProducts[5]);
+    glVertex3f(-0.5f, -0.5f, -0.5f);
+    glVertex3f(-0.5f, 0.5f, -0.5f);
+    glVertex3f(0.5f, 0.5f, -0.5f);
+    glVertex3f(0.5f, -0.5f, -0.5f);
+    
+    glEnd();
+    
+    glPopMatrix();
+    glEnable(GL_TEXTURE_2D);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  drawHeadlightBeam  (semi-transparent tapered cone, only useful at night)
 // ─────────────────────────────────────────────────────────────────────────────
 void Renderer::drawHeadlightBeam(glm::vec3 origin, float dirX,
@@ -1036,32 +1159,34 @@ void Renderer::updateLighting(float currentTime)
     // Normalize time to 0-1 over a full day/night cycle
     float cycleTime = std::fmod(currentTime * Config::TIME_SPEED, 1.0f);
     
-    // Determine if we're in day or night based on cycle time
-    // 0-0.5 = day, 0.5-1.0 = night
-    bool isDayTime = cycleTime < 0.5f;
+    // Convert cycle time to sun angle for consistent transition zones
+    // cycleTime 0.5 → sunAngle = 0 (noon)
+    // cycleTime 0.75 → sunAngle = π/4 (horizon, dusk)
+    // cycleTime 1.0 → sunAngle = π (midnight)
+    float sunAngle = (cycleTime - 0.5f) * 3.14159f;
+    float absSunAngle = std::abs(sunAngle);
     
-    // Calculate smooth transition using smoothstep for blending
-    float transitionSpeed = 1.0f / Config::TRANSITION_SMOOTHNESS;
-    float blendFactor = 0.0f;
+    const float HORIZON_ANGLE = 3.14159f / 4.0f;  // π/4
+    const float TRANSITION_WIDTH = Config::TRANSITION_ZONE_WIDTH;
     
-    // Smooth transition around 0.5 (dawn/dusk)
-    if (cycleTime < 0.5f)
-    {
-        float distFromMidnight = std::abs(cycleTime - 0.0f);
-        float distFromNoon = std::abs(cycleTime - 0.5f);
-        blendFactor = 1.0f - (distFromNoon / 0.5f) * 0.5f;
-        blendFactor = std::min(1.0f, std::max(0.0f, blendFactor));
-    }
-    else
-    {
-        float distFromNoon = std::abs(cycleTime - 0.5f);
-        float distFromMidnight = std::abs(cycleTime - 1.0f);
-        blendFactor = (distFromNoon / 0.5f) * 0.5f;
-        blendFactor = std::min(1.0f, std::max(0.0f, blendFactor));
-    }
+    // Smooth step function for consistent transition behavior
+    auto smoothstep = [](float edge0, float edge1, float x) {
+        if (x < edge0) return 0.0f;
+        if (x > edge1) return 1.0f;
+        float t = (x - edge0) / (edge1 - edge0);
+        return t * t * (3.0f - 2.0f * t);
+    };
     
-    // Update night mode based on cycle time
-    setNightMode(cycleTime >= 0.5f);
+    // Calculate transition factor using same zone as shadows and shading
+    float transitionFactor = smoothstep(
+        HORIZON_ANGLE - TRANSITION_WIDTH,
+        HORIZON_ANGLE + TRANSITION_WIDTH,
+        absSunAngle
+    );
+    
+    // Determine night mode: full transition across the zone
+    bool isNightTime = (absSunAngle > HORIZON_ANGLE);
+    setNightMode(isNightTime);
 }
 
 void Renderer::drawSunAndMoon(float sunProgress, bool isDayTime)
@@ -1114,28 +1239,26 @@ float Renderer::getShadowYHeight(LaneType laneType) const
 
 float Renderer::getShadowFadeFactor(float sunAngle) const
 {
-    // Calculate fade factor based on sun angle
-    // When sun approaches horizon (±π/4 ≈ ±0.7854), shadows fade out
-    // Fade range: from SHADOW_FADE_START_ANGLE to π/4 (0.7854)
+    // Calculate fade factor based on sun angle using smooth transitions
+    // When sun approaches horizon (±π/4 ≈ ±0.7854), shadows fade out smoothly
+    // Transition zone: controlled by Config::TRANSITION_ZONE_WIDTH for consistency
+    
     const float HORIZON_ANGLE = 3.14159f / 4.0f;  // π/4
+    const float FADE_START = Config::SHADOW_FADE_START_ANGLE;
+    const float TRANSITION_WIDTH = Config::TRANSITION_ZONE_WIDTH;
     float sunAngleMagnitude = std::abs(sunAngle);
     
-    // If angle is less than fade start, full opacity
-    if (sunAngleMagnitude < Config::SHADOW_FADE_START_ANGLE) {
-        return 1.0f;
-    }
+    // Smooth step function for smooth fade transitions
+    auto smoothstep = [](float edge0, float edge1, float x) {
+        if (x < edge0) return 1.0f;
+        if (x > edge1) return 0.0f;
+        float t = (x - edge0) / (edge1 - edge0);
+        return 1.0f - (t * t * (3.0f - 2.0f * t));  // Reverse smoothstep for fade-out
+    };
     
-    // If angle is beyond horizon, no shadow
-    if (sunAngleMagnitude >= HORIZON_ANGLE) {
-        return 0.0f;
-    }
-    
-    // Linear interpolation between fade start and horizon for smooth transition
-    float fadeRange = HORIZON_ANGLE - Config::SHADOW_FADE_START_ANGLE;
-    float fadeProgress = (sunAngleMagnitude - Config::SHADOW_FADE_START_ANGLE) / fadeRange;
-    
-    // Smoothly fade from 1.0 to 0.0
-    return 1.0f - std::min(1.0f, fadeProgress);
+    // Smooth fade from full opacity to no shadow
+    // Starts fading at FADE_START - TRANSITION_WIDTH, fully faded at FADE_START + TRANSITION_WIDTH
+    return smoothstep(FADE_START - TRANSITION_WIDTH, FADE_START + TRANSITION_WIDTH, sunAngleMagnitude);
 }
 
 void Renderer::drawShadow(glm::vec3 position, glm::vec3 size, float sunAngle, float sunAngleMagnitude, float shadowFadeFactor, LaneType laneType)
@@ -1201,4 +1324,18 @@ void Renderer::drawSignalPostShadow(glm::vec3 basePosition, float sunAngle, floa
     // Signal posts are tall and thin
     glm::vec3 shadowSize = glm::vec3(0.2f, 1.5f, 0.1f);
     drawShadow(basePosition, shadowSize, sunAngle, sunAngleMagnitude, shadowFadeFactor, laneType);
+}
+
+void Renderer::drawTreeShadow(glm::vec3 position, float scale, float sunAngle, float sunAngleMagnitude, float shadowFadeFactor, LaneType laneType)
+{
+    // Trees have foliage width ~0.7, scale varies from 1.0 to 1.5
+    glm::vec3 shadowSize = glm::vec3(0.7f * scale * 0.7f, 0.7f * scale * 0.3f, 0.7f * scale * 0.8f);
+    drawShadow(position, shadowSize, sunAngle, sunAngleMagnitude, shadowFadeFactor, laneType);
+}
+
+void Renderer::drawRockShadow(glm::vec3 position, float scale, float sunAngle, float sunAngleMagnitude, float shadowFadeFactor, LaneType laneType)
+{
+    // Rocks have main size ~0.5x0.3x0.5
+    glm::vec3 shadowSize = glm::vec3(0.5f * scale * 0.7f, 0.3f * scale * 0.3f, 0.5f * scale * 0.8f);
+    drawShadow(position, shadowSize, sunAngle, sunAngleMagnitude, shadowFadeFactor, laneType);
 }
