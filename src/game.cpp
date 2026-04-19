@@ -611,12 +611,6 @@ void Game::render()
 
 void Game::onKeyPress(unsigned char key)
 {
-    if (key == 'n' || key == 'N')
-    {
-        nightMode = !nightMode;
-        renderer.setNightMode(nightMode);
-        return;
-    }
 
     if (state == GAME_STATE_START_SCREEN) {
         if (key == '1') player.setModel(MODEL_CHICKEN);
