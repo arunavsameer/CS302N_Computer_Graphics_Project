@@ -120,8 +120,8 @@ namespace Config {
     constexpr float SHADOW_HEIGHT_ROAD = 0.10f;     // shadow height on road lanes (well above surface for visibility)
     constexpr float SHADOW_HEIGHT_GRASS = 0.10f;    // shadow height on grass lanes
     constexpr float SHADOW_HEIGHT_RAIL = 0.10f;     // shadow height on rail lanes
-    constexpr float SHADOW_HEIGHT_RIVER = -0.08f;   // shadow height on river lanes (lower)
-    constexpr float SHADOW_HEIGHT_LILYPAD = -0.04f; // shadow height on lilypad lanes
+    constexpr float SHADOW_HEIGHT_RIVER = -0.1f;   // shadow height on river lanes (lower)
+    constexpr float SHADOW_HEIGHT_LILYPAD = -0.1f; // shadow height on lilypad lanes
 }
 
 #endif

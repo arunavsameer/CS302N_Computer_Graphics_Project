@@ -46,7 +46,7 @@ private:
     bool nightMode   = false;   // toggled with N key
     
     // ── Day/Night Cycle & Shadows ────────────────────────────────────────────
-    float currentGameTime = 0.0f;  // Game time in seconds for day/night cycle
+    float currentGameTime = 30.0f;  // Game time in seconds (starts at midday: cycleTime ~0.3)
     float sunAngle = 0.0f;         // Current angle of the sun (radians)
 
     void updateDayNightCycle(float deltaTime);

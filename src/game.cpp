@@ -460,16 +460,26 @@ void Game::updateDayNightCycle(float deltaTime)
     float cycleTime = std::fmod(currentGameTime * Config::TIME_SPEED, 1.0f);
     
     // Calculate sun angle for shadow rendering
-    // Sun moves from -π/4 (left, low) to π/4 (right, low) with peak at 0 (middle, high)
-    sunAngle = (cycleTime - 0.5f) * 3.14159f * 0.5f;
+    // Sun arc expanded to full 180°: -π to +π (sun below horizon to above horizon to below horizon)
+    // This allows proper day/night cycle where sun actually goes below horizon
+    // cycleTime 0.0 → sunAngle = -π (sun fully below horizon, deep night)
+    // cycleTime 0.25 → sunAngle = -π/4 (sun at horizon, night/day transition)
+    // cycleTime 0.5 → sunAngle = 0 (sun at peak, noon)
+    // cycleTime 0.75 → sunAngle = π/4 (sun at horizon, day/night transition)
+    // cycleTime 1.0 → sunAngle = π (sun fully below horizon, deep night)
+    sunAngle = (cycleTime - 0.5f) * 3.14159f;  // Full π range instead of π/2
     
     // Update renderer lighting
     renderer.updateLighting(currentGameTime);
     
-    // Auto-update night mode based on cycle time
-    // Transition at cycleTime ~0.05 and ~0.95 (when shadow completely fades, |sunAngle| = π/4)
-    // 0.05-0.95 = day, 0.0-0.05 and 0.95-1.0 = night (cycle boundaries where shadow is gone)
-    bool isDayTime = (cycleTime > 0.05f && cycleTime < 0.95f);
+    // Day/night mode based on sun angle relative to horizon
+    // HORIZON_ANGLE = π/4 is where sun reaches horizon and shadows fully fade
+    // Day: |sunAngle| < π/4 (sun above horizon, shadows visible)
+    // Night: |sunAngle| >= π/4 (sun at/below horizon, no shadows)
+    // This ensures day/night transitions happen EXACTLY when shadow fade completes
+    const float HORIZON_ANGLE = 3.14159f / 4.0f;  // π/4 radians
+    float sunAngleMagnitude = std::abs(sunAngle);
+    bool isDayTime = (sunAngleMagnitude < HORIZON_ANGLE);
     renderer.setNightMode(!isDayTime);
 }
 
@@ -484,7 +494,9 @@ void Game::renderShadows()
     bool isDayTime = cycleTime < 0.5f;
     
     // Draw sun or moon in the sky
-    renderer.drawSunAndMoon(cycleTime, isDayTime);
+    // COMMENTED OUT: Sun/moon cubes are not visible in normal gameplay views
+    // The sun angle logic remains intact and governs shadow rendering
+    // renderer.drawSunAndMoon(cycleTime, isDayTime);
     
     // Render shadow for the player character (use grass lane height as default)
     glm::vec3 playerPos = player.getPosition();
