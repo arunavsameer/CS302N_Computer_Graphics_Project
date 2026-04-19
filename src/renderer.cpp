@@ -16,6 +16,17 @@
 #endif
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  Helper functions
+// ─────────────────────────────────────────────────────────────────────────────
+// Smoothstep function for smooth interpolation (used in lighting transitions)
+static float smoothstepHelper(float edge0, float edge1, float x) {
+    if (x < edge0) return 0.0f;
+    if (x > edge1) return 1.0f;
+    float t = (x - edge0) / (edge1 - edge0);
+    return t * t * (3.0f - 2.0f * t);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  Construction / Destruction
 // ─────────────────────────────────────────────────────────────────────────────
 Renderer::Renderer() : mainShader(nullptr), nightMode(false) {}
@@ -167,16 +178,8 @@ void Renderer::drawCubeShaded(glm::vec3 position, glm::vec3 scale, glm::vec3 bas
     
     glm::vec3 lightDir;
     
-    // Smooth step function to blend from day to night
-    // This creates a transition window around the horizon
-    auto smoothstep = [](float edge0, float edge1, float x) {
-        if (x < edge0) return 0.0f;
-        if (x > edge1) return 1.0f;
-        float t = (x - edge0) / (edge1 - edge0);
-        return t * t * (3.0f - 2.0f * t);  // Smooth step curve
-    };
-    
-    float transitionFactor = smoothstep(
+    // Use pre-defined smoothstep helper instead of creating lambda each call
+    float transitionFactor = smoothstepHelper(
         HORIZON_ANGLE - TRANSITION_WIDTH,
         HORIZON_ANGLE + TRANSITION_WIDTH,
         absSunAngle

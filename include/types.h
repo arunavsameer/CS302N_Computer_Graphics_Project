@@ -135,4 +135,9 @@ namespace Config {
     constexpr float SHADOW_HEIGHT_LILYPAD = -0.1f; // shadow height on lilypad lanes
 }
 
+// Helper function for random float generation (more efficient than repeated casting)
+inline float randomRange(float min, float max) {
+    return min + (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * (max - min);
+}
+
 #endif

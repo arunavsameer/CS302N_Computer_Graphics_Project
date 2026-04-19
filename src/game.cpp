@@ -231,6 +231,7 @@ void Game::checkCollisions(float deltaTime)
 {
     glm::vec3 playerPos = player.getPosition();
     glm::vec3 playerSize = player.getSize();
+    glm::vec3 playerBasePos = player.getBasePosition();
 
     bool onLog = false;
     bool onLilypad = false;
@@ -259,8 +260,10 @@ void Game::checkCollisions(float deltaTime)
             if (obs.getType() != OBSTACLE_TRAIN || !obs.getIsActive())
                 continue;
 
-            bool hitX = std::abs(player.getBasePosition().x - obs.getPosition().x) < (player.getSize().x + obs.getSize().x) * 0.5f * Config::HITBOX_PADDING;
-            bool hitZ = std::abs(playerPos.z - obs.getPosition().z) < Config::CELL_SIZE * 0.9f;
+            glm::vec3 obsPos = obs.getPosition();
+            glm::vec3 obsSize = obs.getSize();
+            bool hitX = std::abs(playerBasePos.x - obsPos.x) < (playerSize.x + obsSize.x) * 0.5f * Config::HITBOX_PADDING;
+            bool hitZ = std::abs(playerPos.z - obsPos.z) < Config::CELL_SIZE * 0.9f;
 
             if (hitX && hitZ)
             {
@@ -278,23 +281,27 @@ void Game::checkCollisions(float deltaTime)
         if (!obs.getIsActive())
             continue;
 
+        ObstacleType obsType = obs.getType();
+        glm::vec3 obsPos = obs.getPosition();
+        glm::vec3 obsSize = obs.getSize();
+
         bool isColliding = false;
-        if (obs.getType() == OBSTACLE_LOG || obs.getType() == OBSTACLE_LILYPAD)
+        if (obsType == OBSTACLE_LOG || obsType == OBSTACLE_LILYPAD)
         {
             isColliding = Collision::checkAABB(
-                player.getBasePosition(), playerSize,
-                obs.getPosition(), obs.getSize());
+                playerBasePos, playerSize,
+                obsPos, obsSize);
         }
         else
         {
             isColliding = Collision::checkAABB(
                 playerPos, playerSize,
-                obs.getPosition(), obs.getSize());
+                obsPos, obsSize);
         }
 
         if (isColliding)
         {
-            if (obs.getType() == OBSTACLE_CAR || obs.getType() == OBSTACLE_TRAIN)
+            if (obsType == OBSTACLE_CAR || obsType == OBSTACLE_TRAIN)
             {
                 player.setDead(true);
                 deathPosition = playerPos;
@@ -302,14 +309,13 @@ void Game::checkCollisions(float deltaTime)
                 state = GAME_STATE_GAME_OVER;
                 return;
             }
-            else if (obs.getType() == OBSTACLE_LOG)
+            else if (obsType == OBSTACLE_LOG)
             {
                 onLog = true;
                 obs.setSinking(true);
                 player.applyLogVelocity(obs.getSpeed(), deltaTime);
 
-                float logX = obs.getPosition().x;
-                if (std::abs(logX) > Config::LOG_STREAM_TRIGGER_X)
+                if (std::abs(obsPos.x) > Config::LOG_STREAM_TRIGGER_X)
                 {
                     obs.setFastStream(true);
                 }
@@ -325,7 +331,7 @@ void Game::checkCollisions(float deltaTime)
                     return;
                 }
             }
-            else if (obs.getType() == OBSTACLE_LILYPAD)
+            else if (obsType == OBSTACLE_LILYPAD)
             {
                 onLilypad = true;
             }
@@ -347,7 +353,8 @@ void Game::checkCollisions(float deltaTime)
         }
     }
 
-    if ((currentLane->getType() == LANE_RIVER || currentLane->getType() == LANE_LILYPAD) && !player.getIsJumping() && !onLog && !onLilypad)
+    LaneType laneType = currentLane->getType();
+    if ((laneType == LANE_RIVER || laneType == LANE_LILYPAD) && !player.getIsJumping() && !onLog && !onLilypad)
     {
         const float waterSurface = -Config::CELL_SIZE * 0.1f;
         player.triggerWaterDeath(waterSurface);

@@ -22,9 +22,7 @@ Lane::Lane(float z, LaneType t, int safePath)
 
     // ===== EXISTING OBSTACLES =====
     if (type == LANE_ROAD) {
-        float speed  = dir * (Config::CAR_SPEED_MIN +
-            static_cast<float>(rand()) /
-            (static_cast<float>(RAND_MAX) / (Config::CAR_SPEED_MAX - Config::CAR_SPEED_MIN)));
+        float speed = dir * randomRange(Config::CAR_SPEED_MIN, Config::CAR_SPEED_MAX);
 
         float startX = dir * -(5.0f + static_cast<float>(rand() % 10));
 
@@ -50,7 +48,7 @@ Lane::Lane(float z, LaneType t, int safePath)
         // ── Signal posts every SIGNAL_SPACING units across the track ─────────
 
         for (float sx = -Config::SIGNAL_RANGE; sx <= Config::SIGNAL_RANGE + 0.01f; sx += Config::SIGNAL_SPACING) {
-            float jitter = Config::SIGNAL_JITTER * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2.0f - 1.0f);
+            float jitter = Config::SIGNAL_JITTER * (randomRange(0.0f, 1.0f) * 2.0f - 1.0f);
             float finalX = sx + jitter;
             if (finalX < -Config::SIGNAL_RANGE) finalX = -Config::SIGNAL_RANGE;
             if (finalX >  Config::SIGNAL_RANGE) finalX =  Config::SIGNAL_RANGE;
@@ -66,9 +64,7 @@ Lane::Lane(float z, LaneType t, int safePath)
         }
     }
     else if (type == LANE_RIVER) {
-            float speed = dir * (Config::LOG_SPEED_MIN +
-                static_cast<float>(rand()) /
-                (static_cast<float>(RAND_MAX) / (Config::LOG_SPEED_MAX - Config::LOG_SPEED_MIN)));
+            float speed = dir * randomRange(Config::LOG_SPEED_MIN, Config::LOG_SPEED_MAX);
             
             // Calculate where the very first set should start so they are spread out
             float startSetX = -((Config::LOG_SETS - 1) * Config::LOG_SET_GAP) / 2.0f;
@@ -106,21 +102,21 @@ Lane::Lane(float z, LaneType t, int safePath)
             0.0f, OBSTACLE_LILYPAD));
 
         // 2. Randomly spawn lilypads to the LEFT
-        float currX = safeX - (Config::LILYPAD_GAP_MIN + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / (Config::LILYPAD_GAP_MAX - Config::LILYPAD_GAP_MIN)));
+        float currX = safeX - randomRange(Config::LILYPAD_GAP_MIN, Config::LILYPAD_GAP_MAX);
         while (currX > -15.0f) {
             obstacles.push_back(Obstacle(
                 glm::vec3(currX, Config::LILYPAD_Y, zPosition), 
                 0.0f, OBSTACLE_LILYPAD));
-            currX -= (Config::LILYPAD_GAP_MIN + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / (Config::LILYPAD_GAP_MAX - Config::LILYPAD_GAP_MIN)));
+            currX -= randomRange(Config::LILYPAD_GAP_MIN, Config::LILYPAD_GAP_MAX);
         }
 
         // 3. Randomly spawn lilypads to the RIGHT
-        currX = safeX + (Config::LILYPAD_GAP_MIN + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / (Config::LILYPAD_GAP_MAX - Config::LILYPAD_GAP_MIN)));
+        currX = safeX + randomRange(Config::LILYPAD_GAP_MIN, Config::LILYPAD_GAP_MAX);
         while (currX < 15.0f) {
             obstacles.push_back(Obstacle(
                 glm::vec3(currX, Config::LILYPAD_Y, zPosition), 
                 0.0f, OBSTACLE_LILYPAD));
-            currX += (Config::LILYPAD_GAP_MIN + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / (Config::LILYPAD_GAP_MAX - Config::LILYPAD_GAP_MIN)));
+            currX += randomRange(Config::LILYPAD_GAP_MIN, Config::LILYPAD_GAP_MAX);
         }
     }
 
