@@ -586,17 +586,18 @@ void Game::onKeyPress(unsigned char key)
         }
     }
 
-    if (!blocked && targetLane && targetLane->getType() == LANE_RAIL)
-    {
-        for (const auto &sp : targetLane->signalPosts)
-        {
-            if (std::abs(nextPos.x - sp.position.x) < 0.45f)
-            {
-                blocked = true;
-                break;
-            }
-        }
-    }
+    // removed because signal post sometimes blocked the only safe path, like lilypads just ahead of it...
+    // if (!blocked && targetLane && targetLane->getType() == LANE_RAIL)
+    // {
+    //     for (const auto &sp : targetLane->signalPosts)
+    //     {
+    //         if (std::abs(nextPos.x - sp.position.x) < 0.45f)
+    //         {
+    //             blocked = true;
+    //             break;
+    //         }
+    //     }
+    // }
 
     if (!blocked)
         player.move(dx, dz);

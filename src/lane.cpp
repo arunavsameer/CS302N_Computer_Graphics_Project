@@ -48,22 +48,12 @@ Lane::Lane(float z, LaneType t, int safePath)
             speed, OBSTACLE_TRAIN));
 
         // ── Signal posts every SIGNAL_SPACING units across the track ─────────
-        // Each post gets a small random X jitter so they look naturally placed.
-        // Posts sit at the near edge of the lane (z + 0.42) so they are
-        // visually beside the rails and the train body clears them cleanly.
-        // Blocking uses only the X axis (player snaps to exact lane Z).
-        constexpr float SIGNAL_SPACING = 8.0f;   // base interval between posts
-        constexpr float SIGNAL_RANGE   = 20.0f;  // ±range from centre
-        constexpr float SIGNAL_Z_SIDE  = 0.42f;  // visual offset to lane near-edge
-        constexpr float SIGNAL_JITTER  = 1.4f;   // max random X nudge per post
 
-        for (float sx = -SIGNAL_RANGE; sx <= SIGNAL_RANGE + 0.01f; sx += SIGNAL_SPACING) {
-            // Small random X jitter so posts aren't perfectly evenly spaced
-            float jitter = SIGNAL_JITTER * (static_cast<float>(rand()) /
-                           static_cast<float>(RAND_MAX) * 2.0f - 1.0f);
+        for (float sx = -Config::SIGNAL_RANGE; sx <= Config::SIGNAL_RANGE + 0.01f; sx += Config::SIGNAL_SPACING) {
+            float jitter = Config::SIGNAL_JITTER * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2.0f - 1.0f);
             float finalX = sx + jitter;
-            if (finalX < -SIGNAL_RANGE) finalX = -SIGNAL_RANGE;
-            if (finalX >  SIGNAL_RANGE) finalX =  SIGNAL_RANGE;
+            if (finalX < -Config::SIGNAL_RANGE) finalX = -Config::SIGNAL_RANGE;
+            if (finalX >  Config::SIGNAL_RANGE) finalX =  Config::SIGNAL_RANGE;
 
             // Don't place a post on the safe path column
             float safeWorldX = safePathColumn * Config::CELL_SIZE;
@@ -71,7 +61,7 @@ Lane::Lane(float z, LaneType t, int safePath)
                 continue;
 
             SignalPost sp;
-            sp.position = glm::vec3(finalX, 0.0f, zPosition + SIGNAL_Z_SIDE);
+            sp.position = glm::vec3(finalX, 0.0f, zPosition + Config::SIGNAL_Z_SIDE);
             signalPosts.push_back(sp);
         }
     }

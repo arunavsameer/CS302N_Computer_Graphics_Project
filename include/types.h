@@ -86,6 +86,12 @@ namespace Config {
     constexpr int   MAX_EGG_CLICKS   = 3;
     constexpr float DEAD_ZOOM_RADIUS = 4.0f;
     constexpr float DEAD_ZOOM_SPEED  = 3.0f;
+
+    // ── Signal Posts ─────────────────────────────────────────
+    constexpr float SIGNAL_SPACING = 8.0f;   // base interval between posts
+    constexpr float SIGNAL_RANGE   = 20.0f;  // ±range from centre
+    constexpr float SIGNAL_Z_SIDE  = 0.42f;  // visual offset to lane near-edge
+    constexpr float SIGNAL_JITTER  = 1.4f;   // max random X nudge per post
 }
 
 #endif
