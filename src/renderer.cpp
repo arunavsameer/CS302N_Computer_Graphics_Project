@@ -1026,3 +1026,193 @@ void Renderer::drawBackWall()
     }
     glDisable(GL_POLYGON_OFFSET_FILL);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Day/Night Cycle & Lighting
+// ─────────────────────────────────────────────────────────────────────────────
+
+void Renderer::updateLighting(float currentTime)
+{
+    // Normalize time to 0-1 over a full day/night cycle
+    float cycleTime = std::fmod(currentTime * Config::TIME_SPEED, 1.0f);
+    
+    // Determine if we're in day or night based on cycle time
+    // 0-0.5 = day, 0.5-1.0 = night
+    bool isDayTime = cycleTime < 0.5f;
+    
+    // Calculate smooth transition using smoothstep for blending
+    float transitionSpeed = 1.0f / Config::TRANSITION_SMOOTHNESS;
+    float blendFactor = 0.0f;
+    
+    // Smooth transition around 0.5 (dawn/dusk)
+    if (cycleTime < 0.5f)
+    {
+        float distFromMidnight = std::abs(cycleTime - 0.0f);
+        float distFromNoon = std::abs(cycleTime - 0.5f);
+        blendFactor = 1.0f - (distFromNoon / 0.5f) * 0.5f;
+        blendFactor = std::min(1.0f, std::max(0.0f, blendFactor));
+    }
+    else
+    {
+        float distFromNoon = std::abs(cycleTime - 0.5f);
+        float distFromMidnight = std::abs(cycleTime - 1.0f);
+        blendFactor = (distFromNoon / 0.5f) * 0.5f;
+        blendFactor = std::min(1.0f, std::max(0.0f, blendFactor));
+    }
+    
+    // Update night mode based on cycle time
+    setNightMode(cycleTime >= 0.5f);
+}
+
+void Renderer::drawSunAndMoon(float sunProgress, bool isDayTime)
+{
+    // sunProgress: 0-1 over the cycle, where 0-0.5 = day, 0.5-1.0 = night
+    
+    // Calculate sun/moon position across the sky
+    // Moves from left (-15) to right (+15) in the world, high in the sky
+    float sunX = -15.0f + sunProgress * 30.0f;
+    float sunY = 8.0f + 3.0f * std::sin(sunProgress * 3.14159f);
+    float sunZ = 0.0f;
+    
+    glPushMatrix();
+    glDisable(GL_DEPTH_TEST);
+    
+    if (isDayTime)
+    {
+        // Draw sun as a large yellow square
+        glm::vec3 sunColor = glm::vec3(1.0f, 0.9f, 0.2f);
+        drawCubeEmissive({sunX, sunY, sunZ}, {1.5f, 1.5f, 0.1f}, sunColor);
+    }
+    else
+    {
+        // Draw moon as a large pale blue/white square
+        glm::vec3 moonColor = glm::vec3(0.85f, 0.9f, 1.0f);
+        drawCubeEmissive({sunX, sunY, sunZ}, {1.2f, 1.2f, 0.1f}, moonColor);
+    }
+    
+    glEnable(GL_DEPTH_TEST);
+    glPopMatrix();
+}
+
+float Renderer::getShadowYHeight(LaneType laneType) const
+{
+    switch (laneType) {
+        case LANE_ROAD:
+            return Config::SHADOW_HEIGHT_ROAD;
+        case LANE_GRASS:
+            return Config::SHADOW_HEIGHT_GRASS;
+        case LANE_RAIL:
+            return Config::SHADOW_HEIGHT_RAIL;
+        case LANE_RIVER:
+            return Config::SHADOW_HEIGHT_RIVER;
+        case LANE_LILYPAD:
+            return Config::SHADOW_HEIGHT_LILYPAD;
+        default:
+            return Config::SHADOW_Y_OFFSET;
+    }
+}
+
+float Renderer::getShadowFadeFactor(float sunAngle) const
+{
+    // Calculate fade factor based on sun angle
+    // When sun approaches horizon (±π/4 ≈ ±0.7854), shadows fade out
+    // Fade range: from SHADOW_FADE_START_ANGLE to π/4 (0.7854)
+    const float HORIZON_ANGLE = 3.14159f / 4.0f;  // π/4
+    float sunAngleMagnitude = std::abs(sunAngle);
+    
+    // If angle is less than fade start, full opacity
+    if (sunAngleMagnitude < Config::SHADOW_FADE_START_ANGLE) {
+        return 1.0f;
+    }
+    
+    // If angle is beyond horizon, no shadow
+    if (sunAngleMagnitude >= HORIZON_ANGLE) {
+        return 0.0f;
+    }
+    
+    // Linear interpolation between fade start and horizon for smooth transition
+    float fadeRange = HORIZON_ANGLE - Config::SHADOW_FADE_START_ANGLE;
+    float fadeProgress = (sunAngleMagnitude - Config::SHADOW_FADE_START_ANGLE) / fadeRange;
+    
+    // Smoothly fade from 1.0 to 0.0
+    return 1.0f - std::min(1.0f, fadeProgress);
+}
+
+void Renderer::drawShadow(glm::vec3 position, glm::vec3 size, float sunAngle, LaneType laneType)
+{
+    // Calculate shadow based on sun angle
+    // sunAngle: 0 = sun directly overhead, larger magnitude = sun lower on horizon
+    
+    // Calculate the shadow length based on sun angle
+    // Use a smoother, more visible shadow calculation
+    float sunAngleMagnitude = std::abs(sunAngle);
+    // Map sun angle to shadow length: overhead (0) -> short shadow, horizon -> long shadow
+    float shadowLengthFactor = Config::SHADOW_MIN_LENGTH + 
+                              (Config::SHADOW_MAX_LENGTH - Config::SHADOW_MIN_LENGTH) * 
+                              std::min(1.0f, sunAngleMagnitude / 1.57f);  // normalized by π/2
+    
+    float shadowLength = std::max(Config::SHADOW_MIN_LENGTH, size.z * shadowLengthFactor);
+    float shadowOffsetX = std::sin(sunAngle) * size.x * 1.5f;  // side-to-side offset
+    float shadowOffsetZ = Config::SHADOW_Z_OFFSET;  // Z offset is now a hyperparameter (0 = no offset)
+    
+    // Shadow is rendered as a dark, flattened cube on the ground plane
+    glm::vec3 shadowPos = position;
+    shadowPos.y = getShadowYHeight(laneType);  // Height based on lane type
+    shadowPos.x += shadowOffsetX;
+    shadowPos.z += shadowOffsetZ;
+    
+    // Create shadow geometry by flattening along Y-axis
+    glm::vec3 shadowSize = glm::vec3(size.x * 1.2f, 0.01f, shadowLength);
+    
+    // Calculate fade factor for smooth day/night transition
+    float fadeFactor = getShadowFadeFactor(sunAngle);
+    
+    // If completely faded out, don't render shadow
+    if (fadeFactor <= 0.0f) {
+        return;
+    }
+    
+    glPushMatrix();
+    
+    // Use blending for semi-transparent shadow
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);  // Don't write to depth to prevent shadows from blocking other objects
+    
+    glDisable(GL_TEXTURE_2D);
+    // Apply fade factor to shadow opacity
+    glColor4f(0.0f, 0.0f, 0.0f, Config::SHADOW_OPACITY * fadeFactor);
+    
+    glTranslatef(shadowPos.x, shadowPos.y, shadowPos.z);
+    glScalef(shadowSize.x, shadowSize.y, shadowSize.z);
+    glutSolidCube(1.0f);
+    
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);  // Reset color
+    glDepthMask(GL_TRUE);  // Re-enable depth writing
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+    
+    glPopMatrix();
+}
+
+void Renderer::drawCharacterShadow(glm::vec3 position, glm::vec3 size, float sunAngle, LaneType laneType)
+{
+    // Render shadow for player character
+    // Characters are typically smaller and rounder
+    glm::vec3 shadowSize = glm::vec3(size.x * 0.9f, size.y * 0.3f, size.z * 0.8f);
+    drawShadow(position, shadowSize, sunAngle, laneType);
+}
+
+void Renderer::drawObstacleShadow(glm::vec3 position, glm::vec3 size, float sunAngle, LaneType laneType)
+{
+    // Render shadow for obstacles (cars, trains, logs)
+    // Obstacles have varying sizes, so we use their provided dimensions
+    drawShadow(position, size, sunAngle, laneType);
+}
+
+void Renderer::drawSignalPostShadow(glm::vec3 basePosition, float sunAngle, LaneType laneType)
+{
+    // Signal posts are tall and thin, create an appropriate shadow
+    glm::vec3 shadowSize = glm::vec3(0.2f, 1.5f, 0.1f);  // Thin and tall
+    drawShadow(basePosition, shadowSize, sunAngle, laneType);
+}

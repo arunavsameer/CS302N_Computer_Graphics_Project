@@ -34,7 +34,7 @@ Lane::Lane(float z, LaneType t, int safePath)
                                 : VEHICLE_SMALL_CAR;
 
         obstacles.push_back(Obstacle(
-            glm::vec3(startX, Config::CELL_SIZE * 0.6f, zPosition),
+            glm::vec3(startX, 0.31f, zPosition),
             speed, OBSTACLE_CAR, variant));
     }
     else if (type == LANE_RAIL) {
@@ -44,7 +44,7 @@ Lane::Lane(float z, LaneType t, int safePath)
         float startX = dir * -(35.0f + static_cast<float>(rand() % 20));
 
         obstacles.push_back(Obstacle(
-            glm::vec3(startX, Config::CELL_SIZE * 0.6f, zPosition),
+            glm::vec3(startX, 0.46f, zPosition),
             speed, OBSTACLE_TRAIN));
 
         // ── Signal posts every SIGNAL_SPACING units across the track ─────────

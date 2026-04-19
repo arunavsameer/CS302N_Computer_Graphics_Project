@@ -62,6 +62,31 @@ public:
     // passes u_nightMode to the shader, and darkens solid-colour drawCube calls.
     void setNightMode(bool night);
     bool isNightMode() const { return nightMode; }
+    // ── Day/Night Cycle & Lighting ────────────────────────────────────────
+    // Update lighting based on current game time
+    void updateLighting(float currentTime);
+    
+    // Draw sun and moon in the sky
+    void drawSunAndMoon(float sunProgress, bool isDayTime);
+    
+    // ── Shadow Rendering ──────────────────────────────────────────────────
+    // Draw a flattened shadow on the ground plane with lane-specific Y height
+    void drawShadow(glm::vec3 position, glm::vec3 size, float sunAngle, LaneType laneType);
+    
+    // Render shadow for a player character at given position
+    void drawCharacterShadow(glm::vec3 position, glm::vec3 size, float sunAngle, LaneType laneType);
+    
+    // Render shadow for an obstacle (car, train, log, etc.)
+    void drawObstacleShadow(glm::vec3 position, glm::vec3 size, float sunAngle, LaneType laneType);
+    
+    // Render shadow for a signal post
+    void drawSignalPostShadow(glm::vec3 basePosition, float sunAngle, LaneType laneType);
+    
+    // Helper to get shadow Y height based on lane type
+    float getShadowYHeight(LaneType laneType) const;
+    
+    // Helper to calculate shadow fade factor based on sun angle (smooth transition)
+    float getShadowFadeFactor(float sunAngle) const;
 
 private:
     std::map<std::string, unsigned int> textures;

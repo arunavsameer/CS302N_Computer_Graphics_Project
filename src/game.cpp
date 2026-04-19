@@ -35,6 +35,7 @@ void Game::resetGame()
     hasWaterDeath = false;
     hasStreamDeath = false;
     deathPosition = glm::vec3(0.0f);
+    currentGameTime = 0.0f;  // Reset day/night cycle
 
     player.reset();
     camera.resetToDefault();
@@ -189,6 +190,9 @@ void Game::update(float deltaTime)
 {
     for (auto &lane : lanes)
         lane.update(deltaTime);
+
+    // Update the day/night cycle and lighting
+    updateDayNightCycle(deltaTime);
 
     if (state == GAME_STATE_START_SCREEN)
     {
@@ -447,6 +451,77 @@ void Game::renderWorldBoundaries()
     renderer.drawBackWall();
 }
 
+void Game::updateDayNightCycle(float deltaTime)
+{
+    // Update game time for day/night cycle
+    currentGameTime += deltaTime;
+    
+    // Normalize to 0-1 based on the time speed parameter
+    float cycleTime = std::fmod(currentGameTime * Config::TIME_SPEED, 1.0f);
+    
+    // Calculate sun angle for shadow rendering
+    // Sun moves from -π/4 (left, low) to π/4 (right, low) with peak at 0 (middle, high)
+    sunAngle = (cycleTime - 0.5f) * 3.14159f * 0.5f;
+    
+    // Update renderer lighting
+    renderer.updateLighting(currentGameTime);
+    
+    // Auto-update night mode based on cycle time
+    // Transition at cycleTime ~0.05 and ~0.95 (when shadow completely fades, |sunAngle| = π/4)
+    // 0.05-0.95 = day, 0.0-0.05 and 0.95-1.0 = night (cycle boundaries where shadow is gone)
+    bool isDayTime = (cycleTime > 0.05f && cycleTime < 0.95f);
+    renderer.setNightMode(!isDayTime);
+}
+
+void Game::renderShadows()
+{
+    // Only render shadows during gameplay
+    if (state != GAME_STATE_PLAYING)
+        return;
+    
+    // Calculate sun progress for sun/moon rendering (0-1 over full cycle)
+    float cycleTime = std::fmod(currentGameTime * Config::TIME_SPEED, 1.0f);
+    bool isDayTime = cycleTime < 0.5f;
+    
+    // Draw sun or moon in the sky
+    renderer.drawSunAndMoon(cycleTime, isDayTime);
+    
+    // Render shadow for the player character (use grass lane height as default)
+    glm::vec3 playerPos = player.getPosition();
+    glm::vec3 playerSize = player.getSize();
+    renderer.drawCharacterShadow(playerPos, playerSize, sunAngle, LANE_GRASS);
+    
+    // Render shadows for all active obstacles
+    for (auto &lane : lanes)
+    {
+        LaneType laneType = lane.getType();
+        
+        for (auto &obs : lane.getObstacles())
+        {
+            if (!obs.getIsActive())
+                continue;
+            
+            // Render shadows for cars, trains, logs, and lilypads
+            ObstacleType obsType = obs.getType();
+            if (obsType == OBSTACLE_CAR || obsType == OBSTACLE_TRAIN || 
+                obsType == OBSTACLE_LOG || obsType == OBSTACLE_LILYPAD)
+            {
+                glm::vec3 obsPos = obs.getPosition();
+                glm::vec3 obsSize = obs.getSize();
+                renderer.drawObstacleShadow(obsPos, obsSize, sunAngle, laneType);
+            }
+        }
+        
+        // Render shadows for signal posts (on rail lanes)
+        if (lane.getType() == LANE_RAIL)
+        {
+            // Access signal posts from the lane - need to check the lane structure
+            // For now, we'll skip this as it requires accessing private lane data
+            // This will be handled if signal posts are accessible
+        }
+    }
+}
+
 void Game::render()
 {
     renderer.prepareFrame();
@@ -456,6 +531,9 @@ void Game::render()
 
     for (auto &lane : lanes)
         lane.render(renderer);
+
+    // Render shadows for game objects
+    renderShadows();
 
     if (state == GAME_STATE_START_SCREEN)
     {

@@ -44,6 +44,13 @@ private:
     int eggClicks    = 0;
     int lastClickTime = 0;
     bool nightMode   = false;   // toggled with N key
+    
+    // ── Day/Night Cycle & Shadows ────────────────────────────────────────────
+    float currentGameTime = 0.0f;  // Game time in seconds for day/night cycle
+    float sunAngle = 0.0f;         // Current angle of the sun (radians)
+
+    void updateDayNightCycle(float deltaTime);
+    void renderShadows();
     void resetGame();
     void renderUIOverlay();
 
