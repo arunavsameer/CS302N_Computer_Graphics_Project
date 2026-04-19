@@ -116,7 +116,7 @@ namespace Config {
     constexpr glm::vec3 LIGHT_DIRECTION_VECTOR = glm::vec3(1.0f, 1.0f, 0.0f);
     
     // Shadow rendering parameters
-    constexpr float SHADOW_Y_OFFSET = 0.01f;     // height above ground to prevent z-fighting
+    constexpr float SHADOW_Y_OFFSET = 0.02f;     // height above ground to prevent z-fighting (tweakable)
     constexpr float SHADOW_Z_OFFSET = 0.1f;      // z-axis offset for shadows (0 = no offset between lanes)
     constexpr float SHADOW_OPACITY = 0.4f;       // alpha/opacity of shadows
     constexpr float SHADOW_MAX_LENGTH = 3.0f;    // maximum shadow projection length

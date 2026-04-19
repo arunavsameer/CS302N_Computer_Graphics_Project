@@ -19,9 +19,9 @@ void CharacterChicken::drawModel(Renderer& renderer) const {
 
     // Wings: 3-layer stubs, symmetric
     for(float s:{-1.f,1.f}){
-        renderer.drawCube({s*.46f,.56f,.04f},{.14f,.24f,.46f},owt);
-        renderer.drawCube({s*.52f,.50f,0},   {.08f,.18f,.36f},wht);
-        renderer.drawCube({s*.54f,.44f,-.04f},{.06f,.12f,.28f},owt);
+        renderer.drawCube({s*.36f,.56f,.04f},{.14f,.24f,.46f},owt);
+        renderer.drawCube({s*.42f,.50f,0},   {.08f,.18f,.36f},wht);
+        renderer.drawCube({s*.44f,.44f,-.04f},{.06f,.12f,.28f},owt);
     }
 
     // Tail feathers: base + centre plume + 2 side plumes
@@ -31,33 +31,34 @@ void CharacterChicken::drawModel(Renderer& renderer) const {
         renderer.drawCube({s*.14f,.74f,-.40f},{.08f,.24f,.07f},owt);
 
     // Neck
-    renderer.drawCube({0,.80f,.20f},{.26f,.18f,.24f},wht);
-    renderer.drawCube({0,.90f,.22f},{.22f,.12f,.20f},wht);
+    // renderer.drawCube({0,.80f,.20f},{.26f,.18f,.24f},wht);
+    // renderer.drawCube({0,.90f,.22f},{.22f,.12f,.20f},wht);
 
+    float y_offset_head = -0.18f;
     // Head + puffed cheeks
-    renderer.drawCube({0,1.02f,.28f},{.44f,.40f,.42f},wht);
+    renderer.drawCube({0,1.02f + y_offset_head,.28f},{.44f,.40f,.42f},wht);
     for(float s:{-1.f,1.f})
-        renderer.drawCube({s*.24f,.98f,.34f},{.10f,.14f,.18f},owt);
+        renderer.drawCube({s*.24f,.98f + y_offset_head,.34f},{.10f,.14f,.18f},owt);
 
     // Comb: base strip + centre lobe (tallest) + 2 side lobes
-    renderer.drawCube({0,1.18f,.22f},{.22f,.06f,.10f},red);
-    renderer.drawCube({0,1.24f,.24f},{.08f,.12f,.10f},red);
+    renderer.drawCube({0,1.22f + y_offset_head,.22f},{.22f,.06f,.10f},red);
+    renderer.drawCube({0,1.28f + y_offset_head,.24f},{.08f,.12f,.10f},red);
     for(float s:{-1.f,1.f})
-        renderer.drawCube({s*.10f,1.20f,.22f},{.07f,.08f,.08f},red);
+        renderer.drawCube({s*.10f,1.24f + y_offset_head,.22f},{.07f,.08f,.08f},red);
 
     // Wattle
-    renderer.drawCube({0,.88f,.50f},{.13f,.16f,.08f},pnk);
-    renderer.drawCube({0,.80f,.50f},{.10f,.10f,.07f},pnk);
+    renderer.drawCube({0,.88f + y_offset_head,.50f},{.13f,.16f,.08f},pnk);
+    renderer.drawCube({0,.80f + y_offset_head,.50f},{.10f,.10f,.07f},pnk);
 
     // Beak (upper + lower)
-    renderer.drawCube({0,1.00f,.54f},{.14f,.07f,.14f},org);
-    renderer.drawCube({0,.94f,.52f}, {.12f,.06f,.12f},ord);
+    renderer.drawCube({0,1.00f + y_offset_head,.54f},{.14f,.07f,.14f},org);
+    renderer.drawCube({0,.94f + y_offset_head,.52f}, {.12f,.06f,.12f},ord);
 
     // Eyes: yellow iris, pupil, shine – symmetric
     for(float s:{-1.f,1.f}){
-        renderer.drawCube({s*.20f,1.06f,.46f},{.10f,.10f,.06f},yel);
-        renderer.drawCube({s*.20f,1.06f,.50f},{.06f,.06f,.04f},blk);
-        renderer.drawCube({s*.20f+.04f,1.10f,.52f},{.03f,.03f,.02f},wht);
+        renderer.drawCube({s*.20f,1.06f + y_offset_head,.46f},{.10f,.10f,.06f},yel);
+        renderer.drawCube({s*.20f,1.06f + y_offset_head,.50f},{.06f,.06f,.04f},blk);
+        renderer.drawCube({s*.20f+.04f,1.10f + y_offset_head,.52f},{.03f,.03f,.02f},wht);
     }
 
     // Legs: upper, shin, foot + 3 forward toes + back spur – symmetric

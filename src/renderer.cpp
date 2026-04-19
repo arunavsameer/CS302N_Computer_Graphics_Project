@@ -1138,81 +1138,67 @@ float Renderer::getShadowFadeFactor(float sunAngle) const
     return 1.0f - std::min(1.0f, fadeProgress);
 }
 
-void Renderer::drawShadow(glm::vec3 position, glm::vec3 size, float sunAngle, LaneType laneType)
+void Renderer::drawShadow(glm::vec3 position, glm::vec3 size, float sunAngle, float sunAngleMagnitude, float shadowFadeFactor, LaneType laneType)
 {
-    // Calculate shadow based on sun angle
-    // sunAngle: 0 = sun directly overhead, larger magnitude = sun lower on horizon
+    // OPTIMIZED: Render shadow as a simple flat quad instead of cube
+    // Fade factor and sun angle magnitude are pre-calculated to avoid redundant calculations
+    
+    // Skip completely faded shadows
+    if (shadowFadeFactor <= 0.0f) return;
     
     // Calculate the shadow length based on sun angle
-    // Use a smoother, more visible shadow calculation
-    float sunAngleMagnitude = std::abs(sunAngle);
-    // Map sun angle to shadow length: overhead (0) -> short shadow, horizon -> long shadow
     float shadowLengthFactor = Config::SHADOW_MIN_LENGTH + 
                               (Config::SHADOW_MAX_LENGTH - Config::SHADOW_MIN_LENGTH) * 
-                              std::min(1.0f, sunAngleMagnitude / 1.57f);  // normalized by π/2
+                              std::min(1.0f, sunAngleMagnitude / 1.57f);
     
     float shadowLength = std::max(Config::SHADOW_MIN_LENGTH, size.z * shadowLengthFactor);
-    float shadowOffsetX = std::sin(sunAngle) * size.x * 1.5f;  // side-to-side offset
-    float shadowOffsetZ = Config::SHADOW_Z_OFFSET;  // Z offset is now a hyperparameter (0 = no offset)
+    float shadowOffsetX = std::sin(sunAngle) * size.x * 1.5f;
+    float shadowOffsetZ = Config::SHADOW_Z_OFFSET;
     
-    // Shadow is rendered as a dark, flattened cube on the ground plane
     glm::vec3 shadowPos = position;
-    shadowPos.y = getShadowYHeight(laneType);  // Height based on lane type
+    shadowPos.y = getShadowYHeight(laneType) + Config::SHADOW_Y_OFFSET;
     shadowPos.x += shadowOffsetX;
     shadowPos.z += shadowOffsetZ;
     
-    // Create shadow geometry by flattening along Y-axis
-    glm::vec3 shadowSize = glm::vec3(size.x * 1.2f, 0.01f, shadowLength);
+    float shadowWidth = size.x * 1.2f;
     
-    // Calculate fade factor for smooth day/night transition
-    float fadeFactor = getShadowFadeFactor(sunAngle);
+    // Render shadow as a flat quad (much faster than glutSolidCube)
+    glColor4f(0.0f, 0.0f, 0.0f, Config::SHADOW_OPACITY * shadowFadeFactor);
     
-    // If completely faded out, don't render shadow
-    if (fadeFactor <= 0.0f) {
-        return;
-    }
+    // Draw quad with 4 vertices (no matrix operations needed)
+    glBegin(GL_QUADS);
+    float halfW = shadowWidth * 0.5f;
+    float z1 = shadowPos.z;
+    float z2 = shadowPos.z + shadowLength;
+    float x1 = shadowPos.x - halfW;
+    float x2 = shadowPos.x + halfW;
+    float y = shadowPos.y;
     
-    glPushMatrix();
-    
-    // Use blending for semi-transparent shadow
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthMask(GL_FALSE);  // Don't write to depth to prevent shadows from blocking other objects
-    
-    glDisable(GL_TEXTURE_2D);
-    // Apply fade factor to shadow opacity
-    glColor4f(0.0f, 0.0f, 0.0f, Config::SHADOW_OPACITY * fadeFactor);
-    
-    glTranslatef(shadowPos.x, shadowPos.y, shadowPos.z);
-    glScalef(shadowSize.x, shadowSize.y, shadowSize.z);
-    glutSolidCube(1.0f);
+    glVertex3f(x1, y, z1);
+    glVertex3f(x2, y, z1);
+    glVertex3f(x2, y, z2);
+    glVertex3f(x1, y, z2);
+    glEnd();
     
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);  // Reset color
-    glDepthMask(GL_TRUE);  // Re-enable depth writing
-    glDisable(GL_BLEND);
-    glEnable(GL_TEXTURE_2D);
-    
-    glPopMatrix();
 }
 
-void Renderer::drawCharacterShadow(glm::vec3 position, glm::vec3 size, float sunAngle, LaneType laneType)
+void Renderer::drawCharacterShadow(glm::vec3 position, glm::vec3 size, float sunAngle, float sunAngleMagnitude, float shadowFadeFactor, LaneType laneType)
 {
     // Render shadow for player character
-    // Characters are typically smaller and rounder
     glm::vec3 shadowSize = glm::vec3(size.x * 0.9f, size.y * 0.3f, size.z * 0.8f);
-    drawShadow(position, shadowSize, sunAngle, laneType);
+    drawShadow(position, shadowSize, sunAngle, sunAngleMagnitude, shadowFadeFactor, laneType);
 }
 
-void Renderer::drawObstacleShadow(glm::vec3 position, glm::vec3 size, float sunAngle, LaneType laneType)
+void Renderer::drawObstacleShadow(glm::vec3 position, glm::vec3 size, float sunAngle, float sunAngleMagnitude, float shadowFadeFactor, LaneType laneType)
 {
     // Render shadow for obstacles (cars, trains, logs)
-    // Obstacles have varying sizes, so we use their provided dimensions
-    drawShadow(position, size, sunAngle, laneType);
+    drawShadow(position, size, sunAngle, sunAngleMagnitude, shadowFadeFactor, laneType);
 }
 
-void Renderer::drawSignalPostShadow(glm::vec3 basePosition, float sunAngle, LaneType laneType)
+void Renderer::drawSignalPostShadow(glm::vec3 basePosition, float sunAngle, float sunAngleMagnitude, float shadowFadeFactor, LaneType laneType)
 {
-    // Signal posts are tall and thin, create an appropriate shadow
-    glm::vec3 shadowSize = glm::vec3(0.2f, 1.5f, 0.1f);  // Thin and tall
-    drawShadow(basePosition, shadowSize, sunAngle, laneType);
+    // Signal posts are tall and thin
+    glm::vec3 shadowSize = glm::vec3(0.2f, 1.5f, 0.1f);
+    drawShadow(basePosition, shadowSize, sunAngle, sunAngleMagnitude, shadowFadeFactor, laneType);
 }

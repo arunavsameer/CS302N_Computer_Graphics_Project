@@ -484,21 +484,32 @@ void Game::renderShadows()
     if (state != GAME_STATE_PLAYING)
         return;
     
-    // Calculate sun progress for sun/moon rendering (0-1 over full cycle)
-    float cycleTime = std::fmod(currentGameTime * Config::TIME_SPEED, 1.0f);
-    bool isDayTime = cycleTime < 0.5f;
+    // OPTIMIZATION: Calculate fade factor and sun angle magnitude ONCE per frame
+    // instead of recalculating for every shadow
+    float sunAngleMagnitude = std::abs(sunAngle);
+    float shadowFadeFactor = renderer.getShadowFadeFactor(sunAngle);
     
-    // Draw sun or moon in the sky
-    // COMMENTED OUT: Sun/moon cubes are not visible in normal gameplay views
-    // The sun angle logic remains intact and governs shadow rendering
-    // renderer.drawSunAndMoon(cycleTime, isDayTime);
+    // Skip entire shadow rendering if fade factor is zero
+    if (shadowFadeFactor <= 0.0f)
+        return;
     
-    // Render shadow for the player character (use grass lane height as default)
+    // OPTIMIZED: Set up GL state once, then render all shadows
+    glPushMatrix();
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_TEXTURE_2D);
+    
+    // Render shadow for the player character
     glm::vec3 playerPos = player.getPosition();
     glm::vec3 playerSize = player.getSize();
-    renderer.drawCharacterShadow(playerPos, playerSize, sunAngle, LANE_GRASS);
+    renderer.drawCharacterShadow(playerPos, playerSize, sunAngle, sunAngleMagnitude, shadowFadeFactor, LANE_GRASS);
     
-    // Render shadows for all active obstacles
+    // Visibility culling: Get player Z position to only render nearby obstacles
+    float playerZ = playerPos.z;
+    const float SHADOW_RENDER_DISTANCE = 20.0f;
+    
+    // Render shadows for all active obstacles within visibility range
     for (auto &lane : lanes)
     {
         LaneType laneType = lane.getType();
@@ -508,25 +519,30 @@ void Game::renderShadows()
             if (!obs.getIsActive())
                 continue;
             
+            glm::vec3 obsPos = obs.getPosition();
+            
+            // OPTIMIZATION: Skip obstacles that are too far away
+            float distanceFromPlayer = std::abs(obsPos.z - playerZ);
+            if (distanceFromPlayer > SHADOW_RENDER_DISTANCE)
+                continue;
+            
             // Render shadows for cars, trains, logs, and lilypads
             ObstacleType obsType = obs.getType();
             if (obsType == OBSTACLE_CAR || obsType == OBSTACLE_TRAIN || 
                 obsType == OBSTACLE_LOG || obsType == OBSTACLE_LILYPAD)
             {
-                glm::vec3 obsPos = obs.getPosition();
                 glm::vec3 obsSize = obs.getSize();
-                renderer.drawObstacleShadow(obsPos, obsSize, sunAngle, laneType);
+                renderer.drawObstacleShadow(obsPos, obsSize, sunAngle, sunAngleMagnitude, shadowFadeFactor, laneType);
             }
         }
-        
-        // Render shadows for signal posts (on rail lanes)
-        if (lane.getType() == LANE_RAIL)
-        {
-            // Access signal posts from the lane - need to check the lane structure
-            // For now, we'll skip this as it requires accessing private lane data
-            // This will be handled if signal posts are accessible
-        }
     }
+    
+    // Restore GL state
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+    glPopMatrix();
 }
 
 void Game::render()
