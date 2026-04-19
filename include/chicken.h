@@ -3,13 +3,14 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <memory>
 #include "renderer.h"
 #include "types.h"
+#include "character_base.h"
 
-// ── Added Character Models ─────────────────────────────────────────────────
 enum CharacterModel { MODEL_CHICKEN, MODEL_FROG };
+enum DeathType { DEATH_NONE, DEATH_SQUISH, DEATH_WATER };
 
-// ── Water-death splatter particle ──────────────────────────────────────────
 struct WaterParticle {
     glm::vec3 pos;
     glm::vec3 vel;
@@ -18,13 +19,10 @@ struct WaterParticle {
     float     alpha;
 };
 
-enum DeathType { DEATH_NONE, DEATH_SQUISH, DEATH_WATER };
-
 class Chicken {
 private:
     glm::vec3 position;
 
-    // --- Jump State ---
     bool      isJumping;
     glm::vec3 startPos;
     glm::vec3 targetPos;
@@ -32,18 +30,17 @@ private:
     float     rotationY;
     bool      isDead;
 
-    // --- Character State ---
     CharacterModel currentModel;
+    std::unique_ptr<CharacterBase> modelRenderer; // The rendering delegate
 
-    // --- Death Animation ---
     DeathType                  deathType;
     std::vector<WaterParticle> waterParticles;
     float                      waterSurfaceY;
-    float                      waterDeathSinkTimer;  // pre-explosion sink phase
-    bool                       waterDeathExploded;   // true once particles spawned
+    float                      waterDeathSinkTimer;
+    bool                       waterDeathExploded;
 
     void updateWaterParticles(float deltaTime);
-    void spawnWaterDeathParticles();               // called after sink phase ends
+    void spawnWaterDeathParticles();
 
 public:
     static constexpr float JUMP_DURATION = 0.25f;
@@ -61,15 +58,18 @@ public:
     glm::vec3 getSize()         const { return glm::vec3(Config::CELL_SIZE * 0.8f); }
     bool      getIsJumping()    const { return isJumping; }
     bool      getIsDead()       const { return isDead; }
+    float     getRotationY()    const { return rotationY; }
+    
+    // Getters so the separate renderer class can access state
+    int       getDeathType()    const { return deathType; }
+    bool      getWaterDeathExploded() const { return waterDeathExploded; }
+    const std::vector<WaterParticle>& getWaterParticles() const { return waterParticles; }
 
-    // --- New getters/setters for models ---
-    void setModel(CharacterModel model) { currentModel = model; }
+    void setModel(CharacterModel model);
     CharacterModel getModel() const { return currentModel; }
 
-    // Squish death (car / train)
     void setDead(bool dead) { isDead = dead; if (dead) deathType = DEATH_SQUISH; }
 
-    // Water death – spawns block particles at surfaceY
     void triggerWaterDeath(float surfaceY);
     bool isWaterDeathFinished() const;
 

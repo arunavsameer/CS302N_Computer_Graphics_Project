@@ -1,28 +1,22 @@
 #include "../include/chicken.h"
+#include "../include/character_chicken.h"
+#include "../include/character_frog.h"
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
-#define GL_SILENCE_DEPRECATION
-#ifdef __APPLE__
-    #include <GLUT/glut.h>
-#else
-    #include <GL/glut.h>
-#endif
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Construction / Reset
-// ─────────────────────────────────────────────────────────────────────────────
 Chicken::Chicken() {
-    position            = glm::vec3(0.0f, Config::CELL_SIZE * 0.15f, 0.0f);
-    isJumping           = false;
-    jumpProgress        = 0.0f;
-    rotationY           = 180.0f;
-    isDead              = false;
-    deathType           = DEATH_NONE;
-    waterSurfaceY       = 0.0f;
-    waterDeathSinkTimer = 0.0f;
-    waterDeathExploded  = false;
-    currentModel        = MODEL_CHICKEN; // Default model
+    setModel(MODEL_CHICKEN);
+    reset();
+}
+
+void Chicken::setModel(CharacterModel model) {
+    currentModel = model;
+    if (model == MODEL_CHICKEN) {
+        modelRenderer = std::make_unique<CharacterChicken>();
+    } else {
+        modelRenderer = std::make_unique<CharacterFrog>();
+    }
 }
 
 void Chicken::reset() {
@@ -37,49 +31,22 @@ void Chicken::reset() {
     waterParticles.clear();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Water death – Phase 1: brief visible sink, Phase 2: cube explosion
-// ─────────────────────────────────────────────────────────────────────────────
 void Chicken::triggerWaterDeath(float surfaceY) {
     isDead              = true;
     deathType           = DEATH_WATER;
     waterSurfaceY       = surfaceY;
-    waterDeathSinkTimer = 0.18f;   // 0.18 s of visible sinking before explosion
+    waterDeathSinkTimer = 0.18f;
     waterDeathExploded  = false;
     waterParticles.clear();
 }
 
-// Called automatically after the sink timer expires
 void Chicken::spawnWaterDeathParticles() {
-    const int numColors = 8;
-    glm::vec3 palette[numColors];
+    std::vector<glm::vec3> palette = modelRenderer->getWaterDeathPalette();
+    int numColors = palette.size();
 
-    if (currentModel == MODEL_CHICKEN) {
-        palette[0] = {1.00f, 1.00f, 1.00f};   // white
-        palette[1] = {1.00f, 1.00f, 1.00f};
-        palette[2] = {1.00f, 1.00f, 1.00f};
-        palette[3] = {1.00f, 0.50f, 0.05f};   // orange
-        palette[4] = {1.00f, 0.50f, 0.05f};
-        palette[5] = {1.00f, 0.20f, 0.55f};   // hot-pink
-        palette[6] = {0.85f, 0.10f, 0.10f};   // red
-        palette[7] = {0.05f, 0.05f, 0.05f};   // black
-    } else {
-        // Frog palette
-        palette[0] = {0.35f, 0.70f, 0.30f};   // green
-        palette[1] = {0.35f, 0.70f, 0.30f};
-        palette[2] = {0.35f, 0.70f, 0.30f};
-        palette[3] = {0.20f, 0.50f, 0.15f};   // dark green
-        palette[4] = {0.20f, 0.50f, 0.15f};
-        palette[5] = {0.85f, 0.90f, 0.70f};   // light belly
-        palette[6] = {1.00f, 1.00f, 1.00f};   // white
-        palette[7] = {0.05f, 0.05f, 0.05f};   // black
-    }
-
-    int count = 24 + rand() % 8;   // 24-31 cubes
+    int count = 24 + rand() % 8;
     for (int i = 0; i < count; i++) {
         WaterParticle p;
-
-        // Spawn scattered around the centre
         p.pos = position + glm::vec3(
             ((rand() % 200) - 100) * 0.007f,
             ((rand() % 80))        * 0.006f,
@@ -90,18 +57,12 @@ void Chicken::spawnWaterDeathParticles() {
         float hspeed = 0.5f + (rand() % 100) * 0.022f;
         float vspeed = 1.4f + (rand() % 100) * 0.032f;
 
-        // A quarter of the cubes shoot straight up – "breaking apart" feel
         if (i < count / 4) {
             vspeed *= 1.9f;
             hspeed *= 0.3f;
         }
 
-        p.vel = glm::vec3(
-            std::cos(angle) * hspeed,
-            vspeed,
-            std::sin(angle) * hspeed
-        );
-
+        p.vel = glm::vec3(std::cos(angle) * hspeed, vspeed, std::sin(angle) * hspeed);
         p.size  = 0.07f + (rand() % 100) * 0.005f;
         p.color = palette[rand() % numColors];
         p.alpha = 1.0f;
@@ -117,42 +78,29 @@ bool Chicken::isWaterDeathFinished() const {
     return true;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Per-frame water particle physics
-// ─────────────────────────────────────────────────────────────────────────────
 void Chicken::updateWaterParticles(float deltaTime) {
     for (auto& p : waterParticles) {
         if (p.alpha <= 0.0f) continue;
 
-        // Gravity
         p.vel.y -= 8.0f * deltaTime;
         p.pos   += p.vel * deltaTime;
 
         if (p.pos.y < waterSurfaceY) {
-            // Heavy drag once in water – kills horizontal momentum quickly
             float drag = 1.0f - 6.0f * deltaTime;
             if (drag < 0.0f) drag = 0.0f;
             p.vel.x *= drag;
             p.vel.z *= drag;
-
-            // Steady sinking speed
             if (p.vel.y > -0.6f) p.vel.y = -0.6f;
 
-            // Fade out in ~0.4 s after hitting surface
             p.alpha -= 2.8f * deltaTime;
             if (p.alpha < 0.0f) p.alpha = 0.0f;
         }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Update
-// ─────────────────────────────────────────────────────────────────────────────
 void Chicken::update(float deltaTime) {
-    // Water death: Phase 1 – sink visibly, Phase 2 – animate particles
     if (deathType == DEATH_WATER) {
         if (!waterDeathExploded) {
-            // Sink the body into the water surface
             waterDeathSinkTimer -= deltaTime;
             position.y -= 1.8f * deltaTime;
             if (waterDeathSinkTimer <= 0.0f) {
@@ -176,143 +124,17 @@ void Chicken::update(float deltaTime) {
     } else {
         position.x = startPos.x + (targetPos.x - startPos.x) * jumpProgress;
         position.z = startPos.z + (targetPos.z - startPos.z) * jumpProgress;
-
         float parabola = 4.0f * JUMP_HEIGHT * jumpProgress * (1.0f - jumpProgress);
         position.y = startPos.y + parabola;
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Render
-// ─────────────────────────────────────────────────────────────────────────────
 void Chicken::render(Renderer& renderer) {
-
-    // ── WATER DEATH: Phase 1 – sinking body; Phase 2 – cube particles ────────
-    if (isDead && deathType == DEATH_WATER) {
-        if (!waterDeathExploded) {
-            // Render body normally – it translates down via position.y
-        } else {
-            // Phase 2: draw flying / sinking cube particles only
-            glDisable(GL_TEXTURE_2D);
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-            for (const auto& p : waterParticles) {
-                if (p.alpha <= 0.0f) continue;
-                glPushMatrix();
-                glTranslatef(p.pos.x, p.pos.y, p.pos.z);
-                glScalef(p.size, p.size, p.size);
-                glColor4f(p.color.r, p.color.g, p.color.b, p.alpha);
-                glutSolidCube(1.0f);
-                glPopMatrix();
-            }
-
-            glDisable(GL_BLEND);
-            return;   // no body drawn in phase 2
-        }
+    if (modelRenderer) {
+        modelRenderer->render(renderer, *this);
     }
-
-    // ── NORMAL / SQUISH render ───────────────────────────────────────────────
-    glPushMatrix();
-
-    glTranslatef(position.x, position.y, position.z);
-    glRotatef(rotationY, 0.0f, 1.0f, 0.0f);
-
-    float s = Config::CELL_SIZE * 0.8f;
-
-    if(isDead){
-        if(deathType != DEATH_WATER){
-            glTranslatef(0.0f, -0.05f * s, 0.0f);
-            glScalef(1.2f, 0.15f, 1.2f);
-        }
-        else if(deathType == DEATH_WATER){
-            glScalef(0, 0, 0);
-        }
-    }
-    else {
-        glScalef(s, s, s);
-    }
-
-    glDisable(GL_TEXTURE_2D);
-
-    if (currentModel == MODEL_CHICKEN) {
-        // --- Original Chicken Palette ---
-        glm::vec3 white   = glm::vec3(1.00f, 1.00f, 1.00f);
-        glm::vec3 orange  = glm::vec3(1.00f, 0.50f, 0.05f);
-        glm::vec3 hotPink = glm::vec3(1.00f, 0.20f, 0.55f);
-        glm::vec3 red     = glm::vec3(0.85f, 0.10f, 0.10f);
-        glm::vec3 black   = glm::vec3(0.05f, 0.05f, 0.05f);
-
-        // Body
-        renderer.drawCube(glm::vec3(0.0f,  0.50f,  0.0f),  glm::vec3(0.72f, 0.60f, 0.72f), white);
-        // Head
-        renderer.drawCube(glm::vec3(0.0f,  0.88f,  0.16f), glm::vec3(0.44f, 0.44f, 0.44f), white);
-        // Comb
-        renderer.drawCube(glm::vec3(0.0f,  1.13f,  0.16f), glm::vec3(0.16f, 0.26f, 0.22f), hotPink);
-        // Beak
-        renderer.drawCube(glm::vec3(0.0f,  0.86f,  0.42f), glm::vec3(0.13f, 0.10f, 0.16f), orange);
-        // Wattle
-        renderer.drawCube(glm::vec3(0.0f,  0.74f,  0.36f), glm::vec3(0.09f, 0.13f, 0.09f), red);
-        // Eyes
-        renderer.drawCube(glm::vec3(-0.23f, 0.92f, 0.30f), glm::vec3(0.07f, 0.09f, 0.05f), black);
-        renderer.drawCube(glm::vec3( 0.23f, 0.92f, 0.30f), glm::vec3(0.07f, 0.09f, 0.05f), black);
-
-        // Legs + feet
-        float legX  = 0.20f;
-        float legCY = 0.11f;
-        float legH  = 0.22f;
-        float legW  = 0.11f;
-        renderer.drawCube(glm::vec3(-legX, legCY, 0.0f),  glm::vec3(legW, legH, legW),          orange);
-        renderer.drawCube(glm::vec3(-legX, 0.03f, 0.10f), glm::vec3(0.24f, 0.06f, 0.28f),      orange);
-        renderer.drawCube(glm::vec3( legX, legCY, 0.0f),  glm::vec3(legW, legH, legW),          orange);
-        renderer.drawCube(glm::vec3( legX, 0.03f, 0.10f), glm::vec3(0.24f, 0.06f, 0.28f),      orange);
-
-    } else if (currentModel == MODEL_FROG) {
-        // --- New Frog Palette ---
-        glm::vec3 frogGreen = glm::vec3(0.35f, 0.70f, 0.30f);
-        glm::vec3 frogDark  = glm::vec3(0.20f, 0.50f, 0.15f);
-        glm::vec3 frogBelly = glm::vec3(0.85f, 0.90f, 0.70f);
-        glm::vec3 white     = glm::vec3(1.00f, 1.00f, 1.00f);
-        glm::vec3 black     = glm::vec3(0.05f, 0.05f, 0.05f);
-
-        // Main Body (wide and flat)
-        renderer.drawCube(glm::vec3(0.0f, 0.30f, 0.0f), glm::vec3(0.80f, 0.35f, 0.75f), frogGreen);
-        // Belly
-        renderer.drawCube(glm::vec3(0.0f, 0.20f, 0.05f), glm::vec3(0.82f, 0.20f, 0.70f), frogBelly);
-
-        // Eyes (bulging up)
-        renderer.drawCube(glm::vec3(-0.25f, 0.55f, 0.20f), glm::vec3(0.25f, 0.25f, 0.25f), white);
-        renderer.drawCube(glm::vec3( 0.25f, 0.55f, 0.20f), glm::vec3(0.25f, 0.25f, 0.25f), white);
-        // Pupils
-        renderer.drawCube(glm::vec3(-0.25f, 0.55f, 0.33f), glm::vec3(0.10f, 0.10f, 0.05f), black);
-        renderer.drawCube(glm::vec3( 0.25f, 0.55f, 0.33f), glm::vec3(0.10f, 0.10f, 0.05f), black);
-
-        // Legs (squatting position)
-        float legY = 0.10f;
-        renderer.drawCube(glm::vec3(-0.45f, legY, -0.25f), glm::vec3(0.20f, 0.30f, 0.35f), frogDark); // Back left
-        renderer.drawCube(glm::vec3( 0.45f, legY, -0.25f), glm::vec3(0.20f, 0.30f, 0.35f), frogDark); // Back right
-        renderer.drawCube(glm::vec3(-0.40f, legY,  0.30f), glm::vec3(0.15f, 0.30f, 0.20f), frogDark); // Front left
-        renderer.drawCube(glm::vec3( 0.40f, legY,  0.30f), glm::vec3(0.15f, 0.30f, 0.20f), frogDark); // Front right
-    }
-
-    // Drop shadow
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f(0.0f, 0.0f, 0.0f, 0.25f);
-    glBegin(GL_QUADS);
-        glVertex3f(-0.40f, 0.01f, -0.40f);
-        glVertex3f( 0.40f, 0.01f, -0.40f);
-        glVertex3f( 0.40f, 0.01f,  0.40f);
-        glVertex3f(-0.40f, 0.01f,  0.40f);
-    glEnd();
-    glDisable(GL_BLEND);
-
-    glPopMatrix();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Movement
-// ─────────────────────────────────────────────────────────────────────────────
 void Chicken::move(float gridX, float gridZ) {
     if (isJumping) return;
     if (gridX == 0.0f && gridZ == 0.0f) return;
@@ -338,7 +160,6 @@ glm::vec3 Chicken::getBasePosition() const {
 
 void Chicken::applyLogVelocity(float velocityX, float deltaTime) {
     float movement = velocityX * deltaTime;
-
     if (!isJumping) {
         position.x  += movement;
         startPos.x   = position.x;

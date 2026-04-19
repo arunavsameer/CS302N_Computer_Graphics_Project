@@ -52,6 +52,9 @@ set(SOURCES
     src/camera.cpp
     src/shader.cpp
     src/stb_implement.cpp
+    src/character_frog.cpp
+    src/character_chicken.cpp   
+    src/character_base.cpp
     src/coin.cpp
 )
 
