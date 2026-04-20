@@ -165,6 +165,7 @@
 │   └── TargetDirectories.txt
 ├── cmake_install.cmake
 ├── CMakeLists.txt
+├── CODE_DETAILS.md
 ├── include
 │   ├── camera.h
 │   ├── character_base.h
@@ -208,4 +209,4 @@
 │   └── stb_implement.cpp
 └── tree.txt
 
-32 directories, 177 files
+32 directories, 178 files
