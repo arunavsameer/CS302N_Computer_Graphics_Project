@@ -138,7 +138,8 @@ With vsync (smooth but potentially delayed):
   Next scan starts with new frame buffer
   Result: No tearing, but ~16.67ms delay possible
   
-This game: Vsync enabled (smooth gaming priority)
+This game: Software frame rate limiting (120 FPS target via chrono timing)
+  Note: NOT hardware vsync - uses fixed timestep instead for cross-platform consistency
 ```
 
 **Frame Timing Analysis:**
@@ -156,9 +157,9 @@ This game: Vsync enabled (smooth gaming priority)
              - Draw UI
              - ~5-8ms of GPU work
   t=14-16ms: glutSwapBuffers() calls
-             - Waits for vsync if needed
-             - Swaps Front ↔ Back
+             - Swaps Front ↔ Back buffers
              - Screen updates with new frame
+             - May experience tearing if not vsync'd to monitor
   t=16ms:  Frame complete, cycle repeats
 ```
 **Purpose**: GLUT calls this whenever screen needs redrawing (triggered by glutPostRedisplay())
@@ -222,7 +223,8 @@ With vsync (smooth but potentially delayed):
   Next scan starts with new frame buffer
   Result: No tearing, but ~16.67ms delay possible
   
-This game: Vsync enabled (smooth gaming priority)
+This game: Software frame rate limiting (120 FPS target via chrono timing)
+  Note: NOT hardware vsync - uses fixed timestep instead for cross-platform consistency
 ```
 
 **Frame Timing Analysis:**
@@ -240,9 +242,9 @@ This game: Vsync enabled (smooth gaming priority)
              - Draw UI
              - ~5-8ms of GPU work
   t=14-16ms: glutSwapBuffers() calls
-             - Waits for vsync if needed
-             - Swaps Front ↔ Back
+             - Swaps Front ↔ Back buffers
              - Screen updates with new frame
+             - May experience tearing if not vsync'd to monitor
   t=16ms:  Frame complete, cycle repeats
 ```
 
@@ -497,27 +499,31 @@ if (game != nullptr) {
 Clicks route to game state:
 
 MAIN_MENU:
-  Click on "Start" button region → transitionTo(CHARACTER_SELECT)
-  Click on "Options" → show options
-  Click on "Exit" → exit game
+  Click on "PLAY" button region → transitionTo(START_SCREEN)
+  Click on "CHARACTERS" button → transitionTo(CHARACTER_SELECT)
   
 CHARACTER_SELECT:
-  Click on character portrait → selectCharacter()
-  Click on "Begin" button → transitionTo(PLAYING)
+  Click on left/right arrow circles → cycleCharacter()
+  Click on "SELECT!" button → selectCharacter() and return to MAIN_MENU
+  Click on "< BACK" button → return to MAIN_MENU
+  
+START_SCREEN:
+  Click anywhere on egg → increment eggClicks
+  After 3 egg clicks → transitionTo(PLAYING)
   
 GAME_OVER:
-  Click on "Restart" button → resetGame()
-  Click on "Menu" button → showMainMenu()
-  Click on egg decoration → unlock easter egg effect?
+  Click on "TRY AGAIN" button → return to MAIN_MENU (triggers reset)
 
 Hit Testing (Bounding Box Check):
-  Button regions defined as rectangles:
-    Restart button: x:[100,300], y:[400,450]
-    Menu button:    x:[350,550], y:[400,450]
+  Button regions defined as circles/rectangles with exact coordinates:
+    PLAY button: centered, pulsing animation
+    CHARACTERS button: x:[13,131], invertedY:[31,73]
+    SELECT! button: centered at cy-148 with 100 width, 56 height
+    < BACK button: x:[13,97], invertedY:[windowHeight-67, windowHeight-33]
+    TRY AGAIN button: centered at cy-98 with 230 width, 62 height
+    Arrow buttons (LEFT/RIGHT): circular, x=52 and x=windowWidth-52, radius=38
   
-  If (clickX >= 100 && clickX <= 300 &&
-      clickY >= 400 && clickY <= 450):
-    OnRestartClicked()
+  Hit test: If click falls within button bounds/circle, trigger action
 ```
 
 **Step 2: Track Left Mouse Button for Camera Drag**
@@ -980,27 +986,31 @@ if (game != nullptr) {
 Clicks route to game state:
 
 MAIN_MENU:
-  Click on "Start" button region → transitionTo(CHARACTER_SELECT)
-  Click on "Options" → show options
-  Click on "Exit" → exit game
+  Click on "PLAY" button region → transitionTo(START_SCREEN)
+  Click on "CHARACTERS" button → transitionTo(CHARACTER_SELECT)
   
 CHARACTER_SELECT:
-  Click on character portrait → selectCharacter()
-  Click on "Begin" button → transitionTo(PLAYING)
+  Click on left/right arrow circles → cycleCharacter()
+  Click on "SELECT!" button → selectCharacter() and return to MAIN_MENU
+  Click on "< BACK" button → return to MAIN_MENU
+  
+START_SCREEN:
+  Click anywhere on egg → increment eggClicks
+  After 3 egg clicks → transitionTo(PLAYING)
   
 GAME_OVER:
-  Click on "Restart" button → resetGame()
-  Click on "Menu" button → showMainMenu()
-  Click on egg decoration → unlock easter egg effect?
+  Click on "TRY AGAIN" button → return to MAIN_MENU (triggers reset)
 
 Hit Testing (Bounding Box Check):
-  Button regions defined as rectangles:
-    Restart button: x:[100,300], y:[400,450]
-    Menu button:    x:[350,550], y:[400,450]
+  Button regions defined as circles/rectangles with exact coordinates:
+    PLAY button: centered, pulsing animation
+    CHARACTERS button: x:[13,131], invertedY:[31,73]
+    SELECT! button: centered at cy-148 with 100 width, 56 height
+    < BACK button: x:[13,97], invertedY:[windowHeight-67, windowHeight-33]
+    TRY AGAIN button: centered at cy-98 with 230 width, 62 height
+    Arrow buttons (LEFT/RIGHT): circular, x=52 and x=windowWidth-52, radius=38
   
-  If (clickX >= 100 && clickX <= 300 &&
-      clickY >= 400 && clickY <= 450):
-    OnRestartClicked()
+  Hit test: If click falls within button bounds/circle, trigger action
 ```
 
 **Step 2: Track Left Mouse Button for Camera Drag**

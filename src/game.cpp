@@ -685,6 +685,24 @@ void Game::render()
 
 void Game::onKeyPress(unsigned char key)
 {
+    // Fullscreen toggle (F key) - works anytime
+    if (key == 'f' || key == 'F') {
+        static bool isFullscreen = false;
+        if (!isFullscreen) {
+            glutFullScreen();
+        } else {
+            glutReshapeWindow(windowWidth, windowHeight);
+        }
+        isFullscreen = !isFullscreen;
+        return;
+    }
+
+    // Restart to main menu (R key) - works anytime
+    if (key == 'r' || key == 'R') {
+        resetGame();
+        return;
+    }
+
     // Delegate pre-game keyboard input to PreGameManager
     preGameManager.onKeyPress(key, state, selectedCharacterIndex, player);
 
@@ -784,6 +802,62 @@ void Game::onSpecialKey(int key)
 {
     // Delegate pre-game special key input to PreGameManager
     preGameManager.onSpecialKey(key, state, selectedCharacterIndex);
+
+    if (state != GAME_STATE_PLAYING)
+        return;
+
+    float dx = 0.0f, dz = 0.0f;
+    // Arrow key movement
+    if (key == GLUT_KEY_UP)
+        dz = -1.0f;
+    else if (key == GLUT_KEY_DOWN)
+        dz = 1.0f;
+    else if (key == GLUT_KEY_LEFT)
+        dx = -1.0f;
+    else if (key == GLUT_KEY_RIGHT)
+        dx = 1.0f;
+    else
+        return;  // Not an arrow key
+
+    glm::vec3 currentPos = player.getPosition();
+    glm::vec3 nextPos = currentPos + glm::vec3(dx * Config::CELL_SIZE,
+                                               0.0f,
+                                               dz * Config::CELL_SIZE);
+
+    if (std::abs(nextPos.x) >= Config::BOUNDARY_X)
+        return;
+
+    if (nextPos.z > Config::BOUNDARY_BACK_Z)
+        return;
+
+    Lane *targetLane = nullptr;
+    for (auto &lane : lanes)
+    {
+        if (std::abs(lane.getZPosition() - nextPos.z) < Config::CELL_SIZE / 2.0f)
+        {
+            targetLane = &lane;
+            break;
+        }
+    }
+
+    bool blocked = false;
+
+    if (targetLane && targetLane->getType() == LANE_GRASS)
+    {
+        for (auto &d : targetLane->decorations)
+        {
+            float sz = (d.type == 0) ? 0.6f : 0.5f;
+            if (std::abs(nextPos.x - d.position.x) < sz &&
+                std::abs(nextPos.z - d.position.z) < sz)
+            {
+                blocked = true;
+                break;
+            }
+        }
+    }
+
+    if (!blocked)
+        player.move(dx, dz);
 }
 
 void Game::onMouseDrag(float deltaX, float deltaY)
