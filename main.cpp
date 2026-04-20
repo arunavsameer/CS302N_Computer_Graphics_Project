@@ -46,6 +46,10 @@ void keyboard(unsigned char key, int x, int y) {
     game->onKeyPress(key);
 }
 
+void specialKey(int key, int x, int y) {
+    game->onSpecialKey(key);
+}
+
 // Handle initial mouse clicks
 void mouseButton(int button, int state, int x, int y) {
     // 1. Pass the click to the game logic to handle the Egg and Replay buttons
@@ -98,6 +102,7 @@ int main(int argc, char** argv) {
     glutDisplayFunc(display);
     glutIdleFunc(idle);
     glutKeyboardFunc(keyboard);
+    glutSpecialFunc(specialKey);
     glutReshapeFunc(reshape);
     
     // Register the new mouse callbacks

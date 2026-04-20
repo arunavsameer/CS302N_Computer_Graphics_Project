@@ -673,6 +673,13 @@ void Game::onKeyPress(unsigned char key)
         if (key == '5') player.setModel(MODEL_DOG);  // <--- ADDED
     }
 
+    // Enter key selects character on the character select screen
+    if (state == GAME_STATE_CHARACTER_SELECT && (key == '\r' || key == '\n')) {
+        decltype(MODEL_CHICKEN) models[] = { MODEL_CHICKEN, MODEL_FROG, MODEL_DINO, MODEL_CAT, MODEL_DOG };
+        player.setModel(models[selectedCharacterIndex]);
+        state = GAME_STATE_MAIN_MENU;
+    }
+
     if (state != GAME_STATE_PLAYING)
         return;
 
@@ -765,6 +772,17 @@ void Game::onKeyPress(unsigned char key)
         camera.toggleLock();
 }
 
+void Game::onSpecialKey(int key)
+{
+    if (state != GAME_STATE_CHARACTER_SELECT)
+        return;
+    const int numChars = 5;
+    if (key == GLUT_KEY_LEFT)
+        selectedCharacterIndex = (selectedCharacterIndex - 1 + numChars) % numChars;
+    else if (key == GLUT_KEY_RIGHT)
+        selectedCharacterIndex = (selectedCharacterIndex + 1) % numChars;
+}
+
 void Game::onMouseDrag(float deltaX, float deltaY)
 {
     if (state != GAME_STATE_PLAYING)
@@ -790,131 +808,713 @@ void Game::renderUIOverlay()
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+ 
     float cx = windowWidth / 2.0f;
     float cy = windowHeight / 2.0f;
     int timeMs = glutGet(GLUT_ELAPSED_TIME);
-
-    // --- FIXED TEXT RENDERER ---
-    auto drawText = [](float x, float y, std::string text, void* font, float r, float g, float b, bool useShadow = false) {
-        if (useShadow) {
-            glColor4f(0.0f, 0.0f, 0.0f, 0.8f); 
-            glRasterPos2f(x + 1.0f, y - 1.0f); 
-            for (char c : text) glutBitmapCharacter(font, c);
-        }
-        glColor3f(r, g, b); 
-        glRasterPos2f(x, y);
-        for (char c : text) glutBitmapCharacter(font, c);
+ 
+    // ── Helpers ─────────────────────────────────────────────────────────────
+ 
+    auto fillRect = [](float x1, float y1, float x2, float y2,
+                       float r, float g, float b, float a = 1.0f) {
+        glColor4f(r, g, b, a);
+        glBegin(GL_QUADS);
+        glVertex2f(x1, y1); glVertex2f(x2, y1);
+        glVertex2f(x2, y2); glVertex2f(x1, y2);
+        glEnd();
     };
-
+ 
+    auto drawText = [](float x, float y, const std::string& txt, void* font,
+                       float r, float g, float b, float a = 1.0f, bool shadow = false) {
+        if (shadow) {
+            glColor4f(0.0f, 0.0f, 0.0f, 0.75f);
+            glRasterPos2f(x + 2.0f, y - 2.0f);
+            for (char c : txt) glutBitmapCharacter(font, c);
+        }
+        glColor4f(r, g, b, a);
+        glRasterPos2f(x, y);
+        for (char c : txt) glutBitmapCharacter(font, c);
+    };
+ 
+    // Centre text on cx
+    auto drawCentered = [&](float tcx, float y, const std::string& txt, void* font,
+                            float r, float g, float b, bool shadow = false) {
+        float w = 0; for (char c : txt) w += glutBitmapWidth(font, c);
+        drawText(tcx - w / 2.0f, y, txt, font, r, g, b, 1.0f, shadow);
+    };
+ 
+    // Stylish 3-layer button with top highlight
+    auto drawButton = [&](float bcx, float bcy, float bw, float bh,
+                          float br, float bg, float bb,
+                          float sr, float sg, float sb,
+                          const std::string& label, void* font) {
+        // Drop shadow
+        fillRect(bcx - bw/2 + 5, bcy - bh/2 - 5, bcx + bw/2 + 5, bcy + bh/2 - 5, 0, 0, 0, 0.45f);
+        // Dark border
+        fillRect(bcx - bw/2 - 2, bcy - bh/2 - 2, bcx + bw/2 + 2, bcy + bh/2 + 2, sr*0.6f, sg*0.6f, sb*0.6f);
+        // Bottom edge (gives 3-D depth)
+        fillRect(bcx - bw/2, bcy - bh/2 - 4, bcx + bw/2, bcy + bh/2, sr, sg, sb);
+        // Main face
+        fillRect(bcx - bw/2, bcy - bh/2, bcx + bw/2, bcy + bh/2, br, bg, bb);
+        // Top sheen
+        fillRect(bcx - bw/2 + 3, bcy + bh/2 - 9, bcx + bw/2 - 3, bcy + bh/2 - 3,
+                 std::min(1.0f, br * 1.55f), std::min(1.0f, bg * 1.55f), std::min(1.0f, bb * 1.55f), 0.55f);
+        // Label
+        float lw = 0; for (char c : label) lw += glutBitmapWidth(font, c);
+        drawText(bcx - lw/2.0f, bcy - 8.0f, label, font, 1.0f, 1.0f, 1.0f, 1.0f, true);
+    };
+ 
+    // Circle approximated with GL_POLYGON (n segments)
+    auto drawCircle = [](float cx_, float cy_, float r, float red, float grn, float blu, float a, int segs = 16) {
+        glColor4f(red, grn, blu, a);
+        glBegin(GL_POLYGON);
+        for (int i = 0; i < segs; i++) {
+            float ang = i * 2.0f * 3.14159f / segs;
+            glVertex2f(cx_ + r * std::cos(ang), cy_ + r * std::sin(ang));
+        }
+        glEnd();
+    };
+ 
+    // ── Character avatar (2-D voxel art) ────────────────────────────────────
+    auto drawCharIcon = [&](float icx, float icy, float sz, int ci, bool selected) {
+        float s = sz / 100.0f;
+        float cw = sz * 1.25f, ch = sz * 1.65f;
+ 
+        // Card drop shadow
+        fillRect(icx - cw/2 + 6, icy - ch/2 - 6, icx + cw/2 + 6, icy + ch/2 - 6, 0, 0, 0, 0.45f);
+ 
+        // Gold animated border for selected card
+        if (selected) {
+            float pulse = 0.65f + 0.35f * std::abs(std::sin(timeMs * 0.0035f));
+            fillRect(icx - cw/2 - 5, icy - ch/2 - 5, icx + cw/2 + 5, icy + ch/2 + 5,
+                     1.0f * pulse, 0.82f * pulse, 0.0f);
+        }
+ 
+        // Card fill – brighter for selected
+        if (selected)
+            fillRect(icx - cw/2, icy - ch/2, icx + cw/2, icy + ch/2, 0.12f, 0.30f, 0.58f, 0.92f);
+        else
+            fillRect(icx - cw/2, icy - ch/2, icx + cw/2, icy + ch/2, 0.06f, 0.12f, 0.25f, 0.80f);
+ 
+        // Inner top sheen
+        fillRect(icx - cw/2 + 3, icy + ch/2 - 10, icx + cw/2 - 3, icy + ch/2 - 3,
+                 1.0f, 1.0f, 1.0f, selected ? 0.12f : 0.06f);
+ 
+        switch (ci) {
+            // ── CHICKEN ─────────────────────────────────────────────────────
+            case 0: {
+                // Feet
+                glColor4f(1.0f, 0.55f, 0.0f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 21*s, icy - 44*s); glVertex2f(icx - 6*s,  icy - 44*s);
+                glVertex2f(icx - 6*s,  icy - 28*s); glVertex2f(icx - 21*s, icy - 28*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 6*s,  icy - 44*s); glVertex2f(icx + 21*s, icy - 44*s);
+                glVertex2f(icx + 21*s, icy - 28*s); glVertex2f(icx + 6*s,  icy - 28*s);
+                glEnd();
+                // Body
+                glColor4f(1.0f, 0.95f, 0.88f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 23*s, icy - 30*s); glVertex2f(icx + 23*s, icy - 30*s);
+                glVertex2f(icx + 21*s, icy + 12*s); glVertex2f(icx - 21*s, icy + 12*s);
+                glEnd();
+                // Head
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 16*s, icy + 11*s); glVertex2f(icx + 16*s, icy + 11*s);
+                glVertex2f(icx + 15*s, icy + 38*s); glVertex2f(icx - 15*s, icy + 38*s);
+                glEnd();
+                // Comb
+                glColor4f(0.92f, 0.12f, 0.1f, 1.0f);
+                glBegin(GL_TRIANGLES);
+                glVertex2f(icx - 9*s, icy + 37*s); glVertex2f(icx - 3*s, icy + 52*s); glVertex2f(icx + 3*s, icy + 37*s);
+                glVertex2f(icx + 2*s, icy + 37*s); glVertex2f(icx + 7*s, icy + 50*s); glVertex2f(icx + 12*s, icy + 37*s);
+                glEnd();
+                // Wattle
+                glColor4f(0.9f, 0.15f, 0.1f, 1.0f);
+                glBegin(GL_TRIANGLES);
+                glVertex2f(icx - 8*s, icy + 14*s); glVertex2f(icx + 2*s, icy + 14*s); glVertex2f(icx - 3*s, icy + 7*s);
+                glEnd();
+                // Beak
+                glColor4f(1.0f, 0.62f, 0.0f, 1.0f);
+                glBegin(GL_TRIANGLES);
+                glVertex2f(icx - 4*s, icy + 20*s); glVertex2f(icx + 13*s, icy + 22*s); glVertex2f(icx + 4*s, icy + 14*s);
+                glEnd();
+                // Eye dark
+                glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 3*s, icy + 27*s); glVertex2f(icx + 11*s, icy + 27*s);
+                glVertex2f(icx + 11*s, icy + 33*s); glVertex2f(icx + 3*s, icy + 33*s);
+                glEnd();
+                // Eye shine
+                glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 4*s, icy + 30*s); glVertex2f(icx + 7*s, icy + 30*s);
+                glVertex2f(icx + 7*s, icy + 33*s); glVertex2f(icx + 4*s, icy + 33*s);
+                glEnd();
+                break;
+            }
+            // ── FROG ────────────────────────────────────────────────────────
+            case 1: {
+                // Wide back legs
+                glColor4f(0.14f, 0.62f, 0.14f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 40*s, icy - 35*s); glVertex2f(icx - 21*s, icy - 35*s);
+                glVertex2f(icx - 21*s, icy - 5*s);  glVertex2f(icx - 40*s, icy - 5*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 21*s, icy - 35*s); glVertex2f(icx + 40*s, icy - 35*s);
+                glVertex2f(icx + 40*s, icy - 5*s);  glVertex2f(icx + 21*s, icy - 5*s);
+                glEnd();
+                // Body
+                glColor4f(0.18f, 0.78f, 0.18f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 26*s, icy - 28*s); glVertex2f(icx + 26*s, icy - 28*s);
+                glVertex2f(icx + 27*s, icy + 16*s); glVertex2f(icx - 27*s, icy + 16*s);
+                glEnd();
+                // Belly
+                glColor4f(0.62f, 0.96f, 0.52f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 17*s, icy - 23*s); glVertex2f(icx + 17*s, icy - 23*s);
+                glVertex2f(icx + 16*s, icy + 12*s); glVertex2f(icx - 16*s, icy + 12*s);
+                glEnd();
+                // Wide head
+                glColor4f(0.18f, 0.78f, 0.18f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 29*s, icy + 14*s); glVertex2f(icx + 29*s, icy + 14*s);
+                glVertex2f(icx + 25*s, icy + 40*s); glVertex2f(icx - 25*s, icy + 40*s);
+                glEnd();
+                // Smile
+                glColor4f(0.1f, 0.5f, 0.1f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 19*s, icy + 18*s); glVertex2f(icx + 19*s, icy + 18*s);
+                glVertex2f(icx + 19*s, icy + 22*s); glVertex2f(icx - 19*s, icy + 22*s);
+                glEnd();
+                // Bulging eyes (white + pupil)
+                glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 27*s, icy + 37*s); glVertex2f(icx - 11*s, icy + 37*s);
+                glVertex2f(icx - 11*s, icy + 52*s); glVertex2f(icx - 27*s, icy + 52*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 11*s, icy + 37*s); glVertex2f(icx + 27*s, icy + 37*s);
+                glVertex2f(icx + 27*s, icy + 52*s); glVertex2f(icx + 11*s, icy + 52*s);
+                glEnd();
+                glColor4f(0.0f, 0.18f, 0.0f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 24*s, icy + 39*s); glVertex2f(icx - 13*s, icy + 39*s);
+                glVertex2f(icx - 13*s, icy + 50*s); glVertex2f(icx - 24*s, icy + 50*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 13*s, icy + 39*s); glVertex2f(icx + 24*s, icy + 39*s);
+                glVertex2f(icx + 24*s, icy + 50*s); glVertex2f(icx + 13*s, icy + 50*s);
+                glEnd();
+                // Eye shine
+                glColor4f(1.0f, 1.0f, 1.0f, 0.9f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 24*s, icy + 48*s); glVertex2f(icx - 19*s, icy + 48*s);
+                glVertex2f(icx - 19*s, icy + 52*s); glVertex2f(icx - 24*s, icy + 52*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 19*s, icy + 48*s); glVertex2f(icx + 24*s, icy + 48*s);
+                glVertex2f(icx + 24*s, icy + 52*s); glVertex2f(icx + 19*s, icy + 52*s);
+                glEnd();
+                break;
+            }
+            // ── DINO (brown T-Rex, matches in-game model) ─────────────────────
+            case 2: {
+                // Tail (stubby, low-right)
+                glColor4f(0.52f, 0.32f, 0.12f, 1.0f);
+                glBegin(GL_TRIANGLES);
+                glVertex2f(icx + 20*s, icy - 18*s);
+                glVertex2f(icx + 46*s, icy - 30*s);
+                glVertex2f(icx + 20*s, icy - 6*s);
+                glEnd();
+                // Left leg
+                glColor4f(0.48f, 0.28f, 0.10f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 18*s, icy - 46*s); glVertex2f(icx - 4*s,  icy - 46*s);
+                glVertex2f(icx - 4*s,  icy - 22*s); glVertex2f(icx - 18*s, icy - 22*s);
+                glEnd();
+                // Right leg
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 4*s,  icy - 46*s); glVertex2f(icx + 18*s, icy - 46*s);
+                glVertex2f(icx + 18*s, icy - 22*s); glVertex2f(icx + 4*s,  icy - 22*s);
+                glEnd();
+                // Feet (white claws)
+                glColor4f(0.95f, 0.95f, 0.95f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 20*s, icy - 50*s); glVertex2f(icx - 2*s,  icy - 50*s);
+                glVertex2f(icx - 2*s,  icy - 44*s); glVertex2f(icx - 20*s, icy - 44*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 2*s,  icy - 50*s); glVertex2f(icx + 20*s, icy - 50*s);
+                glVertex2f(icx + 20*s, icy - 44*s); glVertex2f(icx + 2*s,  icy - 44*s);
+                glEnd();
+                // Body
+                glColor4f(0.62f, 0.38f, 0.15f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 22*s, icy - 24*s); glVertex2f(icx + 22*s, icy - 24*s);
+                glVertex2f(icx + 22*s, icy + 18*s); glVertex2f(icx - 22*s, icy + 18*s);
+                glEnd();
+                // Belly (cream/tan patch)
+                glColor4f(0.88f, 0.72f, 0.50f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 13*s, icy - 22*s); glVertex2f(icx + 13*s, icy - 22*s);
+                glVertex2f(icx + 10*s, icy + 16*s); glVertex2f(icx - 10*s, icy + 16*s);
+                glEnd();
+                // Small arms
+                glColor4f(0.55f, 0.33f, 0.12f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 22*s, icy + 2*s); glVertex2f(icx - 32*s, icy - 6*s);
+                glVertex2f(icx - 30*s, icy - 12*s); glVertex2f(icx - 20*s, icy - 4*s);
+                glEnd();
+                // Head
+                glColor4f(0.62f, 0.38f, 0.15f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 20*s, icy + 17*s); glVertex2f(icx + 20*s, icy + 17*s);
+                glVertex2f(icx + 20*s, icy + 50*s); glVertex2f(icx - 20*s, icy + 50*s);
+                glEnd();
+                // Snout
+                glColor4f(0.70f, 0.44f, 0.18f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 12*s, icy + 17*s); glVertex2f(icx + 28*s, icy + 17*s);
+                glVertex2f(icx + 28*s, icy + 32*s); glVertex2f(icx + 12*s, icy + 32*s);
+                glEnd();
+                // Nostril
+                glColor4f(0.40f, 0.22f, 0.08f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 21*s, icy + 28*s); glVertex2f(icx + 26*s, icy + 28*s);
+                glVertex2f(icx + 26*s, icy + 31*s); glVertex2f(icx + 21*s, icy + 31*s);
+                glEnd();
+                // Eye (white + pupil)
+                glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 4*s,  icy + 36*s); glVertex2f(icx + 16*s, icy + 36*s);
+                glVertex2f(icx + 16*s, icy + 46*s); glVertex2f(icx + 4*s,  icy + 46*s);
+                glEnd();
+                glColor4f(0.08f, 0.08f, 0.08f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 8*s,  icy + 38*s); glVertex2f(icx + 14*s, icy + 38*s);
+                glVertex2f(icx + 14*s, icy + 44*s); glVertex2f(icx + 8*s,  icy + 44*s);
+                glEnd();
+                // Teeth
+                glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+                glBegin(GL_TRIANGLES);
+                glVertex2f(icx + 14*s, icy + 17*s); glVertex2f(icx + 18*s, icy + 17*s); glVertex2f(icx + 16*s, icy + 11*s);
+                glVertex2f(icx + 20*s, icy + 17*s); glVertex2f(icx + 24*s, icy + 17*s); glVertex2f(icx + 22*s, icy + 11*s);
+                glEnd();
+                break;
+            }
+            // ── CAT ──────────────────────────────────────────────────────────
+            case 3: {
+                // Tail
+                glColor4f(0.88f, 0.48f, 0.14f, 1.0f);
+                glBegin(GL_TRIANGLES);
+                glVertex2f(icx + 21*s, icy + 12*s);
+                glVertex2f(icx + 40*s, icy + 34*s);
+                glVertex2f(icx + 21*s, icy + 0*s);
+                glEnd();
+                // Legs
+                glColor4f(0.84f, 0.44f, 0.10f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 21*s, icy - 42*s); glVertex2f(icx - 7*s, icy - 42*s);
+                glVertex2f(icx - 7*s,  icy - 20*s); glVertex2f(icx - 21*s, icy - 20*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 7*s,  icy - 42*s); glVertex2f(icx + 21*s, icy - 42*s);
+                glVertex2f(icx + 21*s, icy - 20*s); glVertex2f(icx + 7*s,  icy - 20*s);
+                glEnd();
+                // Body
+                glColor4f(0.92f, 0.52f, 0.16f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 22*s, icy - 22*s); glVertex2f(icx + 22*s, icy - 22*s);
+                glVertex2f(icx + 22*s, icy + 18*s); glVertex2f(icx - 22*s, icy + 18*s);
+                glEnd();
+                // Head
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 20*s, icy + 17*s); glVertex2f(icx + 20*s, icy + 17*s);
+                glVertex2f(icx + 20*s, icy + 44*s); glVertex2f(icx - 20*s, icy + 44*s);
+                glEnd();
+                // Ears outer
+                glColor4f(0.84f, 0.43f, 0.11f, 1.0f);
+                glBegin(GL_TRIANGLES);
+                glVertex2f(icx - 20*s, icy + 42*s); glVertex2f(icx - 9*s, icy + 42*s); glVertex2f(icx - 16*s, icy + 60*s);
+                glVertex2f(icx + 9*s,  icy + 42*s); glVertex2f(icx + 20*s, icy + 42*s); glVertex2f(icx + 16*s, icy + 60*s);
+                glEnd();
+                // Ears inner (pink)
+                glColor4f(1.0f, 0.70f, 0.80f, 1.0f);
+                glBegin(GL_TRIANGLES);
+                glVertex2f(icx - 18*s, icy + 43*s); glVertex2f(icx - 11*s, icy + 43*s); glVertex2f(icx - 16*s, icy + 56*s);
+                glVertex2f(icx + 11*s, icy + 43*s); glVertex2f(icx + 18*s, icy + 43*s); glVertex2f(icx + 16*s, icy + 56*s);
+                glEnd();
+                // Eyes (slit pupils)
+                glColor4f(0.08f, 0.70f, 0.08f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 15*s, icy + 30*s); glVertex2f(icx - 6*s, icy + 30*s);
+                glVertex2f(icx - 6*s,  icy + 38*s); glVertex2f(icx - 15*s, icy + 38*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 6*s,  icy + 30*s); glVertex2f(icx + 15*s, icy + 30*s);
+                glVertex2f(icx + 15*s, icy + 38*s); glVertex2f(icx + 6*s,  icy + 38*s);
+                glEnd();
+                glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 12*s, icy + 31*s); glVertex2f(icx - 8*s, icy + 31*s);
+                glVertex2f(icx - 8*s,  icy + 37*s); glVertex2f(icx - 12*s, icy + 37*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 8*s,  icy + 31*s); glVertex2f(icx + 12*s, icy + 31*s);
+                glVertex2f(icx + 12*s, icy + 37*s); glVertex2f(icx + 8*s,  icy + 37*s);
+                glEnd();
+                // Nose
+                glColor4f(1.0f, 0.48f, 0.68f, 1.0f);
+                glBegin(GL_TRIANGLES);
+                glVertex2f(icx - 3*s, icy + 24*s); glVertex2f(icx + 3*s, icy + 24*s); glVertex2f(icx, icy + 20*s);
+                glEnd();
+                // Whiskers
+                glColor4f(1.0f, 1.0f, 1.0f, 0.88f);
+                glLineWidth(1.2f);
+                glBegin(GL_LINES);
+                glVertex2f(icx - 4*s, icy + 24*s); glVertex2f(icx - 22*s, icy + 25*s);
+                glVertex2f(icx - 4*s, icy + 21*s); glVertex2f(icx - 22*s, icy + 18*s);
+                glVertex2f(icx + 4*s, icy + 24*s); glVertex2f(icx + 22*s, icy + 25*s);
+                glVertex2f(icx + 4*s, icy + 21*s); glVertex2f(icx + 22*s, icy + 18*s);
+                glEnd();
+                glLineWidth(1.0f);
+                break;
+            }
+            // ── DOG ──────────────────────────────────────────────────────────
+            case 4: {
+                // Wagging tail
+                float waggle = std::sin(timeMs * 0.007f) * 10.0f * s;
+                glColor4f(0.58f, 0.36f, 0.18f, 1.0f);
+                glBegin(GL_TRIANGLES);
+                glVertex2f(icx + 22*s, icy + 20*s);
+                glVertex2f(icx + 42*s, icy + 34*s + waggle);
+                glVertex2f(icx + 22*s, icy + 4*s);
+                glEnd();
+                // Legs
+                glColor4f(0.56f, 0.34f, 0.16f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 24*s, icy - 43*s); glVertex2f(icx - 8*s,  icy - 43*s);
+                glVertex2f(icx - 8*s,  icy - 22*s); glVertex2f(icx - 24*s, icy - 22*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 8*s,  icy - 43*s); glVertex2f(icx + 24*s, icy - 43*s);
+                glVertex2f(icx + 24*s, icy - 22*s); glVertex2f(icx + 8*s,  icy - 22*s);
+                glEnd();
+                // Body
+                glColor4f(0.66f, 0.42f, 0.20f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 25*s, icy - 24*s); glVertex2f(icx + 25*s, icy - 24*s);
+                glVertex2f(icx + 25*s, icy + 20*s); glVertex2f(icx - 25*s, icy + 20*s);
+                glEnd();
+                // Floppy ears (hang beside head)
+                glColor4f(0.48f, 0.28f, 0.12f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 36*s, icy + 16*s); glVertex2f(icx - 23*s, icy + 16*s);
+                glVertex2f(icx - 23*s, icy + 46*s); glVertex2f(icx - 36*s, icy + 46*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 23*s, icy + 16*s); glVertex2f(icx + 36*s, icy + 16*s);
+                glVertex2f(icx + 36*s, icy + 46*s); glVertex2f(icx + 23*s, icy + 46*s);
+                glEnd();
+                // Head
+                glColor4f(0.70f, 0.45f, 0.22f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 23*s, icy + 18*s); glVertex2f(icx + 23*s, icy + 18*s);
+                glVertex2f(icx + 23*s, icy + 48*s); glVertex2f(icx - 23*s, icy + 48*s);
+                glEnd();
+                // Eyes
+                glColor4f(0.22f, 0.10f, 0.02f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 16*s, icy + 33*s); glVertex2f(icx - 6*s,  icy + 33*s);
+                glVertex2f(icx - 6*s,  icy + 42*s); glVertex2f(icx - 16*s, icy + 42*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 6*s,  icy + 33*s); glVertex2f(icx + 16*s, icy + 33*s);
+                glVertex2f(icx + 16*s, icy + 42*s); glVertex2f(icx + 6*s,  icy + 42*s);
+                glEnd();
+                // Eye shine
+                glColor4f(1.0f, 1.0f, 1.0f, 0.9f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 15*s, icy + 39*s); glVertex2f(icx - 11*s, icy + 39*s);
+                glVertex2f(icx - 11*s, icy + 42*s); glVertex2f(icx - 15*s, icy + 42*s);
+                glEnd();
+                glBegin(GL_QUADS);
+                glVertex2f(icx + 7*s,  icy + 39*s); glVertex2f(icx + 11*s, icy + 39*s);
+                glVertex2f(icx + 11*s, icy + 42*s); glVertex2f(icx + 7*s,  icy + 42*s);
+                glEnd();
+                // Nose
+                glColor4f(0.08f, 0.04f, 0.04f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 7*s, icy + 23*s); glVertex2f(icx + 7*s, icy + 23*s);
+                glVertex2f(icx + 7*s, icy + 28*s); glVertex2f(icx - 7*s, icy + 28*s);
+                glEnd();
+                // Tongue
+                glColor4f(1.0f, 0.40f, 0.50f, 1.0f);
+                glBegin(GL_QUADS);
+                glVertex2f(icx - 6*s, icy + 15*s); glVertex2f(icx + 6*s, icy + 15*s);
+                glVertex2f(icx + 6*s, icy + 22*s); glVertex2f(icx - 6*s, icy + 22*s);
+                glEnd();
+                break;
+            }
+        }
+    };
+ 
+    // ── MAIN MENU ────────────────────────────────────────────────────────────
     if (state == GAME_STATE_MAIN_MENU)
     {
-        std::stringstream tc; tc << "BANK: " << totalCoins;
-        drawText(20.0f, windowHeight - 40.0f, tc.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 0.0f, true);
-
-        std::stringstream hs; hs << "BEST: " << highScore;
-        drawText(windowWidth - 120.0f, windowHeight - 40.0f, hs.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
-
-        drawText(cx - 105.0f, cy + 120.0f, "CRAZY HOPPER", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f, true);
-
-        if ((timeMs / 500) % 2 == 0) {
-            drawText(cx - 95.0f, cy - 80.0f, "TAP ANYWHERE TO HOP", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
+        // ── Coin bank (top-left) ─────────────────────────────────────────────
+        float coinX = 38.0f, coinY = windowHeight - 38.0f;
+        // Pill background
+        float pillW = 110.0f;
+        fillRect(coinX - 18, coinY - 16, coinX + pillW, coinY + 16, 0.0f, 0.0f, 0.0f, 0.45f);
+        fillRect(coinX - 16, coinY - 14, coinX + pillW - 2, coinY + 14, 0.12f, 0.10f, 0.02f, 0.80f);
+        // Coin circle
+        drawCircle(coinX, coinY, 12.0f, 1.0f, 0.82f, 0.0f, 1.0f, 14);
+        drawCircle(coinX, coinY,  8.0f, 0.82f, 0.65f, 0.0f, 1.0f, 14);
+        std::stringstream tc; tc << totalCoins;
+        drawText(coinX + 18, coinY - 7, tc.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 0.9f, 0.1f, 1.0f, true);
+ 
+        // ── Best score (top-right) ────────────────────────────────────────────
+        std::stringstream hs; hs << "BEST  " << highScore;
+        float hsW = 0; for (char c : hs.str()) hsW += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, c);
+        float hsX = windowWidth - hsW - 38.0f;
+        fillRect(hsX - 14, coinY - 16, windowWidth - 12, coinY + 16, 0.0f, 0.0f, 0.0f, 0.45f);
+        fillRect(hsX - 12, coinY - 14, windowWidth - 14, coinY + 14, 0.05f, 0.05f, 0.12f, 0.80f);
+        // Trophy icon
+        glColor4f(1.0f, 0.80f, 0.0f, 1.0f);
+        fillRect(hsX - 10, coinY - 9, hsX + 4,  coinY + 9, 1.0f, 0.80f, 0.0f, 1.0f);  // cup body
+        fillRect(hsX - 12, coinY + 5, hsX + 6,  coinY + 9, 1.0f, 0.80f, 0.0f, 1.0f);  // rim
+        fillRect(hsX - 5,  coinY - 12, hsX + 0, coinY - 9, 1.0f, 0.80f, 0.0f, 1.0f);  // stem
+        fillRect(hsX - 8,  coinY - 14, hsX + 4, coinY - 11, 1.0f, 0.80f, 0.0f, 1.0f); // base
+        drawText(hsX + 8, coinY - 7, hs.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, 1.0f, true);
+ 
+        // ── Title banner ─────────────────────────────────────────────────────
+        float titleY = cy + 118.0f;
+        float bw = 200.0f, bh = 30.0f;
+        // Shadow
+        fillRect(cx - bw - 6, titleY - bh - 6, cx + bw + 6, titleY + bh - 2, 0, 0, 0, 0.45f);
+        // Outer border
+        fillRect(cx - bw - 3, titleY - bh - 3, cx + bw + 3, titleY + bh + 3, 0.05f, 0.10f, 0.22f);
+        // Gold top/bottom pinstripes
+        fillRect(cx - bw - 3, titleY + bh - 2, cx + bw + 3, titleY + bh + 3, 1.0f, 0.82f, 0.0f);
+        fillRect(cx - bw - 3, titleY - bh - 3, cx + bw + 3, titleY - bh + 2, 1.0f, 0.82f, 0.0f);
+        // Gradient body (two-tone illusion)
+        glColor4f(0.12f, 0.28f, 0.58f, 0.96f);
+        glBegin(GL_QUADS);
+        glVertex2f(cx - bw, titleY - bh); glVertex2f(cx + bw, titleY - bh);
+        glVertex2f(cx + bw, titleY);       glVertex2f(cx - bw, titleY);
+        glEnd();
+        glColor4f(0.20f, 0.48f, 0.88f, 0.96f);
+        glBegin(GL_QUADS);
+        glVertex2f(cx - bw, titleY); glVertex2f(cx + bw, titleY);
+        glVertex2f(cx + bw, titleY + bh); glVertex2f(cx - bw, titleY + bh);
+        glEnd();
+        // Title text (bigger font - use 2 shadows for depth)
+        {
+            std::string title = "CRAZY  HOPPER";
+            float tw = 0; for (char c : title) tw += glutBitmapWidth(GLUT_BITMAP_TIMES_ROMAN_24, c);
+            // Deep shadow
+            glColor4f(0.0f, 0.0f, 0.0f, 0.9f);
+            glRasterPos2f(cx - tw/2 + 3, titleY - 8); for (char c : title) glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+            // Mid shadow
+            glColor4f(0.0f, 0.2f, 0.5f, 0.8f);
+            glRasterPos2f(cx - tw/2 + 1, titleY - 6); for (char c : title) glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+            // Main text
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            glRasterPos2f(cx - tw/2, titleY - 7); for (char c : title) glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }
-
-        float btnSize = 70.0f;
-        float margin = 20.0f;
-        
-        glColor3f(0.1f, 0.4f, 0.7f); 
-        glBegin(GL_QUADS);
-        glVertex2f(margin, margin - 4.0f); glVertex2f(margin + btnSize, margin - 4.0f);
-        glVertex2f(margin + btnSize, margin + btnSize); glVertex2f(margin, margin + btnSize);
-        glEnd();
-        
-        glColor3f(0.2f, 0.6f, 1.0f); 
-        glBegin(GL_QUADS);
-        glVertex2f(margin, margin); glVertex2f(margin + btnSize, margin);
-        glVertex2f(margin + btnSize, margin + btnSize); glVertex2f(margin, margin + btnSize);
-        glEnd();
-
-        drawText(margin + 8.0f, margin + 28.0f, "CHARS", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, false);
+ 
+        // ── PLAY button (large, pulsing green) ───────────────────────────────
+        float playPulse = 3.0f * std::abs(std::sin(timeMs * 0.0022f));
+        drawButton(cx, cy - 18.0f, 230.0f + playPulse, 64.0f,
+                   0.08f, 0.74f, 0.08f,
+                   0.04f, 0.38f, 0.04f,
+                   "PLAY!", GLUT_BITMAP_TIMES_ROMAN_24);
+ 
+        // Blinking "tap anywhere" hint
+        if ((timeMs / 600) % 2 == 0) {
+            drawCentered(cx, cy - 100.0f, "- TAP ANYWHERE TO START -",
+                         GLUT_BITMAP_HELVETICA_12, 0.88f, 0.88f, 0.88f, false);
+        }
+ 
+        // ── Characters button (bottom-left) ──────────────────────────────────
+        drawButton(72.0f, 52.0f, 118.0f, 42.0f,
+                   0.14f, 0.44f, 0.74f,
+                   0.06f, 0.20f, 0.40f,
+                   "CHARACTERS", GLUT_BITMAP_HELVETICA_12);
     }
+ 
+    // ── CHARACTER SELECT ─────────────────────────────────────────────────────
     else if (state == GAME_STATE_CHARACTER_SELECT)
     {
-        glColor4f(0.05f, 0.1f, 0.15f, 0.85f);
-        glBegin(GL_QUADS);
-        glVertex2f(0, 0); glVertex2f(windowWidth, 0);
-        glVertex2f(windowWidth, windowHeight); glVertex2f(0, windowHeight);
-        glEnd();
-
-        drawText(cx - 95.0f, cy + 180.0f, "CHOOSE YOUR HOPPER", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
-
-        float btnW = 200.0f, btnH = 45.0f;
-        float yPos[] = { cy + 100.0f, cy + 45.0f, cy - 10.0f, cy - 65.0f, cy - 120.0f };
-        std::string labels[] = { "CHICKEN", "FROG", "DINO", "CAT", "DOG" };
-        glm::vec3 colors[] = { {0.9f, 0.9f, 0.9f}, {0.2f, 0.8f, 0.2f}, {0.3f, 0.7f, 0.2f}, {0.9f, 0.5f, 0.1f}, {0.7f, 0.5f, 0.3f} };
-        glm::vec3 shadows[] = { {0.6f, 0.6f, 0.6f}, {0.1f, 0.4f, 0.1f}, {0.1f, 0.3f, 0.1f}, {0.5f, 0.2f, 0.0f}, {0.4f, 0.3f, 0.1f} };
-
-        for (int i = 0; i < 5; i++) {
-            glColor3f(shadows[i].r, shadows[i].g, shadows[i].b);
-            glBegin(GL_QUADS);
-            glVertex2f(cx - btnW/2, yPos[i] - btnH/2 - 4); glVertex2f(cx + btnW/2, yPos[i] - btnH/2 - 4);
-            glVertex2f(cx + btnW/2, yPos[i] + btnH/2);     glVertex2f(cx - btnW/2, yPos[i] + btnH/2);
-            glEnd();
-            
-            glColor3f(colors[i].r, colors[i].g, colors[i].b);
-            glBegin(GL_QUADS);
-            glVertex2f(cx - btnW/2, yPos[i] - btnH/2);     glVertex2f(cx + btnW/2, yPos[i] - btnH/2);
-            glVertex2f(cx + btnW/2, yPos[i] + btnH/2);     glVertex2f(cx - btnW/2, yPos[i] + btnH/2);
-            glEnd();
-            
-            float textX = cx - (labels[i].length() * 4.5f); 
-            drawText(textX, yPos[i] - 6.0f, labels[i], GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, false);
+        // Dark vignette overlay
+        fillRect(0, 0, windowWidth, windowHeight, 0.02f, 0.05f, 0.12f, 0.82f);
+ 
+        // ── Title ────────────────────────────────────────────────────────────
+        {
+            std::string hdr = "CHOOSE  YOUR  HOPPER";
+            float tw = 0; for (char c : hdr) tw += glutBitmapWidth(GLUT_BITMAP_TIMES_ROMAN_24, c);
+            // Banner under title
+            fillRect(cx - tw/2 - 20, windowHeight - 72, cx + tw/2 + 20, windowHeight - 32, 0.05f, 0.12f, 0.28f, 0.85f);
+            fillRect(cx - tw/2 - 20, windowHeight - 74, cx + tw/2 + 20, windowHeight - 70, 1.0f, 0.82f, 0.0f);
+            fillRect(cx - tw/2 - 20, windowHeight - 34, cx + tw/2 + 20, windowHeight - 30, 1.0f, 0.82f, 0.0f);
+            drawCentered(cx, windowHeight - 57, hdr, GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f, true);
         }
+ 
+        // ── Character name (animated gold pulse) ─────────────────────────────
+        const char* charNames[] = { "CHICKEN", "FROG", "DINO", "CAT", "DOG" };
+        float nameAlpha = 0.65f + 0.35f * std::abs(std::sin(timeMs * 0.0038f));
+        {
+            std::string nm = charNames[selectedCharacterIndex];
+            float nw = 0; for (char c : nm) nw += glutBitmapWidth(GLUT_BITMAP_TIMES_ROMAN_24, c);
+            glColor4f(1.0f, 0.85f, 0.0f, nameAlpha);
+            glRasterPos2f(cx - nw/2, windowHeight - 108.0f);
+            for (char c : nm) glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        }
+ 
+        // ── Carousel cards ───────────────────────────────────────────────────
+        float carouselY = cy + 30.0f;
+        // slot layout: offsets & sizes for 5 visible cards (−2 … +2)
+        float offsets[5] = { -310.0f, -170.0f,   0.0f, 170.0f, 310.0f };
+        float sizes[5]   = {   48.0f,   68.0f, 105.0f,  68.0f,  48.0f };
+        int   numChars   = 5;
+ 
+        for (int slot = 0; slot < 5; slot++) {
+            int ci = ((selectedCharacterIndex - 2 + slot) % numChars + numChars) % numChars;
+            bool isCenter = (slot == 2);
+            drawCharIcon(cx + offsets[slot], carouselY, sizes[slot], ci, isCenter);
+        }
+ 
+        // ── Navigation arrows ─────────────────────────────────────────────────
+        float arrowR = 38.0f;
+        float lax = 52.0f, rax = windowWidth - 52.0f, ay = carouselY;
+ 
+        // Left arrow
+        drawCircle(lax, ay, arrowR + 3, 0.0f, 0.0f, 0.0f, 0.5f);   // shadow
+        drawCircle(lax, ay, arrowR,     0.12f, 0.32f, 0.62f, 0.90f);
+        drawCircle(lax, ay, arrowR - 4, 0.18f, 0.44f, 0.80f, 0.70f); // sheen ring
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        glBegin(GL_TRIANGLES);
+        glVertex2f(lax + 14.0f, ay - 18.0f);
+        glVertex2f(lax - 16.0f, ay);
+        glVertex2f(lax + 14.0f, ay + 18.0f);
+        glEnd();
+ 
+        // Right arrow
+        drawCircle(rax, ay, arrowR + 3, 0.0f, 0.0f, 0.0f, 0.5f);
+        drawCircle(rax, ay, arrowR,     0.12f, 0.32f, 0.62f, 0.90f);
+        drawCircle(rax, ay, arrowR - 4, 0.18f, 0.44f, 0.80f, 0.70f);
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        glBegin(GL_TRIANGLES);
+        glVertex2f(rax - 14.0f, ay - 18.0f);
+        glVertex2f(rax + 16.0f, ay);
+        glVertex2f(rax - 14.0f, ay + 18.0f);
+        glEnd();
+ 
+        // Dot indicators (5 dots)
+        float dotY = carouselY - 100.0f;
+        for (int d = 0; d < numChars; d++) {
+            float dotX = cx + (d - 2) * 22.0f;
+            bool active = (d == selectedCharacterIndex);
+            drawCircle(dotX, dotY, active ? 7.0f : 4.5f,
+                       active ? 1.0f : 0.5f,
+                       active ? 0.84f : 0.5f,
+                       active ? 0.0f : 0.5f, 1.0f, 12);
+        }
+ 
+        // ── SELECT button ────────────────────────────────────────────────────
+        drawButton(cx, cy - 148.0f, 200.0f, 56.0f,
+                   0.08f, 0.74f, 0.08f,
+                   0.04f, 0.38f, 0.04f,
+                   "SELECT!", GLUT_BITMAP_TIMES_ROMAN_24);
+ 
+        // ── Back button ──────────────────────────────────────────────────────
+        drawButton(55.0f, windowHeight - 50.0f, 84.0f, 34.0f,
+                   0.35f, 0.35f, 0.45f,
+                   0.18f, 0.18f, 0.24f,
+                   "< BACK", GLUT_BITMAP_HELVETICA_12);
     }
+ 
+    // ── PLAYING ──────────────────────────────────────────────────────────────
     else if (state == GAME_STATE_PLAYING)
     {
+        // Score pill (top-right)
         std::stringstream ss; ss << score;
-        drawText(windowWidth - 50.0f, windowHeight - 50.0f, ss.str(), GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f, true);
-        
-        std::stringstream cc; cc << "Coins: " << coinScore;
-        drawText(20.0f, windowHeight - 40.0f, cc.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 0.0f, true);
+        float sw = 0; for (char c : ss.str()) sw += glutBitmapWidth(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        fillRect(windowWidth - sw - 54, windowHeight - 62, windowWidth - 12, windowHeight - 18, 0, 0, 0, 0.45f);
+        fillRect(windowWidth - sw - 52, windowHeight - 60, windowWidth - 14, windowHeight - 20, 0.05f, 0.08f, 0.18f, 0.80f);
+        drawText(windowWidth - sw - 38, windowHeight - 47, ss.str(), GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f, 1.0f, true);
+ 
+        // Coin pill (top-left)
+        float coinX = 36.0f, coinY = windowHeight - 40.0f;
+        std::stringstream cc; cc << coinScore;
+        float cw2 = 0; for (char c : cc.str()) cw2 += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, c);
+        fillRect(10, coinY - 16, coinX + cw2 + 38, coinY + 16, 0, 0, 0, 0.45f);
+        fillRect(12, coinY - 14, coinX + cw2 + 36, coinY + 14, 0.10f, 0.08f, 0.01f, 0.80f);
+        drawCircle(coinX, coinY, 11.0f, 1.0f, 0.82f, 0.0f, 1.0f, 14);
+        drawCircle(coinX, coinY,  7.0f, 0.82f, 0.65f, 0.0f, 1.0f, 14);
+        drawText(coinX + 16, coinY - 7, cc.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 0.88f, 0.0f, 1.0f, true);
     }
+ 
+    // ── START SCREEN ─────────────────────────────────────────────────────────
     else if (state == GAME_STATE_START_SCREEN)
     {
         if ((timeMs / 300) % 2 == 0) {
-            drawText(cx - 85.0f, cy + 100.0f, "TAP EGG TO HATCH!", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
+            drawCentered(cx, cy + 100.0f, "TAP EGG TO HATCH!",
+                         GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
         }
     }
+ 
+    // ── GAME OVER ────────────────────────────────────────────────────────────
     else if (state == GAME_STATE_GAME_OVER)
     {
-        // Red tint block removed here for normal screen appearance
-
-        drawText(cx - 72.0f, cy + 80.0f, "GAME OVER", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 0.3f, 0.3f, true);
-
-        std::stringstream sText; sText << "SCORE: " << score;
-        drawText(cx - 40.0f, cy + 30.0f, sText.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
-        
-        std::stringstream cText; cText << "+" << coinScore << " COINS";
-        drawText(cx - 45.0f, cy, cText.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 0.0f, true);
-
-        float btnW = 200.0f, btnH = 60.0f;
-        float retryY = cy - 60.0f;
-        
-        glColor3f(0.1f, 0.6f, 0.1f);
-        glBegin(GL_QUADS);
-        glVertex2f(cx - btnW/2, retryY - btnH/2 - 5); glVertex2f(cx + btnW/2, retryY - btnH/2 - 5);
-        glVertex2f(cx + btnW/2, retryY + btnH/2); glVertex2f(cx - btnW/2, retryY + btnH/2);
-        glEnd();
-
-        glColor3f(0.2f, 0.9f, 0.2f);
-        glBegin(GL_QUADS);
-        glVertex2f(cx - btnW/2, retryY - btnH/2); glVertex2f(cx + btnW/2, retryY - btnH/2);
-        glVertex2f(cx + btnW/2, retryY + btnH/2); glVertex2f(cx - btnW/2, retryY + btnH/2);
-        glEnd();
-
-        drawText(cx - 45.0f, retryY - 6.0f, "TRY AGAIN", GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, false);
+        // Full dark vignette
+        fillRect(0, 0, windowWidth, windowHeight, 0.0f, 0.0f, 0.0f, 0.52f);
+ 
+        // Panel
+        float pW = 340.0f, pH = 230.0f, pY = cy + 22.0f;
+        // Panel shadow
+        fillRect(cx - pW/2 + 7, pY - pH/2 - 7, cx + pW/2 + 7, pY + pH/2 - 7, 0, 0, 0, 0.75f);
+        // Red glow border
+        fillRect(cx - pW/2 - 4, pY - pH/2 - 4, cx + pW/2 + 4, pY + pH/2 + 4, 0.65f, 0.08f, 0.08f, 0.92f);
+        // Panel body
+        fillRect(cx - pW/2, pY - pH/2, cx + pW/2, pY + pH/2, 0.04f, 0.04f, 0.11f, 0.97f);
+        // Top inner sheen
+        fillRect(cx - pW/2 + 4, pY + pH/2 - 12, cx + pW/2 - 4, pY + pH/2 - 4, 0.45f, 0.08f, 0.08f, 0.55f);
+ 
+        // GAME OVER heading
+        drawCentered(cx, pY + 88.0f, "GAME  OVER", GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 0.22f, 0.22f, true);
+ 
+        // Divider
+        fillRect(cx - 130, pY + 62, cx + 130, pY + 65, 0.55f, 0.10f, 0.10f, 0.80f);
+ 
+        // Score row
+        std::stringstream sText; sText << "SCORE      " << score;
+        drawCentered(cx, pY + 36.0f, sText.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 1.0f, 1.0f, true);
+ 
+        // Coins row
+        std::stringstream cText; cText << "+" << coinScore << "  COINS";
+        drawCentered(cx, pY + 6.0f, cText.str(), GLUT_BITMAP_HELVETICA_18, 1.0f, 0.85f, 0.0f, true);
+ 
+        // New best banner
+        if (score > 0 && score == highScore) {
+            float pulse = 0.7f + 0.3f * std::abs(std::sin(timeMs * 0.005f));
+            fillRect(cx - 110, pY - 22, cx + 110, pY - 4, 0.6f * pulse, 0.5f * pulse, 0.0f, 0.60f);
+            drawCentered(cx, pY - 18.0f, "* NEW BEST! *", GLUT_BITMAP_HELVETICA_12,
+                         1.0f * pulse, 0.9f * pulse, 0.0f, false);
+        }
+ 
+        // TRY AGAIN button
+        drawButton(cx, cy - 98.0f, 230.0f, 62.0f,
+                   0.08f, 0.72f, 0.08f,
+                   0.04f, 0.36f, 0.04f,
+                   "TRY  AGAIN", GLUT_BITMAP_TIMES_ROMAN_24);
     }
-
+ 
     glEnable(GL_DEPTH_TEST);
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -924,54 +1524,50 @@ void Game::renderUIOverlay()
 void Game::onMouseClick(int button, int clickState, int x, int y)
 {
     if (clickState != 0) return;
-
-    int invertedY = windowHeight - y; 
+ 
+    int invertedY = windowHeight - y;
     float cx = windowWidth / 2.0f;
     float cy = windowHeight / 2.0f;
-
+ 
     if (state == GAME_STATE_MAIN_MENU)
     {
-        float btnSize = 70.0f;
-        float margin = 20.0f;
-
-        if (x >= margin && x <= margin + btnSize && invertedY >= margin && invertedY <= margin + btnSize) {
+        // CHARACTERS button – bottom-left (cx=72, cy=52, w=118, h=42)
+        if (x >= 13 && x <= 131 && invertedY >= 31 && invertedY <= 73) {
             state = GAME_STATE_CHARACTER_SELECT;
-        } 
+        }
         else {
+            // Everything else starts the game
             state = GAME_STATE_START_SCREEN;
             eggClicks = 0;
         }
     }
     else if (state == GAME_STATE_CHARACTER_SELECT)
     {
-        float btnW = 200.0f, btnH = 45.0f;
-        
-        // Horizontal check (all buttons are centered on CX)
-        if (x > cx - btnW/2 && x < cx + btnW/2) {
-            
-            // Chicken (Top)
-            if (invertedY > (cy + 100.0f) - btnH/2 && invertedY < (cy + 100.0f) + btnH/2) {
-                player.setModel(MODEL_CHICKEN);
+        float carouselY  = cy + 30.0f;
+        float arrowR     = 38.0f;
+        float lax        = 52.0f;
+        float rax        = windowWidth - 52.0f;
+        int   numChars   = 5;
+ 
+        // Left arrow
+        float dlx = x - lax, dly = invertedY - carouselY;
+        if (dlx*dlx + dly*dly <= arrowR*arrowR) {
+            selectedCharacterIndex = (selectedCharacterIndex - 1 + numChars) % numChars;
+        }
+        // Right arrow
+        else {
+            float drx = x - rax, dry = invertedY - carouselY;
+            if (drx*drx + dry*dry <= arrowR*arrowR) {
+                selectedCharacterIndex = (selectedCharacterIndex + 1) % numChars;
+            }
+            // SELECT button (cx, cy-148, w=200, h=56)
+            else if (x > cx - 100 && x < cx + 100 && invertedY > cy - 176 && invertedY < cy - 120) {
+                decltype(MODEL_CHICKEN) models[] = { MODEL_CHICKEN, MODEL_FROG, MODEL_DINO, MODEL_CAT, MODEL_DOG };                player.setModel(models[selectedCharacterIndex]);
                 state = GAME_STATE_MAIN_MENU;
             }
-            // Frog
-            else if (invertedY > (cy + 45.0f) - btnH/2 && invertedY < (cy + 45.0f) + btnH/2) {
-                player.setModel(MODEL_FROG);
-                state = GAME_STATE_MAIN_MENU;
-            }
-            // Dino
-            else if (invertedY > (cy - 10.0f) - btnH/2 && invertedY < (cy - 10.0f) + btnH/2) {
-                player.setModel(MODEL_DINO);
-                state = GAME_STATE_MAIN_MENU;
-            }
-            // Cat
-            else if (invertedY > (cy - 65.0f) - btnH/2 && invertedY < (cy - 65.0f) + btnH/2) {
-                player.setModel(MODEL_CAT);
-                state = GAME_STATE_MAIN_MENU;
-            }
-            // Dog (Bottom)
-            else if (invertedY > (cy - 120.0f) - btnH/2 && invertedY < (cy - 120.0f) + btnH/2) {
-                player.setModel(MODEL_DOG);
+            // BACK button (cx=55, cy=windowHeight-50, w=84, h=34)
+            else if (x >= 13 && x <= 97 &&
+                     invertedY >= windowHeight - 67 && invertedY <= windowHeight - 33) {
                 state = GAME_STATE_MAIN_MENU;
             }
         }
@@ -988,12 +1584,13 @@ void Game::onMouseClick(int button, int clickState, int x, int y)
     }
     else if (state == GAME_STATE_GAME_OVER)
     {
-        float btnW = 200.0f, btnH = 60.0f;
-        float retryY = cy - 60.0f; 
-
-        if (x > cx - btnW / 2 && x < cx + btnW / 2 && invertedY > retryY - btnH / 2 && invertedY < retryY + btnH / 2) {
+        // TRY AGAIN button (cx, cy-98, w=230, h=62)
+        float btnW = 230.0f, btnH = 62.0f;
+        float retryY = cy - 98.0f;
+        if (x > cx - btnW/2 && x < cx + btnW/2 &&
+            invertedY > retryY - btnH/2 && invertedY < retryY + btnH/2) {
             resetGame();
-            state = GAME_STATE_MAIN_MENU; 
+            state = GAME_STATE_MAIN_MENU;
         }
     }
 }

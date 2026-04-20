@@ -46,6 +46,7 @@ private:
     int eggClicks    = 0;
     int lastClickTime = 0;
     bool nightMode   = false;   // toggled with N key
+    int selectedCharacterIndex = 0; // index into the character carousel (0–4)
     
     // ── Day/Night Cycle & Shadows ────────────────────────────────────────────
     float currentGameTime = 30.0f;  // Game time in seconds (starts at midday: cycleTime ~0.3)
@@ -62,6 +63,7 @@ public:
     void update(float deltaTime);
     void render();
     void onKeyPress(unsigned char key);
+    void onSpecialKey(int key);   // handles arrow keys (GLUT_KEY_LEFT / RIGHT)
     void onResize(int w, int h);
     void onMouseDrag(float deltaX, float deltaY);
     void onMouseClick(int button, int state, int x, int y);
