@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <string>
+#include <cstdint>
 
 class PreGameManager {
 public:
@@ -19,7 +20,8 @@ public:
     // Render UI for pre-game states
     void render(GameState state, const Chicken& player, int windowWidth, int windowHeight,
                 int eggClicks, int lastClickTime, int selectedCharacterIndex,
-                int highScore, int totalCoins, int score, int coinScore);
+                int highScore, int totalCoins, int score, int coinScore,
+                uint64_t purchasedCharacters);
     
     // Handle keyboard input
     void onKeyPress(unsigned char key, GameState& state, int& selectedCharacterIndex,
@@ -31,7 +33,9 @@ public:
     // Handle mouse clicks
     void onMouseClick(int button, int clickState, int x, int y, GameState& state,
                       int& selectedCharacterIndex, Chicken& player, int windowWidth,
-                      int windowHeight, int& eggClicks, int& lastClickTime);
+                      int windowHeight, int& eggClicks, int& lastClickTime,
+                      uint64_t& totalCoins, uint64_t& purchasedCharacters,
+                      uint64_t highScore);
     
 private:
     int windowWidth, windowHeight;
@@ -39,13 +43,14 @@ private:
     // UI Rendering helpers
     void renderMainMenu(int windowWidth, int windowHeight, int highScore, int totalCoins);
     void renderCharacterSelect(int windowWidth, int windowHeight, int selectedCharacterIndex,
-                               int timeMs);
+                               int timeMs, int totalCoins, uint64_t purchasedCharacters);
     void renderStartScreen(int windowWidth, int windowHeight, int timeMs);
     void renderGameOver(int windowWidth, int windowHeight, int score, int coinScore,
                         int highScore, int timeMs);
     
     // Helper functions for rendering
-    void drawCharacterIcon(float icx, float icy, float sz, int ci, bool selected, int timeMs);
+    void drawCharacterIcon(float icx, float icy, float sz, int ci, bool selected, int timeMs,
+                           bool owned);
 };
 
 #endif

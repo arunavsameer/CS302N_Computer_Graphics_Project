@@ -31,12 +31,15 @@ Game::Game(int width, int height)
     // Load save data
     uint64_t loadedCoins = 0;
     uint64_t loadedScore = 0;
-    if (SaveManager::loadData(loadedCoins, loadedScore)) {
+    uint64_t loadedPurchased = 0;
+    if (SaveManager::loadData(loadedCoins, loadedScore, loadedPurchased)) {
         totalCoins = loadedCoins;
         highScore = loadedScore;
+        purchasedCharacters = loadedPurchased;
     } else {
         totalCoins = 0;
         highScore = 0;
+        purchasedCharacters = 0;
     }
 }
 
@@ -172,7 +175,7 @@ void Game::updateCameraAndFailState(float deltaTime)
             hasWaterDeath = false;
         }
         state = GAME_STATE_GAME_OVER;
-        SaveManager::saveData(totalCoins, highScore);
+        SaveManager::saveData(totalCoins, highScore, purchasedCharacters);
     }
 }
 
@@ -285,7 +288,7 @@ void Game::checkCollisions(float deltaTime)
                 deathPosition = playerPos;
                 hasWaterDeath = false;
                 state = GAME_STATE_GAME_OVER;
-                SaveManager::saveData(totalCoins, highScore);
+                SaveManager::saveData(totalCoins, highScore, purchasedCharacters);
                 return;
             }
         }
@@ -322,7 +325,7 @@ void Game::checkCollisions(float deltaTime)
                 deathPosition = playerPos;
                 hasWaterDeath = false;
                 state = GAME_STATE_GAME_OVER;
-                SaveManager::saveData(totalCoins, highScore);
+                SaveManager::saveData(totalCoins, highScore, purchasedCharacters);
                 return;
             }
             else if (obsType == OBSTACLE_LOG)
@@ -344,7 +347,7 @@ void Game::checkCollisions(float deltaTime)
                     hasWaterDeath = true;
                     hasStreamDeath = true;
                     state = GAME_STATE_GAME_OVER;
-                    SaveManager::saveData(totalCoins, highScore);
+                    SaveManager::saveData(totalCoins, highScore, purchasedCharacters);
                     return;
                 }
             }
@@ -379,7 +382,7 @@ void Game::checkCollisions(float deltaTime)
         hasWaterDeath = true;
         hasStreamDeath = false;
         state = GAME_STATE_GAME_OVER;
-        SaveManager::saveData(totalCoins, highScore);
+        SaveManager::saveData(totalCoins, highScore, purchasedCharacters);
     }
 }
 
@@ -877,7 +880,7 @@ void Game::renderUIOverlay()
     // Delegate pre-game and game-over rendering to PreGameManager
     preGameManager.render(state, player, windowWidth, windowHeight,
                          eggClicks, lastClickTime, selectedCharacterIndex,
-                         highScore, totalCoins, score, coinScore);
+                         highScore, totalCoins, score, coinScore, purchasedCharacters);
     
     // In-game HUD rendering (score and coins)
     if (state == GAME_STATE_PLAYING)
@@ -966,5 +969,6 @@ void Game::onMouseClick(int button, int clickState, int x, int y)
     }
     
     preGameManager.onMouseClick(button, clickState, x, y, state, selectedCharacterIndex,
-                                player, windowWidth, windowHeight, eggClicks, lastClickTime);
+                                player, windowWidth, windowHeight, eggClicks, lastClickTime,
+                                totalCoins, purchasedCharacters, highScore);
 }

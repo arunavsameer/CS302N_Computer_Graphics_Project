@@ -2,6 +2,7 @@
 #define GAME_H
 
 #include <vector>
+#include <cstdint>
 #include "types.h"
 #include "renderer.h"
 #include "camera.h"
@@ -24,7 +25,8 @@ private:
     int highScore; 
     float startZ;
     int coinScore = 0;
-    int totalCoins = 0; // <--- ADD THIS HERE
+    uint64_t totalCoins = 0;
+    uint64_t purchasedCharacters = 0; // bitmask: bit 0 = Dino, bit 1 = Cat, bit 2 = Dog
 
     // ── Death tracking ───────────────────────────────────────────────────────
     glm::vec3 deathPosition;

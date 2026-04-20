@@ -1,5 +1,7 @@
 #include "../include/pregame.h"
 #include "../include/types.h"
+#include "../include/save_data.h"
+#include <cstdint>
 #include <cmath>
 #include <sstream>
 #ifdef __APPLE__
@@ -22,7 +24,8 @@ void PreGameManager::update(float deltaTime, GameState& state, Chicken& player, 
 
 void PreGameManager::render(GameState state, const Chicken& player, int windowWidth, int windowHeight,
                             int eggClicks, int lastClickTime, int selectedCharacterIndex,
-                            int highScore, int totalCoins, int score, int coinScore)
+                            int highScore, int totalCoins, int score, int coinScore,
+                            uint64_t purchasedCharacters)
 {
     // Setup 2D rendering
     glMatrixMode(GL_PROJECTION);
@@ -43,7 +46,7 @@ void PreGameManager::render(GameState state, const Chicken& player, int windowWi
         renderMainMenu(windowWidth, windowHeight, highScore, totalCoins);
     }
     else if (state == GAME_STATE_CHARACTER_SELECT) {
-        renderCharacterSelect(windowWidth, windowHeight, selectedCharacterIndex, timeMs);
+        renderCharacterSelect(windowWidth, windowHeight, selectedCharacterIndex, timeMs, totalCoins, purchasedCharacters);
     }
     else if (state == GAME_STATE_START_SCREEN) {
         renderStartScreen(windowWidth, windowHeight, timeMs);
@@ -90,9 +93,23 @@ void PreGameManager::onSpecialKey(int key, GameState& state, int& selectedCharac
 
 void PreGameManager::onMouseClick(int button, int clickState, int x, int y, GameState& state,
                                   int& selectedCharacterIndex, Chicken& player, int windowWidth,
-                                  int windowHeight, int& eggClicks, int& lastClickTime)
+                                  int windowHeight, int& eggClicks, int& lastClickTime,
+                                  uint64_t& totalCoins, uint64_t& purchasedCharacters,
+                                  uint64_t highScore)
 {
     if (clickState != 0) return;
+    
+    // Helper: is a character index owned?
+    auto isOwned = [&](int ci) -> bool {
+        if (ci == 0 || ci == 1) return true;           // Chicken, Frog always free
+        if (ci == 2) return (purchasedCharacters & 1);  // Dino  – bit 0
+        if (ci == 3) return (purchasedCharacters & 2);  // Cat   – bit 1
+        if (ci == 4) return (purchasedCharacters & 4);  // Dog   – bit 2
+        return true;
+    };
+
+    // Prices for each character index (0/1 = free)
+    const int charPrices[5] = { 0, 0, 300, 400, 500 };
     
     int invertedY = windowHeight - y;
     float cx = windowWidth / 2.0f;
@@ -115,6 +132,8 @@ void PreGameManager::onMouseClick(int button, int clickState, int x, int y, Game
         float lax        = 52.0f;
         float rax        = windowWidth - 52.0f;
         int   numChars   = 5;
+        int   centerChar = selectedCharacterIndex;
+        bool  centerOwned = isOwned(centerChar);
         
         // Left arrow
         float dlx = x - lax, dly = invertedY - carouselY;
@@ -127,11 +146,26 @@ void PreGameManager::onMouseClick(int button, int clickState, int x, int y, Game
             if (drx*drx + dry*dry <= arrowR*arrowR) {
                 selectedCharacterIndex = (selectedCharacterIndex + 1) % numChars;
             }
-            // SELECT button (cx, cy-148, w=200, h=56)
+            // Main action button (SELECT or BUY) – (cx, cy-148, w=200, h=56)
             else if (x > cx - 100 && x < cx + 100 && invertedY > cy - 176 && invertedY < cy - 120) {
-                decltype(MODEL_CHICKEN) models[] = { MODEL_CHICKEN, MODEL_FROG, MODEL_DINO, MODEL_CAT, MODEL_DOG };
-                player.setModel(models[selectedCharacterIndex]);
-                state = GAME_STATE_MAIN_MENU;
+                if (centerOwned) {
+                    // SELECT: switch character and go to main menu
+                    decltype(MODEL_CHICKEN) models[] = { MODEL_CHICKEN, MODEL_FROG, MODEL_DINO, MODEL_CAT, MODEL_DOG };
+                    player.setModel(models[centerChar]);
+                    state = GAME_STATE_MAIN_MENU;
+                } else {
+                    // BUY: deduct coins and unlock if affordable
+                    int price = charPrices[centerChar];
+                    if ((int64_t)totalCoins >= price) {
+                        totalCoins -= price;
+                        if (centerChar == 2) purchasedCharacters |= 1;
+                        else if (centerChar == 3) purchasedCharacters |= 2;
+                        else if (centerChar == 4) purchasedCharacters |= 4;
+                        // Persist the purchase immediately — don't wait for death
+                        SaveManager::saveData(totalCoins, highScore, purchasedCharacters);
+                    }
+                    // (if not enough coins, button does nothing visible – handled by BUY label graying)
+                }
             }
             // BACK button (cx=55, cy=windowHeight-50, w=84, h=34)
             else if (x >= 13 && x <= 97 &&
@@ -288,7 +322,7 @@ void PreGameManager::renderMainMenu(int windowWidth, int windowHeight, int highS
 }
 
 void PreGameManager::renderCharacterSelect(int windowWidth, int windowHeight, int selectedCharacterIndex,
-                                          int timeMs)
+                                          int timeMs, int totalCoins, uint64_t purchasedCharacters)
 {
     float cx = windowWidth / 2.0f;
     float cy = windowHeight / 2.0f;
@@ -344,6 +378,17 @@ void PreGameManager::renderCharacterSelect(int windowWidth, int windowHeight, in
         glEnd();
     };
     
+    // Helper: is a character owned?
+    auto isOwned = [&](int ci) -> bool {
+        if (ci == 0 || ci == 1) return true;
+        if (ci == 2) return (purchasedCharacters & 1) != 0; // Dino
+        if (ci == 3) return (purchasedCharacters & 2) != 0; // Cat
+        if (ci == 4) return (purchasedCharacters & 4) != 0; // Dog
+        return true;
+    };
+    const int charPrices[5] = { 0, 0, 300, 400, 500 };
+    bool centerOwned = isOwned(selectedCharacterIndex);
+
     // Dark vignette overlay
     fillRect(0, 0, windowWidth, windowHeight, 0.02f, 0.05f, 0.12f, 0.82f);
     
@@ -356,14 +401,37 @@ void PreGameManager::renderCharacterSelect(int windowWidth, int windowHeight, in
         fillRect(cx - tw/2 - 20, windowHeight - 34, cx + tw/2 + 20, windowHeight - 30, 1.0f, 0.82f, 0.0f);
         drawCentered(cx, windowHeight - 57, hdr, GLUT_BITMAP_TIMES_ROMAN_24, 1.0f, 1.0f, 1.0f, true);
     }
+
+    // ── Coin balance (top-right of screen) ───────────────────────────────
+    {
+        std::stringstream tc; tc << totalCoins;
+        float pillRight = windowWidth - 16.0f;
+        float pillCy    = windowHeight - 52.0f;
+        float cw = 0; for (char c : tc.str()) cw += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, c);
+        float pillLeft = pillRight - cw - 48.0f;
+        fillRect(pillLeft - 2, pillCy - 16, pillRight + 2, pillCy + 16, 0.0f, 0.0f, 0.0f, 0.45f);
+        fillRect(pillLeft,     pillCy - 14, pillRight,     pillCy + 14, 0.12f, 0.10f, 0.02f, 0.85f);
+        // Coin icon
+        float icx2 = pillLeft + 16.0f;
+        drawCircle(icx2, pillCy, 10.0f, 1.0f, 0.82f, 0.0f, 1.0f, 14);
+        drawCircle(icx2, pillCy,  6.5f, 0.82f, 0.65f, 0.0f, 1.0f, 14);
+        drawCentered(pillLeft + 28.0f + cw/2.0f, pillCy - 7.0f, tc.str(),
+                     GLUT_BITMAP_HELVETICA_18, 1.0f, 0.9f, 0.1f, true);
+    }
     
-    // ── Character name ───────────────────────────────────────────────────
+    // ── Character name (with lock indicator) ─────────────────────────────
     const char* charNames[] = { "CHICKEN", "FROG", "DINO", "CAT", "DOG" };
     float nameAlpha = 0.65f + 0.35f * std::abs(std::sin(timeMs * 0.0038f));
     {
         std::string nm = charNames[selectedCharacterIndex];
+        if (!centerOwned) nm = std::string("\xF0\x9F\x94\x92 ") + nm; // show "locked" in name
+        // Use the lock word instead of emoji for GLUT compatibility
+        if (!centerOwned) nm = charNames[selectedCharacterIndex] + std::string("  [LOCKED]");
         float nw = 0; for (char c : nm) nw += glutBitmapWidth(GLUT_BITMAP_TIMES_ROMAN_24, c);
-        glColor4f(1.0f, 0.85f, 0.0f, nameAlpha);
+        float nameR = centerOwned ? 1.0f : 0.9f;
+        float nameG = centerOwned ? 0.85f : 0.55f;
+        float nameB = centerOwned ? 0.0f  : 0.15f;
+        glColor4f(nameR, nameG, nameB, nameAlpha);
         glRasterPos2f(cx - nw/2, windowHeight - 108.0f);
         for (char c : nm) glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
     }
@@ -377,7 +445,8 @@ void PreGameManager::renderCharacterSelect(int windowWidth, int windowHeight, in
     for (int slot = 0; slot < 5; slot++) {
         int ci = ((selectedCharacterIndex - 2 + slot) % numChars + numChars) % numChars;
         bool isCenter = (slot == 2);
-        drawCharacterIcon(cx + offsets[slot], carouselY, sizes[slot], ci, isCenter, timeMs);
+        bool owned = isOwned(ci);
+        drawCharacterIcon(cx + offsets[slot], carouselY, sizes[slot], ci, isCenter, timeMs, owned);
     }
     
     // ── Navigation arrows ─────────────────────────────────────────────────
@@ -411,17 +480,66 @@ void PreGameManager::renderCharacterSelect(int windowWidth, int windowHeight, in
     for (int d = 0; d < numChars; d++) {
         float dotX = cx + (d - 2) * 22.0f;
         bool active = (d == selectedCharacterIndex);
-        float r = active ? 1.0f : 0.5f;
-        float g = active ? 0.84f : 0.5f;
-        float b = active ? 0.0f : 0.5f;
+        bool dOwned = isOwned(d);
+        float r = active ? (dOwned ? 1.0f : 0.85f) : 0.45f;
+        float g = active ? (dOwned ? 0.84f : 0.30f) : 0.45f;
+        float b = active ? (dOwned ? 0.0f  : 0.10f) : 0.45f;
         drawCircle(dotX, dotY, active ? 7.0f : 4.5f, r, g, b, 1.0f, 12);
+        // Small lock dot for unowned characters
+        if (!dOwned && !active) {
+            drawCircle(dotX, dotY, 3.0f, 0.7f, 0.4f, 0.0f, 0.9f, 8);
+        }
+    }
+
+    // ── Price badge (shown only for locked center character) ─────────────
+    if (!centerOwned) {
+        int price = charPrices[selectedCharacterIndex];
+        std::stringstream ps; ps << price << " COINS";
+        float badgeAlpha = 0.75f + 0.25f * std::abs(std::sin(timeMs * 0.003f));
+        float badgeCy = cy - 110.0f;
+        float bw2 = 0; for (char c : ps.str()) bw2 += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, c);
+        float badgeHalfW = bw2 / 2.0f + 22.0f;
+        fillRect(cx - badgeHalfW + 4, badgeCy - 18, cx + badgeHalfW + 4, badgeCy + 14, 0, 0, 0, 0.45f);
+        fillRect(cx - badgeHalfW,     badgeCy - 16, cx + badgeHalfW,     badgeCy + 16, 0.25f, 0.18f, 0.02f, 0.85f);
+        fillRect(cx - badgeHalfW + 2, badgeCy + 8,  cx + badgeHalfW - 2, badgeCy + 14, 0.6f, 0.45f, 0.0f, 0.4f);
+        // Mini coin icon next to price
+        drawCircle(cx - badgeHalfW + 12, badgeCy - 1, 7.0f, 1.0f, 0.82f, 0.0f, 1.0f, 12);
+        drawCircle(cx - badgeHalfW + 12, badgeCy - 1, 4.5f, 0.82f, 0.65f, 0.0f, 1.0f, 12);
+        bool canAfford = (totalCoins >= price);
+        float prR = canAfford ? 1.0f : 0.9f;
+        float prG = canAfford ? 0.88f : 0.40f;
+        float prB = canAfford ? 0.1f  : 0.10f;
+        glColor4f(prR, prG, prB, badgeAlpha);
+        glRasterPos2f(cx - bw2/2, badgeCy - 8);
+        for (char c : ps.str()) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
     }
     
-    // ── SELECT button ────────────────────────────────────────────────────
-    drawButton(cx, cy - 148.0f, 200.0f, 56.0f,
-               0.08f, 0.74f, 0.08f,
-               0.04f, 0.38f, 0.04f,
-               "SELECT!", GLUT_BITMAP_TIMES_ROMAN_24);
+    // ── SELECT / BUY button ──────────────────────────────────────────────
+    if (centerOwned) {
+        // Green SELECT button
+        drawButton(cx, cy - 148.0f, 200.0f, 56.0f,
+                   0.08f, 0.74f, 0.08f,
+                   0.04f, 0.38f, 0.04f,
+                   "SELECT!", GLUT_BITMAP_TIMES_ROMAN_24);
+    } else {
+        // Orange BUY button — dims if not enough coins
+        bool canAfford = (totalCoins >= charPrices[selectedCharacterIndex]);
+        float br = canAfford ? 0.90f : 0.45f;
+        float bg = canAfford ? 0.52f : 0.35f;
+        float bb = canAfford ? 0.02f : 0.08f;
+        float sr = canAfford ? 0.50f : 0.25f;
+        float sg = canAfford ? 0.28f : 0.18f;
+        float sb = canAfford ? 0.01f : 0.04f;
+        std::stringstream buyLabel;
+        buyLabel << "BUY  " << charPrices[selectedCharacterIndex];
+        drawButton(cx, cy - 148.0f, 200.0f, 56.0f, br, bg, bb, sr, sg, sb,
+                   buyLabel.str(), GLUT_BITMAP_TIMES_ROMAN_24);
+        // "Not enough coins" hint
+        if (!canAfford) {
+            drawCentered(cx, cy - 196.0f, "Not enough coins!",
+                         GLUT_BITMAP_HELVETICA_12, 1.0f, 0.3f, 0.3f, false);
+        }
+    }
     
     // ── Back button ──────────────────────────────────────────────────────
     drawButton(55.0f, windowHeight - 50.0f, 84.0f, 34.0f,
@@ -530,7 +648,7 @@ void PreGameManager::renderGameOver(int windowWidth, int windowHeight, int score
                "TRY  AGAIN", GLUT_BITMAP_TIMES_ROMAN_24);
 }
 
-void PreGameManager::drawCharacterIcon(float icx, float icy, float sz, int ci, bool selected, int timeMs)
+void PreGameManager::drawCharacterIcon(float icx, float icy, float sz, int ci, bool selected, int timeMs, bool owned)
 {
     auto fillRect = [](float x1, float y1, float x2, float y2,
                        float r, float g, float b, float a = 1.0f) {
@@ -1202,5 +1320,98 @@ void PreGameManager::drawCharacterIcon(float icx, float icy, float sz, int ci, b
             glEnd();
             break;
         }
+    }
+
+    // ── Lock overlay (drawn on top for any unowned character) ─────────────
+    if (!owned) {
+        // Dark semi-transparent tint over the whole card
+        float cw = sz * 1.25f, ch = sz * 1.65f;
+        glColor4f(0.0f, 0.0f, 0.0f, 0.62f);
+        glBegin(GL_QUADS);
+        glVertex2f(icx - cw/2, icy - ch/2);
+        glVertex2f(icx + cw/2, icy - ch/2);
+        glVertex2f(icx + cw/2, icy + ch/2);
+        glVertex2f(icx - cw/2, icy + ch/2);
+        glEnd();
+
+        // ── Lock icon (centered on card) ──────────────────────────────────
+        // Scale lock with card size
+        float ls = sz / 100.0f;
+
+        // Shackle (rounded U-bar drawn as 3 quads: left post, right post, top bar)
+        float shW = 7.0f * ls;   // half-width of shackle interior gap
+        float shT = 4.0f * ls;   // bar thickness
+        float shH = 20.0f * ls;  // shackle height above lock body top
+
+        float bodyT  = icy + 4.0f * ls;  // lock body top
+        float shackleBottom = bodyT;
+        float shackleTop    = bodyT + shH;
+
+        glColor4f(0.85f, 0.80f, 0.70f, 1.0f);  // light gold/silver shackle
+        glBegin(GL_QUADS);
+        // Left post
+        glVertex2f(icx - shW - shT, shackleBottom);
+        glVertex2f(icx - shW,       shackleBottom);
+        glVertex2f(icx - shW,       shackleTop);
+        glVertex2f(icx - shW - shT, shackleTop);
+        // Right post
+        glVertex2f(icx + shW,       shackleBottom);
+        glVertex2f(icx + shW + shT, shackleBottom);
+        glVertex2f(icx + shW + shT, shackleTop);
+        glVertex2f(icx + shW,       shackleTop);
+        // Top bar
+        glVertex2f(icx - shW - shT, shackleTop - shT);
+        glVertex2f(icx + shW + shT, shackleTop - shT);
+        glVertex2f(icx + shW + shT, shackleTop);
+        glVertex2f(icx - shW - shT, shackleTop);
+        glEnd();
+
+        // Lock body (gold rectangle below shackle)
+        float bodyHalfW = 18.0f * ls;
+        float bodyH     = 22.0f * ls;
+        float bodyBot   = bodyT - bodyH;
+
+        // Body shadow
+        glColor4f(0.0f, 0.0f, 0.0f, 0.45f);
+        glBegin(GL_QUADS);
+        glVertex2f(icx - bodyHalfW + 3*ls, bodyBot - 3*ls);
+        glVertex2f(icx + bodyHalfW + 3*ls, bodyBot - 3*ls);
+        glVertex2f(icx + bodyHalfW + 3*ls, bodyT   - 3*ls);
+        glVertex2f(icx - bodyHalfW + 3*ls, bodyT   - 3*ls);
+        glEnd();
+        // Body fill (amber gold)
+        glColor4f(0.85f, 0.62f, 0.08f, 1.0f);
+        glBegin(GL_QUADS);
+        glVertex2f(icx - bodyHalfW, bodyBot);
+        glVertex2f(icx + bodyHalfW, bodyBot);
+        glVertex2f(icx + bodyHalfW, bodyT);
+        glVertex2f(icx - bodyHalfW, bodyT);
+        glEnd();
+        // Top sheen
+        glColor4f(1.0f, 0.88f, 0.40f, 0.55f);
+        glBegin(GL_QUADS);
+        glVertex2f(icx - bodyHalfW + 2*ls, bodyT - 5*ls);
+        glVertex2f(icx + bodyHalfW - 2*ls, bodyT - 5*ls);
+        glVertex2f(icx + bodyHalfW - 2*ls, bodyT - 2*ls);
+        glVertex2f(icx - bodyHalfW + 2*ls, bodyT - 2*ls);
+        glEnd();
+
+        // Keyhole (dark circle + vertical slot)
+        float kcy = (bodyBot + bodyT) / 2.0f + 1.0f * ls;
+        float kr  = 5.5f * ls;
+        glColor4f(0.08f, 0.06f, 0.02f, 1.0f);
+        glBegin(GL_POLYGON);
+        for (int ki = 0; ki < 16; ki++) {
+            float ang = ki * 2.0f * 3.14159f / 16;
+            glVertex2f(icx + kr * std::cos(ang), kcy + kr * std::sin(ang));
+        }
+        glEnd();
+        // Slot below keyhole
+        glBegin(GL_QUADS);
+        glVertex2f(icx - 2.5f*ls, bodyBot + 2*ls);
+        glVertex2f(icx + 2.5f*ls, bodyBot + 2*ls);
+        glVertex2f(icx + 2.5f*ls, kcy);
+        glVertex2f(icx - 2.5f*ls, kcy);
+        glEnd();
     }
 }
