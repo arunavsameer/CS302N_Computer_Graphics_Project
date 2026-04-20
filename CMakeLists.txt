@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(CS302N_Game)
+project(crazy_hopper)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -64,16 +64,16 @@ set(SOURCES
 )
 
 # Create executable
-add_executable(CS302N_Game ${SOURCES})
+add_executable(crazy_hopper ${SOURCES})
 
 # --- NEW: Define the ASSET_DIR macro for absolute paths ---
-target_compile_definitions(CS302N_Game PRIVATE 
+target_compile_definitions(crazy_hopper PRIVATE 
     ASSET_DIR="${PROJECT_SOURCE_DIR}/assets/"
 )
 # ----------------------------------------------------------
 
 # Link libraries
-target_link_libraries(CS302N_Game
+target_link_libraries(crazy_hopper
     ${OPENGL_LIBRARIES}
     ${GLUT_LIBRARIES}
     GLEW::GLEW
@@ -81,10 +81,10 @@ target_link_libraries(CS302N_Game
 
 # macOS specific frameworks
 if(APPLE)
-    target_link_libraries(CS302N_Game "-framework Cocoa")
-    target_link_libraries(CS302N_Game "-framework OpenGL")
-    target_link_libraries(CS302N_Game "-framework IOKit")
+    target_link_libraries(crazy_hopper "-framework Cocoa")
+    target_link_libraries(crazy_hopper "-framework OpenGL")
+    target_link_libraries(crazy_hopper "-framework IOKit")
     message(STATUS "macOS frameworks linked")
 endif()
 
-message(STATUS "CS302N_Game build configured successfully!")
+message(STATUS "crazy_hopper build configured successfully!")

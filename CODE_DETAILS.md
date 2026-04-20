@@ -1305,7 +1305,7 @@ SaveManager::initialize(argv[0])
   - `exePath.parent_path()` - Get directory containing executable
   - Construct `savedata.dat` filename in that directory
 - **Use Case**: Ensures save file is placed next to executable, making game portable
-- **Why This Matters**: When user runs `./CS302N_Game`, save file goes to same directory, not random system locations
+- **Why This Matters**: When user runs `./crazy_hopper`, save file goes to same directory, not random system locations
 
 **Step 2: GLUT Window Context Setup**
 ```

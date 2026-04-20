@@ -22,7 +22,7 @@
 ├── bin
 ├── build
 │   ├── bin
-│   │   ├── CS302N_Game
+│   │   ├── crazy_hopper
 │   │   └── savedata.dat
 │   ├── build.ninja
 │   ├── CMakeCache.txt
@@ -57,7 +57,7 @@
 │   │   │       └── tmp
 │   │   ├── cmake.check_cache
 │   │   ├── CMakeConfigureLog.yaml
-│   │   ├── CS302N_Game.dir
+│   │   ├── crazy_hopper.dir
 │   │   │   ├── build.make
 │   │   │   ├── cmake_clean.cmake
 │   │   │   ├── compiler_depend.make
@@ -116,7 +116,7 @@
 │   ├── cmake.check_cache
 │   ├── CMakeConfigureLog.yaml
 │   ├── CMakeDirectoryInformation.cmake
-│   ├── CS302N_Game.dir
+│   ├── crazy_hopper.dir
 │   │   ├── build.make
 │   │   ├── cmake_clean.cmake
 │   │   ├── compiler_depend.internal
