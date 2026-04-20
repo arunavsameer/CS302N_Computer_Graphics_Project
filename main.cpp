@@ -7,6 +7,7 @@
 
 #include "game.h"
 #include "types.h"
+#include "save_data.h"
 
 #include <iostream>
 #include <chrono>
@@ -89,6 +90,9 @@ void reshape(int w, int h) {
 }
 
 int main(int argc, char** argv) {
+    // Initialize SaveManager with executable directory
+    SaveManager::initialize(argv[0]);
+    
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
     glutInitWindowSize(800, 600);

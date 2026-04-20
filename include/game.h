@@ -7,6 +7,7 @@
 #include "camera.h"
 #include "character.h"
 #include "lane.h"
+#include "pregame.h"
 
 class Game {
 private:
@@ -15,6 +16,7 @@ private:
     Renderer renderer;
     Camera camera;
     Chicken player;
+    PreGameManager preGameManager;
     std::vector<Lane> lanes;
     float currentGenerationZ;
     float cameraTrackZ;
