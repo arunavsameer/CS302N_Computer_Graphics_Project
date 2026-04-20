@@ -53,7 +53,7 @@ namespace Config {
     // ── Camera ────────────────────────────────────────────────
     constexpr float CAMERA_AUTO_SCROLL_SPEED        = 0.0f;
     constexpr float CAMERA_BACKWARD_DEATH_DISTANCE  = 5.0f;
-    constexpr float LANE_GENERATION_BUFFER_AHEAD    = 25.0f;
+    constexpr float LANE_GENERATION_BUFFER_AHEAD    = 38.0f;
     constexpr float LANE_CLEANUP_BUFFER_BEHIND      = 12.0f;
     constexpr float CAMERA_SMOOTH_SPEED_XY          = 1.0f;
     constexpr float CAMERA_SMOOTH_SPEED_Z           = 1.0f;

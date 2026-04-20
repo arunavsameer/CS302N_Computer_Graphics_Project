@@ -27,12 +27,12 @@ public:
         glm::vec3 position;   // world-space centre (base of pole)
     };
     std::vector<SignalPost> signalPosts; 
-    int safePathColumn; // 🔥 NEW
+    int safePathColumn; //  NEW
     // int blockWidth;
     // int lane_idx;
 
 public:
-    Lane(float z, LaneType t, int safePath); // 🔥 UPDATED
+    Lane(float z, LaneType t, int safePath); //  UPDATED
     void update(float deltaTime);
     void render(Renderer& renderer, float sunAngle = 0.0f, int frameTime = 0);  // OPTIMIZATION: frameTime for caching
 

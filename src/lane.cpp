@@ -125,13 +125,13 @@ Lane::Lane(float z, LaneType t, int safePath)
     if (type == LANE_GRASS) {
 
         int pathWidth = 2;
-        int pathBufferZone = pathWidth + 1; // ✅ Prevent decorations from spawning directly on safe path
+        int pathBufferZone = pathWidth + 1; //  Prevent decorations from spawning directly on safe path
 
         for (int i = -15; i <= 15; i++) {
 
             float x = i * Config::CELL_SIZE * 0.9f;
 
-            // ✅ ENFORCE: No decorations on the safe path (NEW FIX)
+            //  ENFORCE: No decorations on the safe path (NEW FIX)
             if (std::abs(i - safePathColumn) <= pathBufferZone)
                 continue;
 

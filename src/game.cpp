@@ -394,8 +394,8 @@ void Game::renderWorldBoundaries()
     float snappedZ = std::round(playerPos.z / Config::CELL_SIZE) * Config::CELL_SIZE;
     
     // Z range to render: a little behind the player to well ahead.
-    const float zStart = snappedZ + 9.0f * Config::CELL_SIZE;
-    const float zEnd = snappedZ - 38.0f * Config::CELL_SIZE;
+    const float zStart = std::min((snappedZ + Config::LANE_CLEANUP_BUFFER_BEHIND * Config::CELL_SIZE), Config::BOUNDARY_BACK_Z * Config::CELL_SIZE);
+    const float zEnd = snappedZ - Config::LANE_GENERATION_BUFFER_AHEAD * Config::CELL_SIZE;
     const float step = Config::CELL_SIZE;
 
     // OPTIMIZATION: Pre-build Z-position to lane map for O(1) lookup instead of O(n) per slice (~3-5% improvement)
