@@ -45,7 +45,7 @@ public:
     void drawSprite(glm::vec3 position, glm::vec3 scale,
                     const std::string& textureName, float rotationY = 0.0f);
 
-    void drawAnimatedWater(glm::vec3 position, glm::vec3 scale);
+    void drawAnimatedWater(glm::vec3 position, glm::vec3 scale, int frameTime = 0);
 
     void drawLilypad(glm::vec3 position, glm::vec3 size,
                      glm::vec3 centerColor, glm::vec3 edgeColor);

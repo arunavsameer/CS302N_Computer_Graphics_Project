@@ -47,6 +47,7 @@ private:
     glm::vec3 smoothedCameraTarget;
     int eggClicks    = 0;
     int lastClickTime = 0;
+    int lastFrameTime = 0;  // OPTIMIZATION: cache frame time to avoid multiple glutGet() calls
     bool nightMode   = false;   // toggled with N key
     int selectedCharacterIndex = 0; // index into the character carousel (0–4)
     
