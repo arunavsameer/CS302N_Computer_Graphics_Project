@@ -652,12 +652,11 @@ void Game::render()
     else if (state == GAME_STATE_PLAYING)
     {
         int currentTime = lastFrameTime;  // OPTIMIZATION: use cached frame time instead of glutGet()
-        float timeSinceStart = (currentTime - lastClickTime) / 1000.0f;
-        float spawnDuration = 0.4f;
+        float timeSinceStart = (currentTime - lastClickTime) / 1000.0f;      
 
-        if (timeSinceStart < spawnDuration)
+        if (timeSinceStart < Config::spawnDuration)
         {
-            float t = timeSinceStart / spawnDuration;
+            float t = timeSinceStart / Config::spawnDuration;
             float t1 = t - 1.0f;
             float scale = t1 * t1 * (2.5f * t1 + 1.5f) + 1.0f;
             if (scale < 0.0f) scale = 0.0f;

@@ -27,6 +27,7 @@ namespace Config {
     constexpr float CELL_SIZE = 1.0f;
     constexpr int   INITIAL_SAFE_ZONE_LENGTH = 15;
     constexpr float HITBOX_PADDING           = 0.8f;
+    constexpr float spawnDuration = 0.4f;
 
     // ── Boundaries ────────────────────────────────────────────
     // Player movement is blocked at ±BOUNDARY_X (mountain wall starts just beyond)
@@ -36,7 +37,7 @@ namespace Config {
     // How many columns the mountain extends outward from its inner face
     constexpr int   MOUNTAIN_COLS       = 8;
     // Back wall z (player can't move past this positive Z)
-    constexpr float BOUNDARY_BACK_Z     = 2.0f;
+    constexpr float BOUNDARY_BACK_Z     = 5.0f;
 
     // ── Lane generation ───────────────────────────────────────
     constexpr int MIN_GRASS_WIDTH = 1;  constexpr int MAX_GRASS_WIDTH = 3;
