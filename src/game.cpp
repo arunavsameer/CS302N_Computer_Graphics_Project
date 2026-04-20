@@ -486,7 +486,7 @@ void Game::renderWorldBoundaries()
         renderer.drawFoam({Config::BOUNDARY_X - 0.25f, foamY, z}, 1.2f, 0.9f);
     }
 
-    renderer.drawBackWall();
+    if(snappedZ >= -Config::BOUNDARY_BACK_Z) renderer.drawBackWall();
 }
 
 void Game::updateDayNightCycle(float deltaTime)
@@ -498,14 +498,7 @@ void Game::updateDayNightCycle(float deltaTime)
     float cycleTime = std::fmod(currentGameTime * Config::TIME_SPEED, 1.0f);
     
     // Calculate sun angle for shadow rendering
-    // Sun arc expanded to full 180°: -π to +π (sun below horizon to above horizon to below horizon)
-    // This allows proper day/night cycle where sun actually goes below horizon
-    // cycleTime 0.0 → sunAngle = -π (sun fully below horizon, deep night)
-    // cycleTime 0.25 → sunAngle = -π/4 (sun at horizon, night/day transition)
-    // cycleTime 0.5 → sunAngle = 0 (sun at peak, noon)
-    // cycleTime 0.75 → sunAngle = π/4 (sun at horizon, day/night transition)
-    // cycleTime 1.0 → sunAngle = π (sun fully below horizon, deep night)
-    sunAngle = (cycleTime - 0.5f) * 3.14159f;  // Full π range instead of π/2
+    sunAngle = (cycleTime - 0.5f) * 3.14159f;  // -π/2 to π/2
     
     // Update renderer lighting
     renderer.updateLighting(currentGameTime);
