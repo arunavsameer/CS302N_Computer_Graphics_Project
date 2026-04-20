@@ -562,265 +562,643 @@ void PreGameManager::drawCharacterIcon(float icx, float icy, float sz, int ci, b
     
     // Inner top sheen
     fillRect(icx - cw/2 + 3, icy + ch/2 - 10, icx + cw/2 - 3, icy + ch/2 - 3,
-             1.0f, 1.0f, 1.0f, selected ? 0.12f : 0.06f);
-    
-    // Draw character (simplified - chicken and frog only for this snippet)
+        1.0f, 1.0f, 1.0f, selected ? 0.12f : 0.06f);
+        
     switch (ci) {
-        case 0: { // CHICKEN
-            glColor4f(1.0f, 0.55f, 0.0f, 1.0f);
+        
+    // ── CHICKEN (Front-facing Voxel Style) ──────────────────────────
+        case 0: {
+            float wht[3] = {1.0f, 1.0f, 1.0f};      // White body
+            float owt[3] = {0.92f, 0.92f, 0.88f};   // Off-white shading
+            float org[3] = {1.0f, 0.50f, 0.05f};    // Orange beak/feet
+            float ord[3] = {0.85f, 0.40f, 0.02f};   // Dark orange
+            float red[3] = {0.85f, 0.10f, 0.10f};   // Red comb
+            float pnk[3] = {1.0f, 0.20f, 0.55f};    // Pink wattle
+            float yel[3] = {0.95f, 0.85f, 0.10f};   // Yellow eyes
+            float blk[3] = {0.05f, 0.05f, 0.05f};   // Black pupils
+
+            // Legs & Feet (Orange/Dark Orange)
+            glColor4f(org[0], org[1], org[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 21*s, icy - 44*s); glVertex2f(icx - 6*s,  icy - 44*s);
-            glVertex2f(icx - 6*s,  icy - 28*s); glVertex2f(icx - 21*s, icy - 28*s);
+            // Left Leg
+            glVertex2f(icx - 14*s, icy - 45*s); glVertex2f(icx - 6*s, icy - 45*s);
+            glVertex2f(icx - 6*s, icy - 20*s); glVertex2f(icx - 14*s, icy - 20*s);
+            // Right Leg
+            glVertex2f(icx + 6*s, icy - 45*s); glVertex2f(icx + 14*s, icy - 45*s);
+            glVertex2f(icx + 14*s, icy - 20*s); glVertex2f(icx + 6*s, icy - 20*s);
             glEnd();
+
+            // Toes
+            glColor4f(ord[0], ord[1], ord[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx + 6*s,  icy - 44*s); glVertex2f(icx + 21*s, icy - 44*s);
-            glVertex2f(icx + 21*s, icy - 28*s); glVertex2f(icx + 6*s,  icy - 28*s);
+            glVertex2f(icx - 18*s, icy - 50*s); glVertex2f(icx - 2*s, icy - 50*s);
+            glVertex2f(icx - 2*s, icy - 45*s); glVertex2f(icx - 18*s, icy - 45*s);
+            glVertex2f(icx + 2*s, icy - 50*s); glVertex2f(icx + 18*s, icy - 50*s);
+            glVertex2f(icx + 18*s, icy - 45*s); glVertex2f(icx + 2*s, icy - 45*s);
             glEnd();
-            glColor4f(1.0f, 0.95f, 0.88f, 1.0f);
+
+            // Body Plump (White/Off-white belly)
+            glColor4f(wht[0], wht[1], wht[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 23*s, icy - 30*s); glVertex2f(icx + 23*s, icy - 30*s);
-            glVertex2f(icx + 21*s, icy + 12*s); glVertex2f(icx - 21*s, icy + 12*s);
+            glVertex2f(icx - 26*s, icy - 15*s); glVertex2f(icx + 26*s, icy - 15*s);
+            glVertex2f(icx + 26*s, icy + 20*s); glVertex2f(icx - 26*s, icy + 20*s);
             glEnd();
+            glColor4f(owt[0], owt[1], owt[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 16*s, icy + 11*s); glVertex2f(icx + 16*s, icy + 11*s);
-            glVertex2f(icx + 15*s, icy + 38*s); glVertex2f(icx - 15*s, icy + 38*s);
+            glVertex2f(icx - 20*s, icy - 22*s); glVertex2f(icx + 20*s, icy - 22*s);
+            glVertex2f(icx + 20*s, icy - 5*s);  glVertex2f(icx - 20*s, icy - 5*s);
             glEnd();
-            glColor4f(0.92f, 0.12f, 0.1f, 1.0f);
+
+            // Wings (Off-white edges)
+            glColor4f(owt[0], owt[1], owt[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 32*s, icy - 5*s); glVertex2f(icx - 24*s, icy - 5*s);
+            glVertex2f(icx - 24*s, icy + 12*s); glVertex2f(icx - 32*s, icy + 12*s);
+            glVertex2f(icx + 24*s, icy - 5*s); glVertex2f(icx + 32*s, icy - 5*s);
+            glVertex2f(icx + 32*s, icy + 12*s); glVertex2f(icx + 24*s, icy + 12*s);
+            glEnd();
+
+            // Head (White)
+            glColor4f(wht[0], wht[1], wht[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 18*s, icy + 15*s); glVertex2f(icx + 18*s, icy + 15*s);
+            glVertex2f(icx + 18*s, icy + 42*s); glVertex2f(icx - 18*s, icy + 42*s);
+            glEnd();
+
+            // Cheeks (Off-white)
+            glColor4f(owt[0], owt[1], owt[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 24*s, icy + 18*s); glVertex2f(icx - 16*s, icy + 18*s);
+            glVertex2f(icx - 16*s, icy + 30*s); glVertex2f(icx - 24*s, icy + 30*s);
+            glVertex2f(icx + 16*s, icy + 18*s); glVertex2f(icx + 24*s, icy + 18*s);
+            glVertex2f(icx + 24*s, icy + 30*s); glVertex2f(icx + 16*s, icy + 30*s);
+            glEnd();
+
+            // Red Comb
+            glColor4f(red[0], red[1], red[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 6*s, icy + 42*s); glVertex2f(icx + 6*s, icy + 42*s);
+            glVertex2f(icx + 6*s, icy + 54*s); glVertex2f(icx - 6*s, icy + 54*s);
+            glVertex2f(icx - 14*s, icy + 42*s); glVertex2f(icx - 6*s, icy + 42*s);
+            glVertex2f(icx - 6*s, icy + 50*s);  glVertex2f(icx - 14*s, icy + 50*s);
+            glVertex2f(icx + 6*s, icy + 42*s);  glVertex2f(icx + 14*s, icy + 42*s);
+            glVertex2f(icx + 14*s, icy + 50*s); glVertex2f(icx + 6*s, icy + 50*s);
+            glEnd();
+
+            // Wattle (Pink)
+            glColor4f(pnk[0], pnk[1], pnk[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 8*s, icy + 10*s); glVertex2f(icx + 8*s, icy + 10*s);
+            glVertex2f(icx + 8*s, icy + 22*s); glVertex2f(icx - 8*s, icy + 22*s);
+            glEnd();
+
+            // Beak (Orange)
+            glColor4f(org[0], org[1], org[2], 1.0f);
             glBegin(GL_TRIANGLES);
-            glVertex2f(icx - 9*s, icy + 37*s); glVertex2f(icx - 3*s, icy + 52*s); glVertex2f(icx + 3*s, icy + 37*s);
-            glVertex2f(icx + 2*s, icy + 37*s); glVertex2f(icx + 7*s, icy + 50*s); glVertex2f(icx + 12*s, icy + 37*s);
+            glVertex2f(icx - 10*s, icy + 28*s); glVertex2f(icx + 10*s, icy + 28*s);
+            glVertex2f(icx, icy + 20*s);
             glEnd();
-            glColor4f(0.9f, 0.15f, 0.1f, 1.0f);
-            glBegin(GL_TRIANGLES);
-            glVertex2f(icx - 8*s, icy + 14*s); glVertex2f(icx + 2*s, icy + 14*s); glVertex2f(icx - 3*s, icy + 7*s);
-            glEnd();
-            glColor4f(1.0f, 0.62f, 0.0f, 1.0f);
-            glBegin(GL_TRIANGLES);
-            glVertex2f(icx - 4*s, icy + 20*s); glVertex2f(icx + 13*s, icy + 22*s); glVertex2f(icx + 4*s, icy + 14*s);
-            glEnd();
-            glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+
+            // Eyes (Yellow base)
+            glColor4f(yel[0], yel[1], yel[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx + 3*s, icy + 27*s); glVertex2f(icx + 11*s, icy + 27*s);
-            glVertex2f(icx + 11*s, icy + 33*s); glVertex2f(icx + 3*s, icy + 33*s);
+            glVertex2f(icx - 22*s, icy + 30*s); glVertex2f(icx - 12*s, icy + 30*s);
+            glVertex2f(icx - 12*s, icy + 40*s); glVertex2f(icx - 22*s, icy + 40*s);
+            glVertex2f(icx + 12*s, icy + 30*s); glVertex2f(icx + 22*s, icy + 30*s);
+            glVertex2f(icx + 22*s, icy + 40*s); glVertex2f(icx + 12*s, icy + 40*s);
             glEnd();
+
+            // Pupils & Shine
+            glColor4f(blk[0], blk[1], blk[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 18*s, icy + 32*s); glVertex2f(icx - 14*s, icy + 32*s);
+            glVertex2f(icx - 14*s, icy + 38*s); glVertex2f(icx - 18*s, icy + 38*s);
+            glVertex2f(icx + 14*s, icy + 32*s); glVertex2f(icx + 18*s, icy + 32*s);
+            glVertex2f(icx + 18*s, icy + 38*s); glVertex2f(icx + 14*s, icy + 38*s);
+            glEnd();
+            glColor4f(wht[0], wht[1], wht[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 17*s, icy + 35*s); glVertex2f(icx - 15*s, icy + 35*s);
+            glVertex2f(icx - 15*s, icy + 37*s); glVertex2f(icx - 17*s, icy + 37*s);
+            glVertex2f(icx + 15*s, icy + 35*s); glVertex2f(icx + 17*s, icy + 35*s);
+            glVertex2f(icx + 17*s, icy + 37*s); glVertex2f(icx + 15*s, icy + 37*s);
+            glEnd();
+            break;
+        }
+        // ── FROG (Front-facing Voxel Style) ─────────────────────────────
+        case 1: {
+            float grn[3] = {0.35f, 0.70f, 0.30f}; // Base green
+            float grd[3] = {0.20f, 0.50f, 0.15f}; // Dark green
+            float grm[3] = {0.28f, 0.60f, 0.22f}; // Mid green
+            float bly[3] = {0.85f, 0.90f, 0.70f}; // Pale belly
+            float wht[3] = {1.0f, 1.0f, 1.0f};    // White
+            float blk[3] = {0.05f, 0.05f, 0.05f}; // Black
+            float gld[3] = {0.90f, 0.75f, 0.10f}; // Gold eyes
+            float mth[3] = {0.18f, 0.44f, 0.12f}; // Dark mouth
+            float red[3] = {0.90f, 0.10f, 0.10f}; // Tongue
+
+            // Frog sits very low (squashed posture)
+            float yb = -30.0f * s; // Shift the whole model down
+
+            // Back Legs (Wide Stance)
+            glColor4f(grd[0], grd[1], grd[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 48*s, icy + yb + 5*s); glVertex2f(icx - 30*s, icy + yb + 5*s);
+            glVertex2f(icx - 30*s, icy + yb + 25*s); glVertex2f(icx - 48*s, icy + yb + 25*s);
+            glVertex2f(icx + 30*s, icy + yb + 5*s); glVertex2f(icx + 48*s, icy + yb + 5*s);
+            glVertex2f(icx + 48*s, icy + yb + 25*s); glVertex2f(icx + 30*s, icy + yb + 25*s);
+            glEnd();
+
+            // Front Arms
+            glColor4f(grm[0], grm[1], grm[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 42*s, icy + yb - 5*s); glVertex2f(icx - 26*s, icy + yb - 5*s);
+            glVertex2f(icx - 26*s, icy + yb + 15*s); glVertex2f(icx - 42*s, icy + yb + 15*s);
+            glVertex2f(icx + 26*s, icy + yb - 5*s); glVertex2f(icx + 42*s, icy + yb - 5*s);
+            glVertex2f(icx + 42*s, icy + yb + 15*s); glVertex2f(icx + 26*s, icy + yb + 15*s);
+            glEnd();
+
+            // Webbed Feet / Hands
+            glColor4f(bly[0], bly[1], bly[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 46*s, icy + yb - 10*s); glVertex2f(icx - 22*s, icy + yb - 10*s);
+            glVertex2f(icx - 22*s, icy + yb - 5*s);  glVertex2f(icx - 46*s, icy + yb - 5*s);
+            glVertex2f(icx + 22*s, icy + yb - 10*s); glVertex2f(icx + 46*s, icy + yb - 10*s);
+            glVertex2f(icx + 46*s, icy + yb - 5*s);  glVertex2f(icx + 22*s, icy + yb - 5*s);
+            glEnd();
+
+            // Main Body (Green)
+            glColor4f(grn[0], grn[1], grn[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 36*s, icy + yb + 5*s); glVertex2f(icx + 36*s, icy + yb + 5*s);
+            glVertex2f(icx + 36*s, icy + yb + 28*s); glVertex2f(icx - 36*s, icy + yb + 28*s);
+            glEnd();
+
+            // Belly (Pale)
+            glColor4f(bly[0], bly[1], bly[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 30*s, icy + yb - 2*s); glVertex2f(icx + 30*s, icy + yb - 2*s);
+            glVertex2f(icx + 30*s, icy + yb + 16*s); glVertex2f(icx - 30*s, icy + yb + 16*s);
+            glEnd();
+
+            // Head (Wide)
+            glColor4f(grn[0], grn[1], grn[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 32*s, icy + yb + 28*s); glVertex2f(icx + 32*s, icy + yb + 28*s);
+            glVertex2f(icx + 32*s, icy + yb + 46*s); glVertex2f(icx - 32*s, icy + yb + 46*s);
+            glEnd();
+
+            // Mouth Line (Dark Green)
+            glColor4f(mth[0], mth[1], mth[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 26*s, icy + yb + 30*s); glVertex2f(icx + 26*s, icy + yb + 30*s);
+            glVertex2f(icx + 26*s, icy + yb + 32*s); glVertex2f(icx - 26*s, icy + yb + 32*s);
+            glEnd();
+
+            // Tongue (Red protruding)
+            glColor4f(red[0], red[1], red[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 6*s, icy + yb + 20*s); glVertex2f(icx + 6*s, icy + yb + 20*s);
+            glVertex2f(icx + 6*s, icy + yb + 30*s); glVertex2f(icx - 6*s, icy + yb + 30*s);
+            glEnd();
+
+            // Bulging Eyes (Dome)
+            glColor4f(wht[0], wht[1], wht[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 34*s, icy + yb + 42*s); glVertex2f(icx - 14*s, icy + yb + 42*s);
+            glVertex2f(icx - 14*s, icy + yb + 60*s); glVertex2f(icx - 34*s, icy + yb + 60*s);
+            glVertex2f(icx + 14*s, icy + yb + 42*s); glVertex2f(icx + 34*s, icy + yb + 42*s);
+            glVertex2f(icx + 34*s, icy + yb + 60*s); glVertex2f(icx + 14*s, icy + yb + 60*s);
+            glEnd();
+
+            // Iris (Gold) & Pupils (Black) & Shine
+            glColor4f(gld[0], gld[1], gld[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 30*s, icy + yb + 46*s); glVertex2f(icx - 18*s, icy + yb + 46*s);
+            glVertex2f(icx - 18*s, icy + yb + 56*s); glVertex2f(icx - 30*s, icy + yb + 56*s);
+            glVertex2f(icx + 18*s, icy + yb + 46*s); glVertex2f(icx + 30*s, icy + yb + 46*s);
+            glVertex2f(icx + 30*s, icy + yb + 56*s); glVertex2f(icx + 18*s, icy + yb + 56*s);
+            glEnd();
+            glColor4f(blk[0], blk[1], blk[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 26*s, icy + yb + 48*s); glVertex2f(icx - 22*s, icy + yb + 48*s);
+            glVertex2f(icx - 22*s, icy + yb + 54*s); glVertex2f(icx - 26*s, icy + yb + 54*s);
+            glVertex2f(icx + 22*s, icy + yb + 48*s); glVertex2f(icx + 26*s, icy + yb + 48*s);
+            glVertex2f(icx + 26*s, icy + yb + 54*s); glVertex2f(icx + 22*s, icy + yb + 54*s);
+            glEnd();
+            glColor4f(wht[0], wht[1], wht[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 23*s, icy + yb + 52*s); glVertex2f(icx - 21*s, icy + yb + 52*s);
+            glVertex2f(icx - 21*s, icy + yb + 54*s); glVertex2f(icx - 23*s, icy + yb + 54*s);
+            glVertex2f(icx + 25*s, icy + yb + 52*s); glVertex2f(icx + 27*s, icy + yb + 52*s);
+            glVertex2f(icx + 27*s, icy + yb + 54*s); glVertex2f(icx + 25*s, icy + yb + 54*s);
+            glEnd();
+            break;
+        }
+
+        // ── DINO (Front-facing Voxel Style) ─────────────────────────────
+        case 2: {
+            // Colors matching character_dino.cpp
+            float brn[3] = {0.65f, 0.42f, 0.18f}; // Main brown
+            float brd[3] = {0.48f, 0.30f, 0.12f}; // Dark brown
+            float tan[3] = {0.88f, 0.76f, 0.54f}; // Tan snout/belly
+            float pnk[3] = {1.0f, 0.60f, 0.70f};  // Pink tongue
+            float amb[3] = {0.90f, 0.60f, 0.10f}; // Amber eyes
+
+            // Tail peeking out from the right side
+            glColor4f(brd[0], brd[1], brd[2], 1.0f);
+            glBegin(GL_TRIANGLES);
+            glVertex2f(icx + 18*s, icy - 10*s);
+            glVertex2f(icx + 40*s, icy - 26*s);
+            glVertex2f(icx + 18*s, icy - 30*s);
+            glEnd();
+
+            // Legs (Shin)
+            glColor4f(brd[0], brd[1], brd[2], 1.0f); 
+            glBegin(GL_QUADS); 
+            // Left
+            glVertex2f(icx - 22*s, icy - 48*s); glVertex2f(icx - 8*s, icy - 48*s);
+            glVertex2f(icx - 8*s, icy - 30*s); glVertex2f(icx - 22*s, icy - 30*s);
+            // Right
+            glVertex2f(icx + 8*s, icy - 48*s); glVertex2f(icx + 22*s, icy - 48*s);
+            glVertex2f(icx + 22*s, icy - 30*s); glVertex2f(icx + 8*s, icy - 30*s);
+            glEnd();
+
+            // Legs (Thigh)
+            glColor4f(brn[0], brn[1], brn[2], 1.0f); 
+            glBegin(GL_QUADS);
+            // Left
+            glVertex2f(icx - 24*s, icy - 36*s); glVertex2f(icx - 6*s, icy - 36*s);
+            glVertex2f(icx - 6*s, icy - 20*s); glVertex2f(icx - 24*s, icy - 20*s);
+            // Right
+            glVertex2f(icx + 6*s, icy - 36*s); glVertex2f(icx + 24*s, icy - 36*s);
+            glVertex2f(icx + 24*s, icy - 20*s); glVertex2f(icx + 6*s, icy - 20*s);
+            glEnd();
+
+            // Toe Claws (White)
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            glBegin(GL_QUADS); 
+            // Left claws
+            glVertex2f(icx - 22*s, icy - 52*s); glVertex2f(icx - 18*s, icy - 52*s);
+            glVertex2f(icx - 18*s, icy - 48*s); glVertex2f(icx - 22*s, icy - 48*s);
+            glVertex2f(icx - 17*s, icy - 52*s); glVertex2f(icx - 13*s, icy - 52*s);
+            glVertex2f(icx - 13*s, icy - 48*s); glVertex2f(icx - 17*s, icy - 48*s);
+            glVertex2f(icx - 12*s, icy - 52*s); glVertex2f(icx - 8*s, icy - 52*s);
+            glVertex2f(icx - 8*s, icy - 48*s); glVertex2f(icx - 12*s, icy - 48*s);
+            // Right claws
+            glVertex2f(icx + 8*s, icy - 52*s); glVertex2f(icx + 12*s, icy - 52*s);
+            glVertex2f(icx + 12*s, icy - 48*s); glVertex2f(icx + 8*s, icy - 48*s);
+            glVertex2f(icx + 13*s, icy - 52*s); glVertex2f(icx + 17*s, icy - 52*s);
+            glVertex2f(icx + 17*s, icy - 48*s); glVertex2f(icx + 13*s, icy - 48*s);
+            glVertex2f(icx + 18*s, icy - 52*s); glVertex2f(icx + 22*s, icy - 52*s);
+            glVertex2f(icx + 22*s, icy - 48*s); glVertex2f(icx + 18*s, icy - 48*s);
+            glEnd();
+
+            // Main Body
+            glColor4f(brn[0], brn[1], brn[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 20*s, icy - 26*s); glVertex2f(icx + 20*s, icy - 26*s);
+            glVertex2f(icx + 20*s, icy + 12*s); glVertex2f(icx - 20*s, icy + 12*s);
+            glEnd();
+
+            // Belly (Tan)
+            glColor4f(tan[0], tan[1], tan[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 14*s, icy - 26*s); glVertex2f(icx + 14*s, icy - 26*s);
+            glVertex2f(icx + 14*s, icy + 8*s); glVertex2f(icx - 14*s, icy + 8*s);
+            glEnd();
+
+            // Little Arms
+            glColor4f(brn[0], brn[1], brn[2], 1.0f);
+            glBegin(GL_QUADS);
+            // Left
+            glVertex2f(icx - 30*s, icy - 2*s); glVertex2f(icx - 20*s, icy - 2*s);
+            glVertex2f(icx - 20*s, icy + 8*s); glVertex2f(icx - 30*s, icy + 8*s);
+            // Right
+            glVertex2f(icx + 20*s, icy - 2*s); glVertex2f(icx + 30*s, icy - 2*s);
+            glVertex2f(icx + 30*s, icy + 8*s); glVertex2f(icx + 20*s, icy + 8*s);
+            glEnd();
+
+            // Hand Claws
             glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx + 4*s, icy + 30*s); glVertex2f(icx + 7*s, icy + 30*s);
-            glVertex2f(icx + 7*s, icy + 33*s); glVertex2f(icx + 4*s, icy + 33*s);
+            // Left
+            glVertex2f(icx - 32*s, icy + 0*s); glVertex2f(icx - 30*s, icy + 0*s);
+            glVertex2f(icx - 30*s, icy + 6*s); glVertex2f(icx - 32*s, icy + 6*s);
+            // Right
+            glVertex2f(icx + 30*s, icy + 0*s); glVertex2f(icx + 32*s, icy + 0*s);
+            glVertex2f(icx + 32*s, icy + 6*s); glVertex2f(icx + 30*s, icy + 6*s);
             glEnd();
-            break;
-        }
-        case 1: { // FROG
-            glColor4f(0.14f, 0.62f, 0.14f, 1.0f);
+
+            // Head (Brown Top)
+            glColor4f(brn[0], brn[1], brn[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 40*s, icy - 35*s); glVertex2f(icx - 21*s, icy - 35*s);
-            glVertex2f(icx - 21*s, icy - 5*s);  glVertex2f(icx - 40*s, icy - 5*s);
+            glVertex2f(icx - 24*s, icy + 10*s); glVertex2f(icx + 24*s, icy + 10*s);
+            glVertex2f(icx + 24*s, icy + 48*s); glVertex2f(icx - 24*s, icy + 48*s);
             glEnd();
+
+            // Snout / Lower Jaw (Tan)
+            glColor4f(tan[0], tan[1], tan[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx + 21*s, icy - 35*s); glVertex2f(icx + 40*s, icy - 35*s);
-            glVertex2f(icx + 40*s, icy - 5*s);  glVertex2f(icx + 21*s, icy - 5*s);
+            glVertex2f(icx - 26*s, icy + 6*s); glVertex2f(icx + 26*s, icy + 6*s);
+            glVertex2f(icx + 26*s, icy + 24*s); glVertex2f(icx - 26*s, icy + 24*s);
             glEnd();
-            glColor4f(0.18f, 0.78f, 0.18f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 26*s, icy - 28*s); glVertex2f(icx + 26*s, icy - 28*s);
-            glVertex2f(icx + 27*s, icy + 16*s); glVertex2f(icx - 27*s, icy + 16*s);
-            glEnd();
-            glColor4f(0.62f, 0.96f, 0.52f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 17*s, icy - 23*s); glVertex2f(icx + 17*s, icy - 23*s);
-            glVertex2f(icx + 16*s, icy + 12*s); glVertex2f(icx - 16*s, icy + 12*s);
-            glEnd();
-            glColor4f(0.18f, 0.78f, 0.18f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 29*s, icy + 14*s); glVertex2f(icx + 29*s, icy + 14*s);
-            glVertex2f(icx + 25*s, icy + 40*s); glVertex2f(icx - 25*s, icy + 40*s);
-            glEnd();
-            glColor4f(0.1f, 0.5f, 0.1f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 19*s, icy + 18*s); glVertex2f(icx + 19*s, icy + 18*s);
-            glVertex2f(icx + 19*s, icy + 22*s); glVertex2f(icx - 19*s, icy + 22*s);
-            glEnd();
+
+            // Teeth
             glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 27*s, icy + 37*s); glVertex2f(icx - 11*s, icy + 37*s);
-            glVertex2f(icx - 11*s, icy + 52*s); glVertex2f(icx - 27*s, icy + 52*s);
+            // Outer left/right
+            glVertex2f(icx - 20*s, icy + 2*s); glVertex2f(icx - 16*s, icy + 2*s);
+            glVertex2f(icx - 16*s, icy + 6*s); glVertex2f(icx - 20*s, icy + 6*s);
+            glVertex2f(icx + 16*s, icy + 2*s); glVertex2f(icx + 20*s, icy + 2*s);
+            glVertex2f(icx + 20*s, icy + 6*s); glVertex2f(icx + 16*s, icy + 6*s);
+            // Inner left/right
+            glVertex2f(icx - 12*s, icy + 2*s); glVertex2f(icx - 8*s, icy + 2*s);
+            glVertex2f(icx - 8*s, icy + 6*s); glVertex2f(icx - 12*s, icy + 6*s);
+            glVertex2f(icx + 8*s, icy + 2*s); glVertex2f(icx + 12*s, icy + 2*s);
+            glVertex2f(icx + 12*s, icy + 6*s); glVertex2f(icx + 8*s, icy + 6*s);
             glEnd();
+
+            // Tongue (Pink)
+            glColor4f(pnk[0], pnk[1], pnk[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx + 11*s, icy + 37*s); glVertex2f(icx + 27*s, icy + 37*s);
-            glVertex2f(icx + 27*s, icy + 52*s); glVertex2f(icx + 11*s, icy + 52*s);
+            glVertex2f(icx - 8*s, icy - 2*s); glVertex2f(icx + 8*s, icy - 2*s);
+            glVertex2f(icx + 8*s, icy + 8*s); glVertex2f(icx - 8*s, icy + 8*s);
             glEnd();
-            glColor4f(0.08f, 0.3f, 0.08f, 1.0f);
+
+            // Eyes (Amber background)
+            glColor4f(amb[0], amb[1], amb[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 24*s, icy + 42*s); glVertex2f(icx - 16*s, icy + 42*s);
-            glVertex2f(icx - 16*s, icy + 48*s); glVertex2f(icx - 24*s, icy + 48*s);
+            glVertex2f(icx - 24*s, icy + 30*s); glVertex2f(icx - 12*s, icy + 30*s);
+            glVertex2f(icx - 12*s, icy + 42*s); glVertex2f(icx - 24*s, icy + 42*s);
+            glVertex2f(icx + 12*s, icy + 30*s); glVertex2f(icx + 24*s, icy + 30*s);
+            glVertex2f(icx + 24*s, icy + 42*s); glVertex2f(icx + 12*s, icy + 42*s);
             glEnd();
+
+            // Black Slit Pupils
+            glColor4f(0.05f, 0.05f, 0.05f, 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx + 16*s, icy + 42*s); glVertex2f(icx + 24*s, icy + 42*s);
-            glVertex2f(icx + 24*s, icy + 48*s); glVertex2f(icx + 16*s, icy + 48*s);
+            glVertex2f(icx - 20*s, icy + 30*s); glVertex2f(icx - 16*s, icy + 30*s);
+            glVertex2f(icx - 16*s, icy + 42*s); glVertex2f(icx - 20*s, icy + 42*s);
+            glVertex2f(icx + 16*s, icy + 30*s); glVertex2f(icx + 20*s, icy + 30*s);
+            glVertex2f(icx + 20*s, icy + 42*s); glVertex2f(icx + 16*s, icy + 42*s);
+            glEnd();
+
+            // Eye Shine (White)
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 18*s, icy + 36*s); glVertex2f(icx - 14*s, icy + 36*s);
+            glVertex2f(icx - 14*s, icy + 40*s); glVertex2f(icx - 18*s, icy + 40*s);
+            glVertex2f(icx + 14*s, icy + 36*s); glVertex2f(icx + 18*s, icy + 36*s);
+            glVertex2f(icx + 18*s, icy + 40*s); glVertex2f(icx + 14*s, icy + 40*s);
+            glEnd();
+
+            break;
+        }
+        // ── CAT (Front-facing Voxel Style) ──────────────────────────────
+        case 3: {
+            float wht[3] = {1.0f, 1.0f, 1.0f};     // White
+            float org[3] = {0.9f, 0.5f, 0.1f};     // Orange patch
+            float blkp[3]= {0.15f, 0.15f, 0.15f};  // Black/Grey patch
+            float crm[3] = {0.98f, 0.96f, 0.88f};  // Cream base
+            float pnk[3] = {1.0f, 0.6f, 0.7f};     // Pink details
+            float grn[3] = {0.2f, 0.7f, 0.25f};    // Green eyes
+            float blk[3] = {0.05f, 0.05f, 0.05f};  // Slit pupils
+
+            // Legs (Calico mismatch: Left=White, Right=Orange)
+            glBegin(GL_QUADS);
+            glColor4f(wht[0], wht[1], wht[2], 1.0f);
+            glVertex2f(icx - 16*s, icy - 42*s); glVertex2f(icx - 6*s, icy - 42*s);
+            glVertex2f(icx - 6*s, icy - 18*s);  glVertex2f(icx - 16*s, icy - 18*s);
+            glColor4f(org[0], org[1], org[2], 1.0f);
+            glVertex2f(icx + 6*s, icy - 42*s);  glVertex2f(icx + 16*s, icy - 42*s);
+            glVertex2f(icx + 16*s, icy - 18*s); glVertex2f(icx + 6*s, icy - 18*s);
+            glEnd();
+
+            // Paws (Cream/White)
+            glColor4f(crm[0], crm[1], crm[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 18*s, icy - 46*s); glVertex2f(icx - 4*s, icy - 46*s);
+            glVertex2f(icx - 4*s, icy - 40*s);  glVertex2f(icx - 18*s, icy - 40*s);
+            glVertex2f(icx + 4*s, icy - 46*s);  glVertex2f(icx + 18*s, icy - 46*s);
+            glVertex2f(icx + 18*s, icy - 40*s); glVertex2f(icx + 4*s, icy - 40*s);
+            glEnd();
+
+            // Body Base (Cream)
+            glColor4f(crm[0], crm[1], crm[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 22*s, icy - 20*s); glVertex2f(icx + 22*s, icy - 20*s);
+            glVertex2f(icx + 22*s, icy + 20*s); glVertex2f(icx - 22*s, icy + 20*s);
+            glEnd();
+
+            // Body Patches
+            glColor4f(wht[0], wht[1], wht[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 12*s, icy - 12*s); glVertex2f(icx + 12*s, icy - 12*s);
+            glVertex2f(icx + 12*s, icy + 22*s); glVertex2f(icx - 12*s, icy + 22*s);
+            glEnd();
+            glColor4f(blkp[0], blkp[1], blkp[2], 1.0f); // Left shoulder dark patch
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 24*s, icy + 4*s); glVertex2f(icx - 10*s, icy + 4*s);
+            glVertex2f(icx - 10*s, icy + 18*s); glVertex2f(icx - 24*s, icy + 18*s);
+            glEnd();
+
+            // Head (White base)
+            glColor4f(wht[0], wht[1], wht[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 22*s, icy + 20*s); glVertex2f(icx + 22*s, icy + 20*s);
+            glVertex2f(icx + 22*s, icy + 48*s); glVertex2f(icx - 22*s, icy + 48*s);
+            glEnd();
+
+            // Forehead patch (Orange top right)
+            glColor4f(org[0], org[1], org[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx, icy + 36*s); glVertex2f(icx + 22*s, icy + 36*s);
+            glVertex2f(icx + 22*s, icy + 48*s); glVertex2f(icx, icy + 48*s);
+            glEnd();
+
+            // Pointy Ears (Left=Black, Right=Orange)
+            glBegin(GL_TRIANGLES);
+            glColor4f(blkp[0], blkp[1], blkp[2], 1.0f);
+            glVertex2f(icx - 22*s, icy + 46*s); glVertex2f(icx - 8*s, icy + 46*s); glVertex2f(icx - 18*s, icy + 62*s);
+            glColor4f(org[0], org[1], org[2], 1.0f);
+            glVertex2f(icx + 8*s, icy + 46*s); glVertex2f(icx + 22*s, icy + 46*s); glVertex2f(icx + 18*s, icy + 62*s);
+            glEnd();
+
+            // Inner Ear (Pink)
+            glColor4f(pnk[0], pnk[1], pnk[2], 1.0f);
+            glBegin(GL_TRIANGLES);
+            glVertex2f(icx - 18*s, icy + 48*s); glVertex2f(icx - 12*s, icy + 48*s); glVertex2f(icx - 16*s, icy + 56*s);
+            glVertex2f(icx + 12*s, icy + 48*s); glVertex2f(icx + 18*s, icy + 48*s); glVertex2f(icx + 16*s, icy + 56*s);
+            glEnd();
+
+            // Muzzle & Cheeks (White)
+            glColor4f(wht[0], wht[1], wht[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 12*s, icy + 22*s); glVertex2f(icx + 12*s, icy + 22*s);
+            glVertex2f(icx + 12*s, icy + 30*s); glVertex2f(icx - 12*s, icy + 30*s);
+            glEnd();
+
+            // Nose (Pink)
+            glColor4f(pnk[0], pnk[1], pnk[2], 1.0f);
+            glBegin(GL_TRIANGLES);
+            glVertex2f(icx - 4*s, icy + 28*s); glVertex2f(icx + 4*s, icy + 28*s); glVertex2f(icx, icy + 24*s);
+            glEnd();
+
+            // Tongue (Pink hanging down)
+            glColor4f(pnk[0], pnk[1], pnk[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 3*s, icy + 18*s); glVertex2f(icx + 3*s, icy + 18*s);
+            glVertex2f(icx + 3*s, icy + 24*s); glVertex2f(icx - 3*s, icy + 24*s);
+            glEnd();
+
+            // Eyes (Green iris, slit pupil, shine)
+            glColor4f(grn[0], grn[1], grn[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 18*s, icy + 32*s); glVertex2f(icx - 8*s, icy + 32*s);
+            glVertex2f(icx - 8*s, icy + 40*s); glVertex2f(icx - 18*s, icy + 40*s);
+            glVertex2f(icx + 8*s, icy + 32*s); glVertex2f(icx + 18*s, icy + 32*s);
+            glVertex2f(icx + 18*s, icy + 40*s); glVertex2f(icx + 8*s, icy + 40*s);
+            glEnd();
+            glColor4f(blk[0], blk[1], blk[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 14*s, icy + 33*s); glVertex2f(icx - 12*s, icy + 33*s);
+            glVertex2f(icx - 12*s, icy + 39*s); glVertex2f(icx - 14*s, icy + 39*s);
+            glVertex2f(icx + 12*s, icy + 33*s); glVertex2f(icx + 14*s, icy + 33*s);
+            glVertex2f(icx + 14*s, icy + 39*s); glVertex2f(icx + 12*s, icy + 39*s);
+            glEnd();
+            glColor4f(wht[0], wht[1], wht[2], 1.0f);
+            glBegin(GL_QUADS);
+            glVertex2f(icx - 13*s, icy + 36*s); glVertex2f(icx - 10*s, icy + 36*s);
+            glVertex2f(icx - 10*s, icy + 38*s); glVertex2f(icx - 13*s, icy + 38*s);
+            glVertex2f(icx + 13*s, icy + 36*s); glVertex2f(icx + 16*s, icy + 36*s);
+            glVertex2f(icx + 16*s, icy + 38*s); glVertex2f(icx + 13*s, icy + 38*s);
             glEnd();
             break;
         }
-        case 2: { // DINO
-            glColor4f(0.34f, 0.66f, 0.30f, 1.0f);
+        // ── DOG (Front-facing Voxel Style) ──────────────────────────────
+        case 4: {
+            float tan[3] = {0.80f, 0.60f, 0.35f};  // Tan body
+            float tnd[3] = {0.60f, 0.42f, 0.22f};  // Dark tan (ears/back)
+            float crm[3] = {0.98f, 0.95f, 0.85f};  // Cream belly/muzzle
+            float wht[3] = {1.0f, 1.0f, 1.0f};     // White shine
+            float blk[3] = {0.10f, 0.10f, 0.10f};  // Black nose/pupils
+            float pnk[3] = {1.0f, 0.6f, 0.7f};     // Pink tongue
+            float brn[3] = {0.45f, 0.28f, 0.10f};  // Brown eyes
+
+            // Legs (Tan with cream paws)
+            glColor4f(tan[0], tan[1], tan[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 24*s, icy - 43*s); glVertex2f(icx - 8*s,  icy - 43*s);
-            glVertex2f(icx - 8*s,  icy - 22*s); glVertex2f(icx - 24*s, icy - 22*s);
+            glVertex2f(icx - 18*s, icy - 40*s); glVertex2f(icx - 6*s, icy - 40*s);
+            glVertex2f(icx - 6*s, icy - 18*s);  glVertex2f(icx - 18*s, icy - 18*s);
+            glVertex2f(icx + 6*s, icy - 40*s);  glVertex2f(icx + 18*s, icy - 40*s);
+            glVertex2f(icx + 18*s, icy - 18*s); glVertex2f(icx + 6*s, icy - 18*s);
             glEnd();
+            glColor4f(crm[0], crm[1], crm[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx + 8*s,  icy - 43*s); glVertex2f(icx + 24*s, icy - 43*s);
-            glVertex2f(icx + 24*s, icy - 22*s); glVertex2f(icx + 8*s,  icy - 22*s);
+            glVertex2f(icx - 20*s, icy - 46*s); glVertex2f(icx - 4*s, icy - 46*s);
+            glVertex2f(icx - 4*s, icy - 36*s);  glVertex2f(icx - 20*s, icy - 36*s);
+            glVertex2f(icx + 4*s, icy - 46*s);  glVertex2f(icx + 20*s, icy - 46*s);
+            glVertex2f(icx + 20*s, icy - 36*s); glVertex2f(icx + 4*s, icy - 36*s);
             glEnd();
-            glColor4f(0.38f, 0.75f, 0.35f, 1.0f);
+
+            // Body (Tan Barrel Chest)
+            glColor4f(tan[0], tan[1], tan[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 28*s, icy - 20*s); glVertex2f(icx + 28*s, icy - 20*s);
-            glVertex2f(icx + 28*s, icy + 20*s); glVertex2f(icx - 28*s, icy + 20*s);
+            glVertex2f(icx - 24*s, icy - 18*s); glVertex2f(icx + 24*s, icy - 18*s);
+            glVertex2f(icx + 24*s, icy + 22*s); glVertex2f(icx - 24*s, icy + 22*s);
             glEnd();
-            glColor4f(0.15f, 0.45f, 0.12f, 1.0f);
+
+            // Belly (Cream)
+            glColor4f(crm[0], crm[1], crm[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 20*s, icy - 15*s); glVertex2f(icx + 20*s, icy - 15*s);
-            glVertex2f(icx + 20*s, icy + 15*s); glVertex2f(icx - 20*s, icy + 15*s);
+            glVertex2f(icx - 14*s, icy - 18*s); glVertex2f(icx + 14*s, icy - 18*s);
+            glVertex2f(icx + 14*s, icy + 12*s); glVertex2f(icx - 14*s, icy + 12*s);
             glEnd();
-            glColor4f(0.60f, 0.40f, 0.20f, 1.0f);
+
+            // Head Base (Tan)
+            glColor4f(tan[0], tan[1], tan[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 26*s, icy + 18*s); glVertex2f(icx + 26*s, icy + 18*s);
-            glVertex2f(icx + 26*s, icy + 45*s); glVertex2f(icx - 26*s, icy + 45*s);
+            glVertex2f(icx - 24*s, icy + 22*s); glVertex2f(icx + 24*s, icy + 22*s);
+            glVertex2f(icx + 24*s, icy + 54*s); glVertex2f(icx - 24*s, icy + 54*s);
             glEnd();
-            glColor4f(0.30f, 0.20f, 0.10f, 1.0f);
+
+            // Top Stripe/Brows (Dark Tan)
+            glColor4f(tnd[0], tnd[1], tnd[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 20*s, icy + 20*s); glVertex2f(icx + 20*s, icy + 20*s);
-            glVertex2f(icx + 20*s, icy + 30*s); glVertex2f(icx - 20*s, icy + 30*s);
+            glVertex2f(icx - 10*s, icy + 48*s); glVertex2f(icx + 10*s, icy + 48*s);
+            glVertex2f(icx + 10*s, icy + 54*s); glVertex2f(icx - 10*s, icy + 54*s);
+            glVertex2f(icx - 20*s, icy + 46*s); glVertex2f(icx - 12*s, icy + 46*s);
+            glVertex2f(icx - 12*s, icy + 50*s); glVertex2f(icx - 20*s, icy + 50*s);
+            glVertex2f(icx + 12*s, icy + 46*s); glVertex2f(icx + 20*s, icy + 46*s);
+            glVertex2f(icx + 20*s, icy + 50*s); glVertex2f(icx + 12*s, icy + 50*s);
             glEnd();
-            glColor4f(0.80f, 0.60f, 0.40f, 1.0f);
+
+            // Floppy Ears (Dark Tan)
+            glColor4f(tnd[0], tnd[1], tnd[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 18*s, icy + 30*s); glVertex2f(icx + 18*s, icy + 30*s);
-            glVertex2f(icx + 18*s, icy + 43*s); glVertex2f(icx - 18*s, icy + 43*s);
+            glVertex2f(icx - 38*s, icy + 20*s); glVertex2f(icx - 22*s, icy + 20*s);
+            glVertex2f(icx - 22*s, icy + 50*s); glVertex2f(icx - 38*s, icy + 50*s);
+            glVertex2f(icx + 22*s, icy + 20*s); glVertex2f(icx + 38*s, icy + 20*s);
+            glVertex2f(icx + 38*s, icy + 50*s); glVertex2f(icx + 22*s, icy + 50*s);
             glEnd();
-            glColor4f(0.22f, 0.10f, 0.02f, 1.0f);
+
+            // Inner Ear (Pink sliver)
+            glColor4f(pnk[0], pnk[1], pnk[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 14*s, icy + 35*s); glVertex2f(icx - 7*s,  icy + 35*s);
-            glVertex2f(icx - 7*s,  icy + 42*s); glVertex2f(icx - 14*s, icy + 42*s);
+            glVertex2f(icx - 32*s, icy + 22*s); glVertex2f(icx - 28*s, icy + 22*s);
+            glVertex2f(icx - 28*s, icy + 40*s); glVertex2f(icx - 32*s, icy + 40*s);
+            glVertex2f(icx + 28*s, icy + 22*s); glVertex2f(icx + 32*s, icy + 22*s);
+            glVertex2f(icx + 32*s, icy + 40*s); glVertex2f(icx + 28*s, icy + 40*s);
             glEnd();
+
+            // Muzzle (Cream)
+            glColor4f(crm[0], crm[1], crm[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx + 7*s,  icy + 35*s); glVertex2f(icx + 14*s, icy + 35*s);
-            glVertex2f(icx + 14*s, icy + 42*s); glVertex2f(icx + 7*s,  icy + 42*s);
+            glVertex2f(icx - 16*s, icy + 20*s); glVertex2f(icx + 16*s, icy + 20*s);
+            glVertex2f(icx + 16*s, icy + 34*s); glVertex2f(icx - 16*s, icy + 34*s);
             glEnd();
-            break;
-        }
-        case 3: { // CAT
-            glColor4f(0.70f, 0.45f, 0.22f, 1.0f);
+
+            // Nose (Black)
+            glColor4f(blk[0], blk[1], blk[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 24*s, icy - 43*s); glVertex2f(icx - 8*s,  icy - 43*s);
-            glVertex2f(icx - 8*s,  icy - 22*s); glVertex2f(icx - 24*s, icy - 22*s);
+            glVertex2f(icx - 8*s, icy + 30*s); glVertex2f(icx + 8*s, icy + 30*s);
+            glVertex2f(icx + 8*s, icy + 36*s); glVertex2f(icx - 8*s, icy + 36*s);
             glEnd();
+
+            // Tongue (Pink hanging)
+            glColor4f(pnk[0], pnk[1], pnk[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx + 8*s,  icy - 43*s); glVertex2f(icx + 24*s, icy - 43*s);
-            glVertex2f(icx + 24*s, icy - 22*s); glVertex2f(icx + 8*s,  icy - 22*s);
+            glVertex2f(icx - 6*s, icy + 8*s);  glVertex2f(icx + 6*s, icy + 8*s);
+            glVertex2f(icx + 6*s, icy + 20*s); glVertex2f(icx - 6*s, icy + 20*s);
             glEnd();
-            glColor4f(0.66f, 0.42f, 0.20f, 1.0f);
+            glColor4f(0.85f, 0.40f, 0.50f, 1.0f); // Tongue crease
             glBegin(GL_QUADS);
-            glVertex2f(icx - 25*s, icy - 24*s); glVertex2f(icx + 25*s, icy - 24*s);
-            glVertex2f(icx + 25*s, icy + 20*s); glVertex2f(icx - 25*s, icy + 20*s);
+            glVertex2f(icx - 1*s, icy + 10*s); glVertex2f(icx + 1*s, icy + 10*s);
+            glVertex2f(icx + 1*s, icy + 18*s); glVertex2f(icx - 1*s, icy + 18*s);
             glEnd();
-            glColor4f(0.48f, 0.28f, 0.12f, 1.0f);
+
+            // Eyes (Brown Iris, Black Pupil, White Shine)
+            glColor4f(brn[0], brn[1], brn[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 36*s, icy + 16*s); glVertex2f(icx - 23*s, icy + 16*s);
-            glVertex2f(icx - 23*s, icy + 46*s); glVertex2f(icx - 36*s, icy + 46*s);
+            glVertex2f(icx - 18*s, icy + 36*s); glVertex2f(icx - 8*s, icy + 36*s);
+            glVertex2f(icx - 8*s, icy + 44*s);  glVertex2f(icx - 18*s, icy + 44*s);
+            glVertex2f(icx + 8*s, icy + 36*s);  glVertex2f(icx + 18*s, icy + 36*s);
+            glVertex2f(icx + 18*s, icy + 44*s); glVertex2f(icx + 8*s, icy + 44*s);
             glEnd();
+            glColor4f(blk[0], blk[1], blk[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx + 23*s, icy + 16*s); glVertex2f(icx + 36*s, icy + 16*s);
-            glVertex2f(icx + 36*s, icy + 46*s); glVertex2f(icx + 23*s, icy + 46*s);
+            glVertex2f(icx - 14*s, icy + 38*s); glVertex2f(icx - 10*s, icy + 38*s);
+            glVertex2f(icx - 10*s, icy + 42*s); glVertex2f(icx - 14*s, icy + 42*s);
+            glVertex2f(icx + 10*s, icy + 38*s); glVertex2f(icx + 14*s, icy + 38*s);
+            glVertex2f(icx + 14*s, icy + 42*s); glVertex2f(icx + 10*s, icy + 42*s);
             glEnd();
-            glColor4f(0.70f, 0.45f, 0.22f, 1.0f);
+            glColor4f(wht[0], wht[1], wht[2], 1.0f);
             glBegin(GL_QUADS);
-            glVertex2f(icx - 23*s, icy + 18*s); glVertex2f(icx + 23*s, icy + 18*s);
-            glVertex2f(icx + 23*s, icy + 48*s); glVertex2f(icx - 23*s, icy + 48*s);
-            glEnd();
-            glColor4f(0.22f, 0.10f, 0.02f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 16*s, icy + 33*s); glVertex2f(icx - 6*s,  icy + 33*s);
-            glVertex2f(icx - 6*s,  icy + 42*s); glVertex2f(icx - 16*s, icy + 42*s);
-            glEnd();
-            glBegin(GL_QUADS);
-            glVertex2f(icx + 6*s,  icy + 33*s); glVertex2f(icx + 16*s, icy + 33*s);
-            glVertex2f(icx + 16*s, icy + 42*s); glVertex2f(icx + 6*s,  icy + 42*s);
-            glEnd();
-            glColor4f(1.0f, 1.0f, 1.0f, 0.9f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 15*s, icy + 39*s); glVertex2f(icx - 11*s, icy + 39*s);
-            glVertex2f(icx - 11*s, icy + 42*s); glVertex2f(icx - 15*s, icy + 42*s);
-            glEnd();
-            glBegin(GL_QUADS);
-            glVertex2f(icx + 7*s,  icy + 39*s); glVertex2f(icx + 11*s, icy + 39*s);
-            glVertex2f(icx + 11*s, icy + 42*s); glVertex2f(icx + 7*s,  icy + 42*s);
-            glEnd();
-            glColor4f(0.08f, 0.04f, 0.04f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 7*s, icy + 23*s); glVertex2f(icx + 7*s, icy + 23*s);
-            glVertex2f(icx + 7*s, icy + 28*s); glVertex2f(icx - 7*s, icy + 28*s);
-            glEnd();
-            glColor4f(1.0f, 0.40f, 0.50f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 6*s, icy + 15*s); glVertex2f(icx + 6*s, icy + 15*s);
-            glVertex2f(icx + 6*s, icy + 22*s); glVertex2f(icx - 6*s, icy + 22*s);
-            glEnd();
-            break;
-        }
-        case 4: { // DOG
-            glColor4f(0.70f, 0.45f, 0.22f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 24*s, icy - 43*s); glVertex2f(icx - 8*s,  icy - 43*s);
-            glVertex2f(icx - 8*s,  icy - 22*s); glVertex2f(icx - 24*s, icy - 22*s);
-            glEnd();
-            glBegin(GL_QUADS);
-            glVertex2f(icx + 8*s,  icy - 43*s); glVertex2f(icx + 24*s, icy - 43*s);
-            glVertex2f(icx + 24*s, icy - 22*s); glVertex2f(icx + 8*s,  icy - 22*s);
-            glEnd();
-            glColor4f(0.66f, 0.42f, 0.20f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 25*s, icy - 24*s); glVertex2f(icx + 25*s, icy - 24*s);
-            glVertex2f(icx + 25*s, icy + 20*s); glVertex2f(icx - 25*s, icy + 20*s);
-            glEnd();
-            glColor4f(0.48f, 0.28f, 0.12f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 36*s, icy + 16*s); glVertex2f(icx - 23*s, icy + 16*s);
-            glVertex2f(icx - 23*s, icy + 46*s); glVertex2f(icx - 36*s, icy + 46*s);
-            glEnd();
-            glBegin(GL_QUADS);
-            glVertex2f(icx + 23*s, icy + 16*s); glVertex2f(icx + 36*s, icy + 16*s);
-            glVertex2f(icx + 36*s, icy + 46*s); glVertex2f(icx + 23*s, icy + 46*s);
-            glEnd();
-            glColor4f(0.70f, 0.45f, 0.22f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 23*s, icy + 18*s); glVertex2f(icx + 23*s, icy + 18*s);
-            glVertex2f(icx + 23*s, icy + 48*s); glVertex2f(icx - 23*s, icy + 48*s);
-            glEnd();
-            glColor4f(0.22f, 0.10f, 0.02f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 16*s, icy + 33*s); glVertex2f(icx - 6*s,  icy + 33*s);
-            glVertex2f(icx - 6*s,  icy + 42*s); glVertex2f(icx - 16*s, icy + 42*s);
-            glEnd();
-            glBegin(GL_QUADS);
-            glVertex2f(icx + 6*s,  icy + 33*s); glVertex2f(icx + 16*s, icy + 33*s);
-            glVertex2f(icx + 16*s, icy + 42*s); glVertex2f(icx + 6*s,  icy + 42*s);
-            glEnd();
-            glColor4f(1.0f, 1.0f, 1.0f, 0.9f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 15*s, icy + 39*s); glVertex2f(icx - 11*s, icy + 39*s);
-            glVertex2f(icx - 11*s, icy + 42*s); glVertex2f(icx - 15*s, icy + 42*s);
-            glEnd();
-            glBegin(GL_QUADS);
-            glVertex2f(icx + 7*s,  icy + 39*s); glVertex2f(icx + 11*s, icy + 39*s);
-            glVertex2f(icx + 11*s, icy + 42*s); glVertex2f(icx + 7*s,  icy + 42*s);
-            glEnd();
-            glColor4f(0.08f, 0.04f, 0.04f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 7*s, icy + 23*s); glVertex2f(icx + 7*s, icy + 23*s);
-            glVertex2f(icx + 7*s, icy + 28*s); glVertex2f(icx - 7*s, icy + 28*s);
-            glEnd();
-            glColor4f(1.0f, 0.40f, 0.50f, 1.0f);
-            glBegin(GL_QUADS);
-            glVertex2f(icx - 6*s, icy + 15*s); glVertex2f(icx + 6*s, icy + 15*s);
-            glVertex2f(icx + 6*s, icy + 22*s); glVertex2f(icx - 6*s, icy + 22*s);
+            glVertex2f(icx - 13*s, icy + 40*s); glVertex2f(icx - 11*s, icy + 40*s);
+            glVertex2f(icx - 11*s, icy + 42*s); glVertex2f(icx - 13*s, icy + 42*s);
+            glVertex2f(icx + 13*s, icy + 40*s); glVertex2f(icx + 15*s, icy + 40*s);
+            glVertex2f(icx + 15*s, icy + 42*s); glVertex2f(icx + 13*s, icy + 42*s);
             glEnd();
             break;
         }
