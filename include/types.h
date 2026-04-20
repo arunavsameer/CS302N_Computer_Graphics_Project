@@ -114,8 +114,6 @@ namespace Config {
     constexpr float TIME_SPEED = 0.01f;           // rate of day/night cycle (seconds/cycle)
     constexpr float TRANSITION_SMOOTHNESS = 4.0f; // duration of day/night blend (seconds)
     constexpr float TRANSITION_ZONE_WIDTH = 0.20f; // width of transition window around horizon (radians)
-    constexpr float SUN_LIGHT_INTENSITY = 1.2f;   // sun brightness multiplier
-    constexpr float MOON_LIGHT_INTENSITY = 0.5f;  // moon brightness multiplier
     
     // Light direction: sun moves left to right across sky
     // This vector represents the direction the sun travels (e.g., +X direction)
