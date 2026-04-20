@@ -97,7 +97,7 @@ namespace Config {
     constexpr float LILYPAD_HEIGHT  = 0.15f;
     constexpr float LILYPAD_Y       = -0.05f;
     constexpr float LILYPAD_GAP_MIN = 1.2f;
-    constexpr float LILYPAD_GAP_MAX = 30.0f;
+    constexpr float LILYPAD_GAP_MAX = 25.0f;
 
     constexpr float EGG_SIZE = 0.35f;
     constexpr int   MAX_EGG_CLICKS   = 3;

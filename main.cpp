@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
     glutInitWindowSize(800, 600);
-    glutCreateWindow("CS302N_Game");
+    glutCreateWindow("Crazy Hopper");
 
     glewInit(); // Initialize GLEW before Game
 
