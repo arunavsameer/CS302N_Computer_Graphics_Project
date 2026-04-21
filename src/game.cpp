@@ -502,12 +502,7 @@ void Game::updateDayNightCycle(float deltaTime)
     
     // Update renderer lighting
     renderer.updateLighting(currentGameTime);
-    
-    // Day/night mode based on sun angle relative to horizon
-    // HORIZON_ANGLE = π/4 is where sun reaches horizon and shadows fully fade
-    // Day: |sunAngle| < π/4 (sun above horizon, shadows visible)
-    // Night: |sunAngle| >= π/4 (sun at/below horizon, no shadows)
-    // This ensures day/night transitions happen EXACTLY when shadow fade completes
+
     const float HORIZON_ANGLE = 3.14159f / 4.0f;  // π/4 radians
     float sunAngleMagnitude = std::abs(sunAngle);
     bool isDayTime = (sunAngleMagnitude < HORIZON_ANGLE);
@@ -528,7 +523,7 @@ void Game::renderShadows()
     if (shadowFadeFactor <= 0.0f)
         return;
     
-    // OPTIMIZED: Set up GL state once, then render all shadows
+    
     glPushMatrix();
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

@@ -1252,7 +1252,7 @@ float Renderer::getShadowFadeFactor(float sunAngle) const
     const float TRANSITION_WIDTH = Config::TRANSITION_ZONE_WIDTH;
     float sunAngleMagnitude = std::abs(sunAngle);
     
-    // Smooth step function for smooth fade transitions
+    // Smooth step function for smooth fade transigetShadowFadeFactortions
     auto smoothstep = [](float edge0, float edge1, float x) {
         if (x < edge0) return 1.0f;
         if (x > edge1) return 0.0f;
