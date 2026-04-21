@@ -121,7 +121,7 @@ Lane::Lane(float z, LaneType t, int safePath)
     }
 
 
-    // ===== 🌳🪨 DECORATIONS FIRST =====
+    // ===== DECORATIONS FIRST =====
     if (type == LANE_GRASS) {
 
         int pathWidth = 2;
