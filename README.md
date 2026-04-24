@@ -1,25 +1,26 @@
-# 🎮 Crazy Hopper - CS302N Computer Graphics Project 
+# CS302N Computer Graphics Project — Crazy Hopper
 
-> Our Computer Graphics Project built with OpenGL.
-
----
-
-## 📋 Table of Contents
-
-- [Prerequisites](#-prerequisites)
-  - [Linux](#-linux)
-  - [macOS](#-macos)
-  - [Windows](#-windows)
-- [Project Setup](#-project-setup)
-- [Building & Running](#-building--running)
+> A computer graphics project built with OpenGL, CMake, FreeGLUT, GLEW, and GLM.
 
 ---
 
-## 📦 Prerequisites
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+  - [Linux](#linux)
+  - [macOS](#macos)
+  - [Windows](#windows)
+- [Project Setup](#project-setup)
+- [Building & Running](#building--running)
+- [Fallback — Manual Compilation with g++](#fallback--manual-compilation-with-g)
+
+---
+
+## Prerequisites
 
 Install the required dependencies for your operating system before proceeding.
 
-### 🐧 Linux
+### Linux
 
 **Arch Linux**
 ```bash
@@ -33,7 +34,7 @@ sudo apt update && sudo apt install build-essential cmake freeglut3-dev libglew-
 
 ---
 
-### 🍎 macOS
+### macOS
 
 > **Requires [Homebrew](https://brew.sh/).** If you don't have it installed, run the following first:
 
@@ -51,7 +52,7 @@ brew install cmake freeglut glew glm
 
 ---
 
-### 🪟 Windows
+### Windows
 
 You have two options. Try **Option A** first; if it doesn't work, use **Option B**.
 
@@ -84,7 +85,7 @@ pacman -S mingw-w64-ucrt-x86_64-gcc \
 
 ---
 
-## 🚀 Project Setup
+## Project Setup
 
 Follow these steps in order after installing all prerequisites.
 
@@ -108,7 +109,7 @@ cd build
 
 ---
 
-## 🔨 Building & Running
+## Building & Running
 
 **5. Generate CMake build files:**
 
@@ -128,40 +129,44 @@ cmake --build .
 
 **7. Run the project:**
 
-| Platform | Command |
-|----------|---------|
-| 🐧 Linux / 🍎 macOS | `./bin/crazy_hopper` |
-| 🪟 Windows | `.\bin\Debug\crazy_hopper.exe` |
+| Platform       | Command                         |
+|----------------|---------------------------------|
+| Linux / macOS  | `./bin/crazy_hopper`            |
+| Windows        | `.\bin\Debug\crazy_hopper.exe`  |
 
 ---
 
-## 🛠️ Fallback — Manual Compilation with g++
+## Fallback — Manual Compilation with g++
 
 If the CMake build isn't working, you can compile directly using `g++` from the **project root directory**. Make sure you've completed all the prerequisite installation steps first.
 
-**🐧 Linux**
+**Linux**
 ```bash
 g++ -std=c++17 -o ./crazy_hopper main.cpp src/*.cpp -Iinclude '-DASSET_DIR="./assets/"' -lGL -lGLU -lGLEW -lglut -lm
 ```
 
-**🍎 macOS**
+**macOS**
 ```bash
 g++ -std=c++17 -o ./crazy_hopper main.cpp src/*.cpp -Iinclude -I/opt/homebrew/include -L/opt/homebrew/lib '-DASSET_DIR="./assets/"' -framework OpenGL -framework GLUT -lGLEW -lm
 ```
 > **Note:** The paths `-I/opt/homebrew/include` and `-L/opt/homebrew/lib` are for **Apple Silicon** Macs. If you're on an **Intel Mac**, replace them with `-I/usr/local/include` and `-L/usr/local/lib`.
 
-**🪟 Windows** *(requires the [MSYS2 fallback setup](#option-b--msys2-fallback) from the prerequisites)*
+**Windows** *(requires the [MSYS2 fallback setup](#option-b--msys2-fallback) from the prerequisites)*
 ```bash
 g++ -std=c++17 -o ./crazy_hopper.exe main.cpp src/*.cpp -Iinclude "-DASSET_DIR=\"./assets/\"" -lopengl32 -lfreeglut -lglew32 -lglu32
 ```
 
 Once compiled, run the game from the project root directory:
 
-| Platform | Command |
-|----------|---------|
-| 🐧 Linux / 🍎 macOS | `./crazy_hopper` |
-| 🪟 Windows | `./crazy_hopper.exe` |
+| Platform       | Command              |
+|----------------|----------------------|
+| Linux / macOS  | `./crazy_hopper`     |
+| Windows        | `./crazy_hopper.exe` |
 
 ---
+
+<div align="center">
+
+Made with love for CS302N — Computer Graphics
 
 </div>
