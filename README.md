@@ -1,6 +1,6 @@
 # Crazy Hopper - CS302N Computer Graphics Project
 
-> A computer graphics project built with OpenGL, CMake, FreeGLUT, GLEW, and GLM.
+> Our computer graphics course project built with OpenGL, CMake, FreeGLUT, GLEW, and GLM.
 
 ---
 
