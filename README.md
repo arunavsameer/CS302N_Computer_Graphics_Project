@@ -165,8 +165,4 @@ Once compiled, run the game from the project root directory:
 
 ---
 
-<div align="center">
-
-Made with love for CS302N — Computer Graphics
-
 </div>
