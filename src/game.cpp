@@ -606,12 +606,10 @@ void Game::render()
     renderer.prepareFrame();
     camera.apply();
 
-    // OPTIMIZATION: Cache frame time once per render to avoid multiple glutGet() calls (~0.5-1% improvement)
     lastFrameTime = glutGet(GLUT_ELAPSED_TIME);
 
     renderWorldBoundaries();
 
-    // OPTIMIZATION: Pass cached frameTime to lane.render() for water animation (avoids repeated system calls)
     for (auto &lane : lanes)
         lane.render(renderer, sunAngle, lastFrameTime);
 
